@@ -21,6 +21,7 @@
         #controls button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);color:#d1d5db;padding:4px 12px;border-radius:8px;font-size:9px;cursor:pointer;transition:all 0.3s;font-family:inherit}
         #controls button:hover{background:rgba(255,255,255,0.15)}
         #controls button.green{background:#10b981;border-color:#10b981;color:#fff;font-weight:700}
+        #controls button.test{background:#8b5cf6;border-color:#8b5cf6;color:#fff;font-weight:700}
         #loading{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;transition:opacity 0.8s}
         #loading.hidden{opacity:0;pointer-events:none}
         .loader-icon{font-size:64px;animation:pulse 1.5s ease-in-out infinite}
@@ -83,6 +84,7 @@
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-low">Low</button>
         <button id="btn-ultra">Ultra</button>
+        <button class="test" id="btn-test">🧪 Test</button>
     </div>
 
     <!-- NOTIFICACIONES -->
@@ -106,7 +108,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         SCRIPTS - CARGA DIRECTA SIN SISTEMA DE MÓDULOS
+         SCRIPTS - CARGA DIRECTA
          ============================================================ -->
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -219,7 +221,6 @@
                             engine.modules.gameWorld._generateWorld();
                             console.log('✅ Mundo generado desde GameWorld');
                         } else {
-                            // Fallback: usar botón
                             var btn = document.getElementById('btn-spawn');
                             if (btn) btn.click();
                         }
@@ -227,6 +228,48 @@
                         console.warn('⚠️ Auto-spawn falló:', e);
                     }
                 }, 3000);
+                
+                // ============================================================
+                //  🧪 BOTÓN DE DIAGNÓSTICO
+                //  ============================================================
+                document.getElementById('btn-test').addEventListener('click', function() {
+                    console.log('🧪 TEST EJECUTADO');
+                    
+                    // 1. Verificar engine
+                    if (window.engine) {
+                        alert('✅ Engine existe: ' + typeof window.engine);
+                        console.log('Engine:', window.engine);
+                    } else {
+                        alert('❌ Engine NO existe');
+                    }
+                    
+                    // 2. Verificar GameWorld
+                    if (window.engine && window.engine.modules && window.engine.modules.gameWorld) {
+                        alert('✅ GameWorld existe');
+                        console.log('GameWorld:', window.engine.modules.gameWorld);
+                    } else {
+                        alert('❌ GameWorld NO existe');
+                    }
+                    
+                    // 3. Verificar ECS
+                    if (window.engine && window.engine.modules && window.engine.modules.ecs) {
+                        alert('✅ ECS existe con ' + window.engine.modules.ecs.count + ' entidades');
+                    } else {
+                        alert('❌ ECS NO existe');
+                    }
+                    
+                    // 4. Intentar generar mundo
+                    try {
+                        if (window.engine && window.engine.modules && window.engine.modules.gameWorld) {
+                            window.engine.modules.gameWorld._generateWorld();
+                            alert('🌍 Mundo generado!');
+                        } else {
+                            alert('❌ No se pudo generar el mundo');
+                        }
+                    } catch(e) {
+                        alert('❌ Error: ' + e.message);
+                    }
+                });
                 
                 // Configurar botón Spawn
                 document.getElementById('btn-spawn').addEventListener('click', function() {
