@@ -143,8 +143,8 @@
             if (saved) {
                 this.metaParams = { ...this.metaParams, ...saved.metaParams };
                 this.confidence = saved.confidence || 0.8;
-                this.history = saved.history || this.history;
-                this.predictionModel = saved.predictionModel || this.predictionModel;
+                this.history = { ...this.history, ...(saved.history || {}) };
+                this.predictionModel = { ...this.predictionModel, ...(saved.predictionModel || {}) };
                 
                 console.log(`📂 Cargado estado MetaOptimizerAI`);
             }

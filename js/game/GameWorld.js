@@ -110,7 +110,8 @@
                     rocks: new Set(),
                     animals: new Set(),
                     buildings: new Set(),
-                    particles: new Set()
+                    particles: new Set(),
+                    water: new Set()
                 }
             };
             
@@ -323,10 +324,20 @@
         //  ============================================================
         _generateWater() {
             const waterBodies = Array.from(this.ecosystems.waterBodies.values());
+            const maxWaterEntities = this.config.maxWaterEntities || 400;
             
-            for (const body of waterBodies) {
-                const count = Math.floor(Math.random() * 20 + 10);
-                for (let i = 0; i < count; i++) {
+            // Muestrear un subconjunto de celdas de agua en vez de procesarlas todas
+            // (evita generar decenas de miles de entidades y saturar el renderer)
+            const sampleSize = Math.min(waterBodies.length, 80);
+            let created = 0;
+            
+            for (let i = 0; i < sampleSize && created < maxWaterEntities; i++) {
+                const idx = Math.floor((i / sampleSize) * waterBodies.length);
+                const body = waterBodies[idx];
+                if (!body) continue;
+                
+                const count = Math.min(3 + Math.floor(Math.random() * 3), maxWaterEntities - created);
+                for (let j = 0; j < count; j++) {
                     const x = body.x + (Math.random() - 0.5) * 15;
                     const z = body.z + (Math.random() - 0.5) * 15;
                     const y = this._getHeight(x, z) + 0.5;
@@ -338,6 +349,7 @@
                             level: 0.5 + Math.random() * 0.5,
                             flow: 0
                         });
+                        created++;
                     }
                 }
             }
@@ -397,6 +409,29 @@
             
             // ===== 8. ACTUALIZAR EVENTOS =====
             this._updateEvents(delta);
+        }
+        
+        // ============================================================
+        //  📅 ACTUALIZAR EVENTOS DEL MUNDO
+        // ============================================================
+        _updateEvents(delta) {
+            // Purgar eventos antiguos (más de 30s de vida)
+            const now = this.state.time;
+            if (this.state.events.length > 0) {
+                this.state.events = this.state.events.filter(ev => (now - ev.time) < 30);
+            }
+            
+            // Generar eventos aleatorios ocasionales (clima extremo, migraciones, etc.)
+            if (Math.random() < delta * 0.01) {
+                const kinds = ['migración animal', 'tormenta acercándose', 'floración', 'sequía leve'];
+                this.state.events.push({
+                    type: kinds[Math.floor(Math.random() * kinds.length)],
+                    time: now
+                });
+                if (this.state.events.length > 20) {
+                    this.state.events.shift();
+                }
+            }
         }
         
         // ============================================================
@@ -759,6 +794,15 @@
             return Math.max(0, Math.min(1, noise + Math.random() * 0.1));
         }
         
+        _getSlope(x, z) {
+            const e = 2;
+            const hL = this._getHeight(x - e, z);
+            const hR = this._getHeight(x + e, z);
+            const hD = this._getHeight(x, z - e);
+            const hU = this._getHeight(x, z + e);
+            return (Math.abs(hR - hL) + Math.abs(hU - hD)) / (e * 2);
+        }
+        
         _getRandomPositionInBiome(biome) {
             const maxAttempts = 100;
             const halfSize = this.config.worldSize / 2;
@@ -772,13 +816,13 @@
                 let isCorrectBiome = false;
                 switch(biome) {
                     case 'forest':
-                        isCorrectBiome = y > 5 && y < 20 && this._getMoisture(x, z) > 0.4;
+                        isCorrectBiome = y > 5 && y < 20 && this._getMoisture(x, z) > 0.4 && this._getSlope(x, z) < 0.6;
                         break;
                     case 'mountain':
                         isCorrectBiome = y > 20 && this._getMoisture(x, z) > 0.3;
                         break;
                     case 'grassland':
-                        isCorrectBiome = y > 2 && y < 10 && this._getMoisture(x, z) > 0.3 && this._getMoisture(x, z) < 0.7;
+                        isCorrectBiome = y > 2 && y < 10 && this._getMoisture(x, z) > 0.3 && this._getMoisture(x, z) < 0.7 && this._getSlope(x, z) < 0.5;
                         break;
                     case 'water':
                         isCorrectBiome = y < 2 && this._getMoisture(x, z) > 0.7;

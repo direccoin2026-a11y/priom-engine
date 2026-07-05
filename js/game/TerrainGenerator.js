@@ -447,6 +447,55 @@
         // ============================================================
         //  🏔️ GENERAR MESH DE TERRENO
         //  ============================================================
+        // ============================================================
+        //  🎨 TEXTURA DE DETALLE PROCEDURAL (sin assets externos)
+        // ============================================================
+        _getDetailTexture() {
+            if (this._detailTexture) return this._detailTexture;
+            
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Base neutra (se multiplica con el color de bioma por vértice)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Ruido tipo "grano" para simular textura de tierra/pasto/roca
+            const imageData = ctx.getImageData(0, 0, size, size);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = 0.78 + Math.random() * 0.22;
+                data[i] *= noise;
+                data[i + 1] *= noise;
+                data[i + 2] *= noise;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Manchas suaves adicionales (variación orgánica)
+            for (let i = 0; i < 90; i++) {
+                const x = Math.random() * size;
+                const y = Math.random() * size;
+                const r = 4 + Math.random() * 14;
+                const shade = 0.85 + Math.random() * 0.3;
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(${255 * shade},${255 * shade},${255 * shade},0.12)`;
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            const tiles = Math.max(8, Math.round(this.config.worldSize / 20));
+            texture.repeat.set(tiles, tiles);
+            
+            this._detailTexture = texture;
+            return texture;
+        }
+        
         generateTerrainMesh(scene, heightMap) {
             const res = this.config.resolution;
             const size = this.config.worldSize;
@@ -509,6 +558,7 @@
             // Material
             const material = new THREE.MeshStandardMaterial({
                 vertexColors: true,
+                map: this._getDetailTexture(),
                 roughness: 0.8,
                 metalness: 0.0,
                 flatShading: false,
@@ -554,10 +604,47 @@
                 7: { r: 0.2, g: 0.3, b: 0.1 }    // SWAMP
             };
             
-            const color = BIOME_COLORS[biome] || BIOME_COLORS[2];
+            let color = { ...(BIOME_COLORS[biome] || BIOME_COLORS[2]) };
+            
+            // ============================================================
+            //  🎨 SISTEMA DE MATERIALES POR ALTURA + PENDIENTE
+            // ============================================================
+            const ROCK = { r: 0.32, g: 0.30, b: 0.28 };
+            const SNOW = { r: 0.92, g: 0.94, b: 0.98 };
+            const SAND = { r: 0.76, g: 0.68, b: 0.48 };
+            
+            // Pendiente estimada por diferencia de altura con vecinos
+            const e = this.config.worldSize / res;
+            const hL = this.getHeight(x - e, z);
+            const hR = this.getHeight(x + e, z);
+            const hD = this.getHeight(x, z - e);
+            const hU = this.getHeight(x, z + e);
+            const slope = (Math.abs(hR - hL) + Math.abs(hU - hD)) / (e * 2);
+            
+            const mix = (a, b, t) => ({
+                r: a.r + (b.r - a.r) * t,
+                g: a.g + (b.g - a.g) * t,
+                b: a.b + (b.b - a.b) * t
+            });
+            
+            const maxHeight = this.config.terrainHeight || 30;
+            const waterLevel = (this.config.waterLevel || 0.5) * maxHeight * 0.3;
+            
+            // Roca en pendientes pronunciadas (cualquier altura)
+            const rockFactor = Math.min(1, Math.max(0, (slope - 0.4) / 1.2));
+            color = mix(color, ROCK, rockFactor);
+            
+            // Nieve en las cumbres (por encima de cierta altura, menos en pendientes muy verticales)
+            const snowLine = maxHeight * 0.55;
+            const snowFactor = Math.min(1, Math.max(0, (y - snowLine) / (maxHeight * 0.25))) * (1 - rockFactor * 0.6);
+            color = mix(color, SNOW, snowFactor);
+            
+            // Arena cerca del nivel del agua
+            const sandFactor = Math.min(1, Math.max(0, 1 - Math.abs(y - waterLevel) / 1.5)) * (1 - rockFactor);
+            color = mix(color, SAND, sandFactor * 0.7);
             
             // Variación sutil
-            const variation = 0.1;
+            const variation = 0.06;
             return {
                 r: color.r + (Math.random() - 0.5) * variation,
                 g: color.g + (Math.random() - 0.5) * variation,

@@ -264,6 +264,20 @@
                 this.modules.memory
             );
             
+            // Vegetación adicional (flores) - aditivo v0.2
+            try {
+                if (window.VegetationPlacer && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
+                    this.modules.vegetationPlacer = new VegetationPlacer(
+                        this.modules.renderer.scene,
+                        this.modules.gameWorld.generators.terrain,
+                        { worldSize: CONFIG.worldSize }
+                    );
+                    this.modules.vegetationPlacer.plantFlowers(800);
+                }
+            } catch (e) {
+                console.warn('⚠️ VegetationPlacer no disponible', e);
+            }
+            
             console.log('✅ Mundo inicializado');
         }
         
@@ -505,50 +519,61 @@
                 return;
             }
             
-            const now = performance.now();
-            let delta = Math.min(now - this._loop.lastTime, this.config.maxDeltaTime * 1000);
-            this._loop.lastTime = now;
-            
-            // Convertir a segundos
-            const deltaSeconds = delta / 1000;
-            
-            // Acumular tiempo para fixed update
-            this._loop.accumulator += deltaSeconds;
-            this._loop.fixedAccumulator += deltaSeconds;
-            
-            // ===== FIXED UPDATE =====
-            while (this._loop.fixedAccumulator >= this._loop.fixedDeltaTime) {
-                this._fixedUpdate(this._loop.fixedDeltaTime);
-                this._loop.fixedAccumulator -= this._loop.fixedDeltaTime;
-                this._loop.updateCount++;
+            try {
+                const now = performance.now();
+                let delta = Math.min(now - this._loop.lastTime, this.config.maxDeltaTime * 1000);
+                this._loop.lastTime = now;
+                
+                // Convertir a segundos
+                const deltaSeconds = delta / 1000;
+                
+                // Acumular tiempo para fixed update
+                this._loop.accumulator += deltaSeconds;
+                this._loop.fixedAccumulator += deltaSeconds;
+                
+                // ===== FIXED UPDATE =====
+                let fixedSteps = 0;
+                while (this._loop.fixedAccumulator >= this._loop.fixedDeltaTime && fixedSteps < 5) {
+                    this._fixedUpdate(this._loop.fixedDeltaTime);
+                    this._loop.fixedAccumulator -= this._loop.fixedDeltaTime;
+                    this._loop.updateCount++;
+                    fixedSteps++;
+                }
+                // Evitar espiral de la muerte si el hilo se atrasa mucho
+                if (this._loop.fixedAccumulator > this._loop.fixedDeltaTime * 5) {
+                    this._loop.fixedAccumulator = 0;
+                }
+                
+                // ===== UPDATE =====
+                this._update(deltaSeconds);
+                
+                // ===== RENDER =====
+                this._render();
+                
+                // ===== POST-RENDER =====
+                this._postRender();
+                
+                // ===== ACTUALIZAR ESTADÍSTICAS =====
+                this.state.frameCount++;
+                this.state.uptime = now - this.state.startTime;
+                this.state.deltaTime = deltaSeconds;
+                
+                // Calcular FPS
+                if (this.state.frameCount % 60 === 0) {
+                    const fps = 1000 / delta;
+                    this.state.fps = Math.round(fps);
+                }
+                
+                // ===== EVENTO DE FRAME =====
+                this.emit('frame', {
+                    delta: deltaSeconds,
+                    frame: this.state.frameCount,
+                    fps: this.state.fps
+                });
+            } catch (e) {
+                this._lastLoopError = (e && e.message) ? e.message : String(e);
+                console.error('❌ Error en el game loop (frame ' + this.state.frameCount + '):', e);
             }
-            
-            // ===== UPDATE =====
-            this._update(deltaSeconds);
-            
-            // ===== RENDER =====
-            this._render();
-            
-            // ===== POST-RENDER =====
-            this._postRender();
-            
-            // ===== ACTUALIZAR ESTADÍSTICAS =====
-            this.state.frameCount++;
-            this.state.uptime = now - this.state.startTime;
-            this.state.deltaTime = deltaSeconds;
-            
-            // Calcular FPS
-            if (this.state.frameCount % 60 === 0) {
-                const fps = 1000 / delta;
-                this.state.fps = Math.round(fps);
-            }
-            
-            // ===== EVENTO DE FRAME =====
-            this.emit('frame', {
-                delta: deltaSeconds,
-                frame: this.state.frameCount,
-                fps: this.state.fps
-            });
             
             // ===== CONTINUAR LOOP =====
             requestAnimationFrame(() => this._gameLoop());
@@ -692,6 +717,15 @@
                 CONFIG.particlesEnabled = action.useParticles;
                 CONFIG.bloomEnabled = action.useBloom;
                 CONFIG.ssaoEnabled = action.useSSAO;
+            }
+            
+            // Conectar los toggles con los pases de post-procesado reales
+            const renderer = this.modules.renderer;
+            if (renderer.ssaoPass) {
+                renderer.ssaoPass.enabled = !!action.useSSAO;
+            }
+            if (renderer.dustSystem) {
+                renderer.dustSystem.visible = !!action.useParticles;
             }
             
             // Actualizar UI

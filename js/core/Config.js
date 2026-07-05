@@ -546,19 +546,31 @@
     //  🚀 INSTANCIA GLOBAL
     //  ============================================================
     // Crear instancia única (Singleton)
-    const CONFIG = new Config();
+    const configInstance = new Config();
     
-    // Congelar la instancia para evitar modificaciones accidentales
-    Object.freeze(CONFIG);
+    // ============================================================
+    //  📤 EXPONER COMO OBJETO PLANO Y MUTABLE
+    //  ============================================================
+    // El resto del motor (PriomEngine, GameWorld, MaxRenderer,
+    // EntityFactory, etc.) lee y ESCRIBE propiedades directamente
+    // sobre CONFIG (ej. CONFIG.waterEnabled = false), nunca a través
+    // de .get()/.set(). Por eso exponemos una copia plana y sin
+    // congelar de la configuración actual, en vez de la instancia
+    // de la clase (que sí puede quedar congelada internamente).
+    const CONFIG = { ...configInstance._current };
+    
+    // Mantener acceso a la instancia completa (getProfile, get, set, etc.)
+    // por si algo la necesita, sin exponerla como el propio CONFIG.
+    CONFIG._instance = configInstance;
     
     // Exponer globalmente
     window.CONFIG = CONFIG;
     
     // Log de inicio
     console.log('⚙️ Configuración inicializada');
-    console.log(`📊 Perfil: ${CONFIG.getProfile().toUpperCase()}`);
-    console.log(`📊 Versión: ${CONFIG.get('version')}`);
-    console.log(`📊 Build: ${CONFIG.get('build')}`);
+    console.log(`📊 Perfil: ${configInstance.getProfile().toUpperCase()}`);
+    console.log(`📊 Versión: ${configInstance.get('version')}`);
+    console.log(`📊 Build: ${configInstance.get('build')}`);
     
     // ============================================================
     //  📦 EXPORTAR (si estamos en módulo)

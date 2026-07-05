@@ -278,16 +278,80 @@
                 flatShading: true
             }));
             
-            // ===== AGUA =====
-            this.materialCache.set('water', new THREE.MeshPhysicalMaterial({
-                color: new THREE.Color(0x0066aa),
+            // ===== AGUA (shader realista: Fresnel + especular solar) =====
+            this.materialCache.set('water', new THREE.ShaderMaterial({
                 transparent: true,
-                opacity: 0.7,
-                roughness: 0.1,
-                metalness: 0.0,
-                clearcoat: 0.3,
-                clearcoatRoughness: 0.2,
-                envMapIntensity: 0.5,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uSunDirection: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
+                    uSunColor: { value: new THREE.Color(0xfff2c0) },
+                    uDeepColor: { value: new THREE.Color(0x02243d) },
+                    uShallowColor: { value: new THREE.Color(0x1f8fae) },
+                    uSkyColor: { value: new THREE.Color(0x668cbf) },
+                    uOpacity: { value: 0.88 }
+                },
+                vertexShader: `
+                    uniform float uTime;
+                    varying vec3 vNormal;
+                    varying vec3 vWorldPos;
+                    varying vec3 vViewDir;
+                    
+                    float waveHeight(vec2 p) {
+                        return sin(p.x * 0.05 + uTime) * 0.3 +
+                               cos(p.y * 0.07 + uTime * 0.8) * 0.2 +
+                               sin((p.x + p.y) * 0.03 + uTime * 0.5) * 0.15;
+                    }
+                    
+                    void main() {
+                        vec3 pos = position;
+                        float e = 0.6;
+                        float hL = waveHeight(pos.xy + vec2(-e, 0.0));
+                        float hR = waveHeight(pos.xy + vec2(e, 0.0));
+                        float hD = waveHeight(pos.xy + vec2(0.0, -e));
+                        float hU = waveHeight(pos.xy + vec2(0.0, e));
+                        pos.z = waveHeight(pos.xy);
+                        
+                        vec3 tangentX = normalize(vec3(2.0 * e, 0.0, hR - hL));
+                        vec3 tangentY = normalize(vec3(0.0, 2.0 * e, hU - hD));
+                        vNormal = normalize(cross(tangentX, tangentY));
+                        
+                        vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+                        vWorldPos = worldPosition.xyz;
+                        vViewDir = normalize(cameraPosition - worldPosition.xyz);
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uSunDirection;
+                    uniform vec3 uSunColor;
+                    uniform vec3 uDeepColor;
+                    uniform vec3 uShallowColor;
+                    uniform vec3 uSkyColor;
+                    uniform float uOpacity;
+                    varying vec3 vNormal;
+                    varying vec3 vWorldPos;
+                    varying vec3 vViewDir;
+                    
+                    void main() {
+                        vec3 normal = normalize(vNormal);
+                        vec3 viewDir = normalize(vViewDir);
+                        
+                        // Fresnel: más reflectante en ángulo rasante
+                        float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 3.0);
+                        
+                        // Color base: mezcla profundo/superficial + reflejo del cielo en el borde
+                        vec3 baseColor = mix(uDeepColor, uShallowColor, 0.4);
+                        vec3 color = mix(baseColor, uSkyColor, fresnel * 0.65);
+                        
+                        // Especular solar (Blinn-Phong)
+                        vec3 halfDir = normalize(normalize(uSunDirection) + viewDir);
+                        float spec = pow(max(0.0, dot(normal, halfDir)), 120.0);
+                        color += uSunColor * spec * 1.5;
+                        
+                        gl_FragColor = vec4(color, uOpacity);
+                    }
+                `,
                 side: THREE.DoubleSide
             }));
             
@@ -336,29 +400,48 @@
                     uniform float uTime;
                     varying vec3 vWorldPosition;
                     
+                    float hash(vec2 p) {
+                        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                    }
+                    
                     void main() {
                         vec3 dir = normalize(vWorldPosition);
-                        float sunFactor = max(0.0, dot(dir, normalize(uSunPosition)));
+                        vec3 sunDir = normalize(uSunPosition);
+                        float sunFactor = max(0.0, dot(dir, sunDir));
                         float sunGlow = pow(sunFactor, 64.0);
                         float sunHalo = pow(sunFactor, 8.0) * 0.3;
                         
-                        // Gradiente de cielo
+                        // Altura del sol: día (1) / noche (0)
+                        float dayAmount = smoothstep(-0.25, 0.35, sunDir.y);
+                        
+                        // Gradiente de cielo (día)
                         float height = (dir.y + 1.0) * 0.5;
-                        vec3 skyColor = mix(
-                            vec3(0.02, 0.02, 0.06),
-                            vec3(0.05, 0.08, 0.2),
-                            height
-                        );
-                        skyColor = mix(skyColor, vec3(0.3, 0.4, 0.6), pow(height, 4.0));
+                        vec3 nightSky = mix(vec3(0.01, 0.01, 0.035), vec3(0.03, 0.04, 0.09), height);
+                        vec3 daySky = mix(vec3(0.08, 0.14, 0.28), vec3(0.35, 0.55, 0.85), pow(height, 0.7));
+                        
+                        // Calidez cerca del horizonte al amanecer/atardecer
+                        float horizonWarmth = (1.0 - abs(sunDir.y)) * dayAmount * pow(max(0.0, 1.0 - height), 2.0);
+                        vec3 horizonColor = vec3(1.0, 0.5, 0.25) * horizonWarmth * 0.6;
+                        
+                        vec3 skyColor = mix(nightSky, daySky, dayAmount) + horizonColor;
                         
                         // Añadir sol
-                        vec3 sunColor = vec3(1.0, 0.8, 0.4) * (sunGlow + sunHalo);
-                        skyColor += sunColor * 0.5;
+                        vec3 sunColor = vec3(1.0, 0.85, 0.5) * (sunGlow + sunHalo) * (0.4 + dayAmount * 0.8);
+                        skyColor += sunColor;
                         
-                        // Estrellas (patrón simple)
-                        float stars = floor(sin(vWorldPosition.x * 100.0) * sin(vWorldPosition.z * 100.0) * 10.0);
-                        stars = max(0.0, stars - 5.0) * 0.5;
-                        skyColor += vec3(stars * 0.3);
+                        // Luna (lado opuesto al sol, solo visible de noche)
+                        vec3 moonDir = -sunDir;
+                        float moonFactor = max(0.0, dot(dir, moonDir));
+                        float moonDisc = pow(moonFactor, 800.0) * (1.0 - dayAmount);
+                        float moonHalo = pow(moonFactor, 40.0) * 0.15 * (1.0 - dayAmount);
+                        skyColor += vec3(0.85, 0.9, 1.0) * (moonDisc * 2.0 + moonHalo);
+                        
+                        // Estrellas (titilan, solo de noche)
+                        vec2 starCoord = floor(dir.xz * 400.0 + dir.y * 200.0);
+                        float starChance = hash(starCoord);
+                        float twinkle = 0.6 + 0.4 * sin(uTime * 3.0 + starChance * 100.0);
+                        float stars = step(0.9925, starChance) * twinkle * (1.0 - dayAmount);
+                        skyColor += vec3(stars);
                         
                         gl_FragColor = vec4(skyColor, 1.0);
                     }
@@ -370,6 +453,228 @@
             
             this.skybox = new THREE.Mesh(skyGeo, skyMat);
             this.scene.add(this.skybox);
+            
+            // ===== DISCO SOLAR VISIBLE (el bloom lo hace brillar) =====
+            const sunGeo = new THREE.SphereGeometry(12, 24, 24);
+            const sunMat = new THREE.MeshBasicMaterial({
+                color: 0xfff2c0,
+                fog: false,
+                toneMapped: false
+            });
+            this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            this.sunMesh.position.copy(this.dayNight.sunPosition).multiplyScalar(4);
+            this.scene.add(this.sunMesh);
+            
+            // ===== PARTÍCULAS DE POLVO AMBIENTAL =====
+            this._setupAmbientDust();
+            
+            // ===== CAMPO DE PASTO (detalle de suelo) =====
+            this._setupGrassField();
+            
+            // ===== CLIMA (lluvia / nieve) =====
+            this._setupWeather();
+            
+            // ===== MÓDULOS ADITIVOS v0.2 (no rompen nada si fallan) =====
+            try {
+                if (window.SkySystem) {
+                    this.skySystem = new SkySystem(this.scene);
+                }
+            } catch (e) { console.warn('⚠️ SkySystem no disponible', e); }
+            
+            try {
+                if (window.WaterSystem) {
+                    this.waterSystemFX = new WaterSystem(this.scene);
+                }
+            } catch (e) { console.warn('⚠️ WaterSystem no disponible', e); }
+            
+            try {
+                if (window.WeatherFX) {
+                    this.weatherFX = new WeatherFX(this.scene);
+                }
+            } catch (e) { console.warn('⚠️ WeatherFX no disponible', e); }
+            
+            try {
+                if (window.AnimationSystem) {
+                    this.animationSystem = new AnimationSystem();
+                    if (this.grassMeshes) {
+                        this.animationSystem.registerSwayGroup(this.grassMeshes, { amplitude: 0.025, speed: 0.9 });
+                    }
+                }
+            } catch (e) { console.warn('⚠️ AnimationSystem no disponible', e); }
+        }
+        
+        // ============================================================
+        //  🌧️ SISTEMA DE CLIMA (lluvia / nieve)
+        // ============================================================
+        _setupWeather() {
+            const count = 2000;
+            const positions = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 140;
+                positions[i * 3 + 1] = Math.random() * 60;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 140;
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const rainMat = new THREE.PointsMaterial({
+                color: 0xaad4ff, size: 0.12, transparent: true, opacity: 0.55,
+                blending: THREE.AdditiveBlending, depthWrite: false
+            });
+            const snowMat = new THREE.PointsMaterial({
+                color: 0xffffff, size: 0.22, transparent: true, opacity: 0.85,
+                depthWrite: false
+            });
+            
+            this.weatherSystem = new THREE.Points(geometry, rainMat);
+            this.weatherSystem.visible = false;
+            this.scene.add(this.weatherSystem);
+            
+            this._weatherMats = { rain: rainMat, snow: snowMat };
+            this.weatherType = 'clear';
+        }
+        
+        // Cambia el clima: 'clear' | 'rain' | 'snow'
+        setWeather(type) {
+            this.weatherType = type;
+            if (!this.weatherSystem) return;
+            
+            if (type === 'clear') {
+                this.weatherSystem.visible = false;
+                return;
+            }
+            
+            this.weatherSystem.material = this._weatherMats[type] || this._weatherMats.rain;
+            this.weatherSystem.visible = true;
+        }
+        
+        _updateWeather(camPos) {
+            if (!this.weatherSystem || !this.weatherSystem.visible) return;
+            const positions = this.weatherSystem.geometry.attributes.position.array;
+            const count = positions.length / 3;
+            const fallSpeed = this.weatherType === 'snow' ? 0.06 : 0.55;
+            const drift = this.weatherType === 'snow' ? 0.03 : 0.01;
+            
+            for (let i = 0; i < count; i++) {
+                positions[i * 3 + 1] -= fallSpeed;
+                positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * drift;
+                
+                if (positions[i * 3 + 1] < 0) {
+                    positions[i * 3 + 1] = 60;
+                    positions[i * 3] = (camPos ? camPos.x : 0) + (Math.random() - 0.5) * 140;
+                    positions[i * 3 + 2] = (camPos ? camPos.z : 0) + (Math.random() - 0.5) * 140;
+                }
+            }
+            this.weatherSystem.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        // ============================================================
+        //  🌾 CAMPO DE PASTO INSTANCIADO (miles de briznas, costo estático)
+        // ============================================================
+        _setupGrassField() {
+            const bladeGeo = new THREE.PlaneGeometry(0.09, 0.42);
+            bladeGeo.translate(0, 0.21, 0);
+            
+            const tones = [
+                { color: 0x3f7a2e, count: 1600 },
+                { color: 0x5a9a3c, count: 1200 },
+                { color: 0x2f6524, count: 900 }
+            ];
+            
+            this.grassMeshes = [];
+            const dummy = new THREE.Object3D();
+            
+            for (const tone of tones) {
+                const mat = new THREE.MeshStandardMaterial({
+                    color: tone.color,
+                    side: THREE.DoubleSide,
+                    roughness: 0.9,
+                    metalness: 0.0
+                });
+                
+                const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
+                
+                for (let i = 0; i < tone.count; i++) {
+                    const x = (Math.random() - 0.5) * 150;
+                    const z = (Math.random() - 0.5) * 150;
+                    dummy.position.set(x, 0.35, z);
+                    dummy.rotation.y = Math.random() * Math.PI;
+                    const scale = 0.55 + Math.random() * 0.9;
+                    dummy.scale.set(scale, scale * (0.7 + Math.random() * 0.6), scale);
+                    dummy.updateMatrix();
+                    mesh.setMatrixAt(i, dummy.matrix);
+                }
+                
+                this.scene.add(mesh);
+                this.grassMeshes.push(mesh);
+            }
+        }
+        
+        // ============================================================
+        //  ✨ POLVO / POLEN AMBIENTAL (profundidad atmosférica)
+        // ============================================================
+        _setupAmbientDust() {
+            const count = 500;
+            const positions = new Float32Array(count * 3);
+            this._dustVelocities = new Float32Array(count * 3);
+            
+            for (let i = 0; i < count; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 160;
+                positions[i * 3 + 1] = Math.random() * 40 + 1;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 160;
+                
+                this._dustVelocities[i * 3] = (Math.random() - 0.5) * 0.15;
+                this._dustVelocities[i * 3 + 1] = Math.random() * 0.08 + 0.02;
+                this._dustVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0xffe9b0,
+                size: 0.18,
+                transparent: true,
+                opacity: 0.55,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                fog: true
+            });
+            
+            this.dustSystem = new THREE.Points(geometry, material);
+            this.scene.add(this.dustSystem);
+        }
+        
+        // ============================================================
+        //  🔄 ACTUALIZAR POLVO AMBIENTAL (llamar cada frame)
+        // ============================================================
+        _updateAmbientDust(delta, camPos) {
+            if (!this.dustSystem) return;
+            const positions = this.dustSystem.geometry.attributes.position.array;
+            const count = positions.length / 3;
+            
+            for (let i = 0; i < count; i++) {
+                positions[i * 3] += this._dustVelocities[i * 3];
+                positions[i * 3 + 1] += this._dustVelocities[i * 3 + 1];
+                positions[i * 3 + 2] += this._dustVelocities[i * 3 + 2];
+                
+                // Reciclar partículas que suben demasiado o se alejan del jugador
+                if (positions[i * 3 + 1] > 40) {
+                    positions[i * 3 + 1] = 1;
+                }
+                const cx = camPos ? camPos.x : 0;
+                const cz = camPos ? camPos.z : 0;
+                if (Math.abs(positions[i * 3] - cx) > 80) {
+                    positions[i * 3] = cx + (Math.random() - 0.5) * 160;
+                }
+                if (Math.abs(positions[i * 3 + 2] - cz) > 80) {
+                    positions[i * 3 + 2] = cz + (Math.random() - 0.5) * 160;
+                }
+            }
+            
+            this.dustSystem.geometry.attributes.position.needsUpdate = true;
         }
         
         // ============================================================
@@ -386,13 +691,87 @@
                     const renderPass = new THREE.RenderPass(this.scene, this.camera);
                     this.composer.addPass(renderPass);
                     
+                    // ===== SSAO (oclusión ambiental / sombras de contacto) =====
+                    if (THREE.SSAOPass) {
+                        try {
+                            const ssaoPass = new THREE.SSAOPass(
+                                this.scene,
+                                this.camera,
+                                window.innerWidth,
+                                window.innerHeight
+                            );
+                            ssaoPass.kernelRadius = 8;
+                            ssaoPass.minDistance = 0.001;
+                            ssaoPass.maxDistance = 0.15;
+                            this.composer.addPass(ssaoPass);
+                            this.ssaoPass = ssaoPass;
+                            console.log('🌑 SSAO activado');
+                        } catch (ssaoErr) {
+                            console.warn('⚠️ SSAO no disponible:', ssaoErr);
+                        }
+                    }
+                    
                     this.bloomPass = new THREE.UnrealBloomPass(
                         new THREE.Vector2(window.innerWidth, window.innerHeight),
-                        0.6,  // strength
-                        0.5,  // radius
-                        0.82  // threshold
+                        0.9,  // strength
+                        0.6,  // radius
+                        0.72  // threshold
                     );
                     this.composer.addPass(this.bloomPass);
+                    
+                    // ===== PASE CINEMATOGRÁFICO (viñeta + grano + contraste) =====
+                    const cinematicShader = {
+                        uniforms: {
+                            tDiffuse: { value: null },
+                            uTime: { value: 0 }
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            void main() {
+                                vUv = uv;
+                                gl_Position = vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform sampler2D tDiffuse;
+                            uniform float uTime;
+                            varying vec2 vUv;
+                            
+                            float grain(vec2 uv, float t) {
+                                return fract(sin(dot(uv * t, vec2(12.9898, 78.233))) * 43758.5453);
+                            }
+                            
+                            void main() {
+                                vec4 color = texture2D(tDiffuse, vUv);
+                                
+                                // Viñeta suave
+                                vec2 centered = vUv - 0.5;
+                                float vig = 1.0 - dot(centered, centered) * 0.7;
+                                color.rgb *= clamp(vig, 0.55, 1.0);
+                                
+                                // Grano de película sutil
+                                float g = (grain(vUv, uTime) - 0.5) * 0.035;
+                                color.rgb += g;
+                                
+                                // Contraste y saturación ligeramente realzados
+                                color.rgb = (color.rgb - 0.5) * 1.08 + 0.5;
+                                float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                                color.rgb = mix(vec3(luma), color.rgb, 1.12);
+                                
+                                gl_FragColor = color;
+                            }
+                        `
+                    };
+                    this.cinematicPass = new THREE.ShaderPass(cinematicShader);
+                    this.composer.addPass(this.cinematicPass);
+                    
+                    // ===== FXAA (antialiasing extra, aditivo) =====
+                    try {
+                        if (window.PostProcessing) {
+                            this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
+                        }
+                    } catch (e) { console.warn('⚠️ FXAA no disponible', e); }
+                    
                     this.bloomAvailable = true;
                     console.log('✨ Bloom real activado');
                 } else {
@@ -454,6 +833,9 @@
             if (this.bloomAvailable && this.composer && CONFIG.bloomEnabled) {
                 if (this.bloomPass) {
                     this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
+                }
+                if (this.cinematicPass) {
+                    this.cinematicPass.uniforms.uTime.value = Date.now() * 0.001;
                 }
                 this.composer.render();
             } else {
@@ -537,6 +919,32 @@
                     skyMat.uniforms.uTime.value = this.dayNight.time;
                 }
             }
+            
+            // Actualizar disco solar visible
+            if (this.sunMesh) {
+                this.sunMesh.position.set(sunX, sunY, sunZ).multiplyScalar(1.4);
+                this.sunMesh.material.opacity = Math.max(0.15, intensity);
+            }
+            
+            // Actualizar polvo ambiental
+            this._updateAmbientDust(0.016, this.camera.position);
+            
+            // Actualizar clima
+            this._updateWeather(this.camera.position);
+            
+            // Actualizar módulos aditivos v0.2
+            try {
+                if (this.skySystem) this.skySystem.update(0.016, sunY / 200);
+            } catch (e) { /* silencioso */ }
+            try {
+                if (this.waterSystemFX) this.waterSystemFX.update(Date.now() * 0.001);
+            } catch (e) { /* silencioso */ }
+            try {
+                if (this.weatherFX) this.weatherFX.update(0.016);
+            } catch (e) { /* silencioso */ }
+            try {
+                if (this.animationSystem) this.animationSystem.update(0.016);
+            } catch (e) { /* silencioso */ }
             
             this.dayNight.intensity = intensity;
         }
@@ -673,25 +1081,16 @@
             }
             
             if (this.waterMesh) {
-                // Animar ondas
-                const positions = this.waterMesh.geometry.attributes.position;
+                const mat = this.waterMesh.material;
                 const time = Date.now() * 0.001;
-                
-                for (let i = 0; i < positions.count; i++) {
-                    const x = positions.getX(i);
-                    const z = positions.getZ(i);
-                    const y = Math.sin(x * 0.05 + time) * 0.3 +
-                              Math.cos(z * 0.07 + time * 0.8) * 0.2 +
-                              Math.sin((x + z) * 0.03 + time * 0.5) * 0.15;
-                    positions.setY(i, y);
-                }
-                positions.needsUpdate = true;
-                
-                // Actualizar color según día/noche
                 const intensity = this.dayNight.intensity || 0.5;
-                const waterColor = new THREE.Color().setHSL(0.6, 0.8, 0.2 + intensity * 0.2);
-                this.waterMesh.material.color.copy(waterColor);
-                this.waterMesh.material.opacity = 0.5 + intensity * 0.2;
+                
+                if (mat.uniforms) {
+                    mat.uniforms.uTime.value = time;
+                    mat.uniforms.uSunDirection.value.copy(this.dayNight.sunPosition).normalize();
+                    mat.uniforms.uSkyColor.value.copy(this.scene.background);
+                    mat.uniforms.uOpacity.value = 0.8 + intensity * 0.1;
+                }
             }
         }
         

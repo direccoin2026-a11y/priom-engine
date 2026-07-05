@@ -354,41 +354,23 @@
             if (template.isGeometry) this.soa.isGeometry[id] = 1;
             if (template.isEnemy) this.soa.isEnemy[id] = 1;
             
-            // Aplicar overrides
+            // Aplicar propiedades base calculadas (posición, color, escala, física...)
+            for (const [key, value] of Object.entries(props)) {
+                if (this.soa[key]) {
+                    this.soa[key][id] = value;
+                }
+            }
+            
+            // Aplicar overrides adicionales del llamador
             for (const [key, value] of Object.entries(overrides)) {
-                if (key.startsWith('pos')) {
-                    const axis = key.charAt(3).toLowerCase();
-                    this.soa[`pos${axis.toUpperCase()}`][id] = value;
-                } else if (key.startsWith('col')) {
-                    const comp = key.charAt(3).toLowerCase();
-                    this.soa[`col${comp.toUpperCase()}`][id] = value;
-                } else if (key.startsWith('scale')) {
-                    const comp = key.charAt(5).toLowerCase();
-                    this.soa[`scale${comp.toUpperCase()}`][id] = value;
-                } else if (key === 'rotX') {
-                    this.soa.rotX[id] = value;
-                } else if (key === 'rotY') {
-                    this.soa.rotY[id] = value;
-                } else if (key === 'rotZ') {
-                    this.soa.rotZ[id] = value;
-                } else if (key === 'mass') {
-                    this.soa.mass[id] = value;
-                } else if (key === 'friction') {
-                    this.soa.friction[id] = value;
-                } else if (key === 'restitution') {
-                    this.soa.restitution[id] = value;
-                } else if (key === 'shadowCaster') {
-                    this.soa.shadowCaster[id] = value;
-                } else if (key === 'flags') {
-                    this.soa.flags[id] = value;
-                } else if (key === 'type') {
-                    this.soa.type[id] = value;
-                } else if (key === 'subType') {
-                    this.soa.subType[id] = value;
-                } else if (key === 'visible') {
-                    this.soa.visible[id] = value;
-                } else if (key === 'active') {
-                    this.soa.active[id] = value;
+                if (key === 'variation') {
+                    continue; // ya se usó arriba para mutar color/escala
+                } else if (key === 'scale') {
+                    this.soa.scaleX[id] = value;
+                    this.soa.scaleY[id] = value;
+                    this.soa.scaleZ[id] = value;
+                } else if (this.soa[key]) {
+                    this.soa[key][id] = value;
                 }
             }
             
