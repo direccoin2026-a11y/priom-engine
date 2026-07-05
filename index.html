@@ -103,6 +103,19 @@
         #geo-lab .geo-stats b { color: #10b981; }
         
         canvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            #hud { padding: 8px 12px; min-width: 150px; }
+            #hud .logo { font-size: 14px; }
+            #stats-panel { padding: 6px 10px; min-width: 120px; }
+            #stats-panel .stat { font-size: 8px; }
+            #ai-status-bar { min-width: auto; padding: 6px 14px; gap: 10px; flex-wrap: wrap; }
+            #ai-status-bar .ai-progress { width: 60px; }
+            #controls { bottom: 70px; gap: 3px; }
+            #controls button { padding: 2px 8px; font-size: 7px; }
+            #geo-lab { top: 70px; right: 10px; width: 190px; }
+        }
     </style>
 </head>
 <body>
@@ -211,7 +224,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         📦 CARGA DE SCRIPTS - VERSIÓN SIMPLIFICADA
+         📦 CARGA DE SCRIPTS
          ============================================================ -->
     
     <!-- 1. THREE.js desde CDN -->
@@ -219,7 +232,7 @@
     
     <script>
     // ============================================================
-    //  🚀 SISTEMA DE CARGA SIMPLIFICADO
+    //  🚀 SISTEMA DE CARGA MEJORADO
     //  ============================================================
     (function() {
         'use strict';
@@ -227,6 +240,7 @@
         const totalModules = 15;
         let loaded = 0;
         let hasError = false;
+        let engineStarted = false;
         
         const elements = {
             fill: document.getElementById('loader-fill'),
@@ -247,7 +261,6 @@
         
         function loadModule(name, checkFn, loadFn) {
             return new Promise((resolve) => {
-                // Verificar si ya está cargado
                 if (checkFn()) {
                     loaded++;
                     updateUI();
@@ -259,9 +272,7 @@
                 elements.text.textContent = `⏳ Cargando ${name}...`;
                 elements.status.textContent = `📦 Cargando ${name}`;
                 
-                // Ejecutar carga
                 loadFn(() => {
-                    // Verificar que se cargó
                     setTimeout(() => {
                         if (checkFn()) {
                             loaded++;
@@ -319,17 +330,8 @@
                 
                 for (const mod of modules) {
                     if (hasError) break;
-                    
-                    const result = await loadModule(
-                        mod.name,
-                        mod.check,
-                        (callback) => loadScript(mod.url, callback)
-                    );
-                    
-                    if (!result) {
-                        hasError = true;
-                        break;
-                    }
+                    const result = await loadModule(mod.name, mod.check, (callback) => loadScript(mod.url, callback));
+                    if (!result) { hasError = true; break; }
                 }
                 
                 if (hasError) {
@@ -348,20 +350,14 @@
                 // Iniciar motor
                 setTimeout(() => {
                     try {
-                        // Asegurar CONFIG
                         if (typeof CONFIG === 'undefined') {
                             window.CONFIG = {
-                                version: '0.1.0',
-                                maxEntities: 50000,
-                                targetFPS: 60,
-                                quality: 'ultra',
-                                lodDistance: 200,
-                                waterEnabled: true,
-                                particlesEnabled: true,
-                                shadowsEnabled: true,
-                                bloomEnabled: true,
-                                ssaoEnabled: true,
-                                debug: false
+                                version: '0.1.0', maxEntities: 50000, targetFPS: 60,
+                                quality: 'ultra', lodDistance: 200,
+                                waterEnabled: true, particlesEnabled: true,
+                                shadowsEnabled: true, bloomEnabled: true, ssaoEnabled: true,
+                                worldSize: 1000, terrainHeight: 30, treeDensity: 0.3,
+                                animalCount: 100, gravity: -9.8, windStrength: 0.6
                             };
                         }
                         
@@ -378,6 +374,29 @@
                                 }, 800);
                             }
                         }, 500);
+                        
+                        // ============================================================
+                        //  🌍 GENERAR MUNDO DEMO AUTOMÁTICAMENTE
+                        //  ============================================================
+                        setTimeout(function() {
+                            try {
+                                console.log('🌍 Generando mundo demo...');
+                                var btn = document.getElementById('btn-spawn');
+                                if (btn) {
+                                    btn.click();
+                                    console.log('✅ Click en Spawn ejecutado');
+                                } else {
+                                    // Fallback: generar directamente
+                                    var e = window.engine;
+                                    if (e && e.modules && e.modules.gameWorld) {
+                                        e.modules.gameWorld._generateWorld();
+                                        console.log('✅ Mundo generado directamente');
+                                    }
+                                }
+                            } catch(e) {
+                                console.log('⚠️ Auto-spawn falló:', e);
+                            }
+                        }, 2500);
                         
                     } catch (e) {
                         console.error('❌ Error al iniciar motor:', e);
