@@ -173,16 +173,78 @@
                     this.start();
                 }
                 
-                // Emitir evento de inicialización
-                this.emit('init', { engine: this });
-                
-            } catch (error) {
-                this.state.status = 'error';
-                this.state.error = error;
-                console.error('❌ Error al inicializar el motor:', error);
-                console.error('Stack trace:', error.stack);
-                this.emit('error', { error });
+                    // Emitir evento de inicialización
+    this.emit('init', { engine: this });
+    
+    // ============================================================
+    //  🌍 GENERAR MUNDO DEMO AUTOMÁTICAMENTE
+    //  ============================================================
+    setTimeout(() => {
+        try {
+            console.log('🌍 Generando mundo demo automático...');
+            
+            // Opción 1: Click en botón Spawn
+            const btn = document.getElementById('btn-spawn');
+            if (btn) {
+                btn.click();
+                console.log('✅ Click en Spawn ejecutado');
+                return;
             }
+            
+            // Opción 2: Generar directamente
+            if (this.modules.gameWorld) {
+                this.modules.gameWorld._generateWorld();
+                console.log('✅ Mundo generado desde GameWorld');
+                return;
+            }
+            
+            // Opción 3: Crear mundo con ECS
+            if (this.modules.ecs && this.modules.entityFactory) {
+                const ecs = this.modules.ecs;
+                const factory = this.modules.entityFactory;
+                
+                // Árboles
+                for (let i = 0; i < 300; i++) {
+                    const x = (Math.random() - 0.5) * 400;
+                    const z = (Math.random() - 0.5) * 400;
+                    const y = 0.5 + Math.random() * 3;
+                    const id = factory.createTree(x, y, z);
+                    if (id !== -1) {
+                        ecs.isTree[id] = 1;
+                        ecs.scale[id] = 0.5 + Math.random() * 3;
+                    }
+                }
+                
+                // Rocas
+                for (let i = 0; i < 100; i++) {
+                    const x = (Math.random() - 0.5) * 400;
+                    const z = (Math.random() - 0.5) * 400;
+                    const y = 0.5 + Math.random() * 2;
+                    const id = factory.createRock(x, y, z);
+                    if (id !== -1) {
+                        ecs.isRock[id] = 1;
+                        ecs.scale[id] = 0.5 + Math.random() * 3;
+                    }
+                }
+                
+                // Actualizar UI
+                const entitiesEl = document.getElementById('entities');
+                if (entitiesEl) entitiesEl.textContent = ecs.count;
+                
+                console.log(`✅ Mundo generado con ${ecs.count} entidades`);
+                this.showNotification(`🌍 Mundo creado con ${ecs.count} entidades`);
+            }
+        } catch(e) {
+            console.warn('⚠️ Auto-spawn falló:', e);
+        }
+    }, 2000);
+    
+} catch (error) {
+    this.state.status = 'error';
+    this.state.error = error;
+    console.error('❌ Error al inicializar el motor:', error);
+    console.error('Stack trace:', error.stack);
+    this.emit('error', { error });
         }
         
         // ============================================================
