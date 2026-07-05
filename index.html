@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>🧠 PRIOM V0.1 - Motor de Juegos IA</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        /* ===== PANTALLA DE CARGA ===== */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #0a0a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+            flex-direction: column;
+        }
+        #loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loader-container {
+            text-align: center;
+            max-width: 480px;
+            padding: 40px 30px;
+        }
+        .loader-icon { font-size: 72px; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.1)} }
+        .loader-title { font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .loader-version { color: #6b7280; font-size: 12px; letter-spacing: 2px; }
+        .loader-bar-wrapper { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+        .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981); border-radius: 2px; transition: width 0.3s ease; }
+        .loader-percent { color: #6b7280; font-size: 14px; font-weight: 600; min-width: 40px; }
+        .loader-text { color: #fff; font-size: 14px; margin-top: 8px; min-height: 24px; }
+        .loader-subtext { color: #6b7280; font-size: 12px; margin-top: 4px; min-height: 20px; }
+        .loader-error { color: #ef4444 !important; }
+        .loader-details { display: flex; justify-content: center; gap: 20px; margin-top: 16px; font-size: 11px; color: #4b5563; }
+        .loader-details span { background: rgba(255,255,255,0.03); padding: 4px 10px; border-radius: 4px; }
+        .loader-particles { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+        .loader-particles .dot { width: 6px; height: 6px; border-radius: 50%; background: #7c3aed; animation: float 1.5s ease-in-out infinite; }
+        .loader-particles .dot:nth-child(2) { animation-delay: 0.2s; background: #06b6d4; }
+        .loader-particles .dot:nth-child(3) { animation-delay: 0.4s; background: #10b981; }
+        .loader-particles .dot:nth-child(4) { animation-delay: 0.6s; background: #f59e0b; }
+        .loader-particles .dot:nth-child(5) { animation-delay: 0.8s; background: #7c3aed; }
+        .loader-particles .dot:nth-child(6) { animation-delay: 1.0s; background: #06b6d4; }
+        .loader-particles .dot:nth-child(7) { animation-delay: 1.2s; background: #10b981; }
+        .loader-particles .dot:nth-child(8) { animation-delay: 1.4s; background: #f59e0b; }
+        @keyframes float { 0%,100%{transform:translateY(0px);opacity:0.3} 50%{transform:translateY(-10px);opacity:1} }
+        .loader-footer { margin-top: 24px; font-size: 11px; color: #4b5563; letter-spacing: 1px; }
+        
+        /* ===== HUD ===== */
+        #hud { position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 12px 18px; min-width: 200px; pointer-events: none; z-index: 100; }
+        #hud .logo { font-size: 18px; font-weight: 900; background: linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        #hud .subtitle { font-size: 9px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 7px; font-weight: 700; text-transform: uppercase; margin-top: 4px; background: rgba(124,58,237,0.2); color: #8b5cf6; border: 1px solid rgba(124,58,237,0.2); }
+        
+        /* ===== STATS ===== */
+        #stats-panel { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 10px 14px; min-width: 150px; pointer-events: none; z-index: 100; }
+        #stats-panel .stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #9ca3af; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        #stats-panel .stat:last-child { border-bottom: none; }
+        #stats-panel .stat .value { color: #fff; font-weight: 600; }
+        #stats-panel .stat .value.good { color: #10b981; }
+        #stats-panel .stat .value.ultra { color: #fbbf24; }
+        #stats-panel .stat .value.ai { color: #8b5cf6; }
+        
+        /* ===== AI STATUS ===== */
+        #ai-status-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.2); border-radius: 40px; padding: 8px 20px; z-index: 100; display: flex; align-items: center; gap: 14px; min-width: 400px; justify-content: center; }
+        #ai-status-bar .ai-icon { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#f59e0b); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        #ai-status-bar .ai-text { font-size: 10px; color: #d1d5db; }
+        #ai-status-bar .ai-text strong { color: #8b5cf6; }
+        #ai-status-bar .ai-progress { width: 100px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg,#7c3aed,#06b6d4,#10b981,#f59e0b); border-radius: 2px; transition: width 0.3s ease; }
+        #ai-status-bar .ai-stats { font-size: 9px; color: #6b7280; display: flex; gap: 10px; }
+        #ai-status-bar .ai-stats .highlight { color: #8b5cf6; }
+        #ai-status-bar .ai-stats .meta { color: #06b6d4; }
+        
+        /* ===== CONTROLES ===== */
+        #controls { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+        #controls button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: #d1d5db; padding: 3px 12px; border-radius: 12px; font-size: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; font-family: inherit; }
+        #controls button:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+        #controls button.active { background: rgba(124,58,237,0.2); border-color: #8b5cf6; color: #8b5cf6; }
+        #controls button.dual-ai { background: linear-gradient(135deg,#7c3aed,#f59e0b); border-color: transparent; color: #fff; font-weight: 700; }
+        
+        /* ===== NOTIFICACIONES ===== */
+        #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .notification { background: rgba(0,0,0,0.9); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; padding: 6px 16px; font-size: 11px; color: #fff; animation: slideDown 0.3s ease, fadeOut 0.3s 3s ease forwards; }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes fadeOut { to { opacity:0; transform:translateY(-10px) } }
+        
+        /* ===== GEO LAB ===== */
+        #geo-lab { position: fixed; top: 80px; right: 15px; width: 220px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; padding: 12px 14px; z-index: 100; font-size: 10px; max-height: calc(100vh - 160px); overflow-y: auto; }
+        #geo-lab .geo-title { font-size: 12px; font-weight: 900; background: linear-gradient(135deg,#10b981,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        #geo-lab select, #geo-lab button.geo-btn { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 10px; margin-bottom: 6px; font-family: inherit; cursor: pointer; }
+        #geo-lab button.geo-btn { background: linear-gradient(135deg,#10b981,#059669); border: none; color: #fff; font-weight: 700; }
+        #geo-lab .geo-stats { display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 9px; color: #6b7280; }
+        #geo-lab .geo-stats b { color: #10b981; }
+        
+        canvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== PANTALLA DE CARGA ===== -->
+    <div id="loading-screen">
+        <div class="loader-container">
+            <div class="loader-icon">🧠</div>
+            <div class="loader-title">PRIOM</div>
+            <div class="loader-version">v0.1 · IA Dual</div>
+            
+            <div class="loader-bar-wrapper">
+                <div class="loader-bar">
+                    <div class="loader-fill" id="loader-fill" style="width:0%"></div>
+                </div>
+                <div class="loader-percent" id="loader-percent">0%</div>
+            </div>
+            
+            <p class="loader-text" id="loader-text">🚀 Inicializando...</p>
+            <p class="loader-subtext" id="loader-subtext">📦 Cargando módulos...</p>
+            
+            <div class="loader-details">
+                <span id="loader-status">⏳ Esperando...</span>
+                <span id="loader-modules">📦 0/16</span>
+            </div>
+            
+            <div class="loader-particles">
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span><span class="dot"></span>
+            </div>
+            
+            <div class="loader-footer">🧠 IA Dual · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo</div>
+        </div>
+    </div>
+
+    <!-- ===== HUD ===== -->
+    <div id="hud">
+        <div class="logo">🧠 PRIOM V0.1</div>
+        <div class="subtitle">🎮 IA Dual · Meta-optimización</div>
+        <div>
+            <span class="badge">🧬 IA DUAL</span>
+            <span class="badge">⚡ META</span>
+            <span class="badge">🎯 OPTIMIZANDO</span>
+        </div>
+    </div>
+
+    <!-- ===== STATS ===== -->
+    <div id="stats-panel">
+        <div class="stat">📊 FPS <span class="value good" id="fps">0</span></div>
+        <div class="stat">👾 Entidades <span class="value" id="entities">0</span></div>
+        <div class="stat">💾 RAM <span class="value" id="ram">0</span> MB</div>
+        <div class="stat">⚡ Calidad <span class="value ultra" id="quality">MAX</span></div>
+        <div class="stat">🎯 Confianza IA <span class="value ai" id="confidence">100%</span></div>
+        <div class="stat">🔮 Predicción <span class="value" id="prediction">⚡ Estable</span></div>
+    </div>
+
+    <!-- ===== AI STATUS ===== -->
+    <div id="ai-status-bar">
+        <div class="ai-icon">🧠</div>
+        <div class="ai-text">
+            <strong id="ai-action">IA DUAL ACTIVA</strong>
+            <span id="ai-detail">· Inicializando...</span>
+        </div>
+        <div class="ai-progress">
+            <div class="fill" id="ai-progress-fill" style="width:100%"></div>
+        </div>
+        <div class="ai-stats">
+            <span>🎯 IA: <span class="highlight" id="ai-conf">100%</span></span>
+            <span>🧬 Meta: <span class="meta" id="ai-meta">100%</span></span>
+        </div>
+    </div>
+
+    <!-- ===== CONTROLES ===== -->
+    <div id="controls">
+        <button class="active dual-ai" id="btn-dual">🧠 IA DUAL</button>
+        <button id="btn-low">🔽 Low</button>
+        <button id="btn-medium">🔄 Med</button>
+        <button id="btn-high">🔼 High</button>
+        <button id="btn-ultra">⚡ Ultra</button>
+        <button id="btn-spawn">➕ Spawn</button>
+        <button id="btn-reset">🔄 Reset</button>
+    </div>
+
+    <!-- ===== NOTIFICACIONES ===== -->
+    <div id="notifications"></div>
+
+    <!-- ===== LABORATORIO ===== -->
+    <div id="geo-lab">
+        <div class="geo-title">🔷 Laboratorio Geométrico</div>
+        <select id="geo-family">
+            <option value="supershape">🌀 Supershape 3D</option>
+            <option value="torusknot">🎀 Nudo tórico</option>
+            <option value="mobius">♾️ Cinta de Möbius</option>
+            <option value="menger">🧊 Esponja de Menger</option>
+        </select>
+        <button class="geo-btn" id="geo-generate">✨ Generar forma</button>
+        <div class="geo-stats">
+            <span>📐 Vértices <b id="geo-verts">0</b></span>
+            <span>🔺 Triángulos <b id="geo-tris">0</b></span>
+        </div>
+    </div>
+
+    <!-- ===== CANVAS ===== -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- ============================================================
+         📦 CARGA DE SCRIPTS - VERSIÓN SIMPLIFICADA
+         ============================================================ -->
+    
+    <!-- 1. THREE.js desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+    // ============================================================
+    //  🚀 SISTEMA DE CARGA SIMPLIFICADO
+    //  ============================================================
+    (function() {
+        'use strict';
+        
+        const totalModules = 15;
+        let loaded = 0;
+        let hasError = false;
+        
+        const elements = {
+            fill: document.getElementById('loader-fill'),
+            percent: document.getElementById('loader-percent'),
+            text: document.getElementById('loader-text'),
+            subtext: document.getElementById('loader-subtext'),
+            status: document.getElementById('loader-status'),
+            modules: document.getElementById('loader-modules'),
+            screen: document.getElementById('loading-screen')
+        };
+        
+        function updateUI() {
+            const progress = (loaded / totalModules) * 100;
+            if (elements.fill) elements.fill.style.width = Math.min(100, progress) + '%';
+            if (elements.percent) elements.percent.textContent = Math.round(progress) + '%';
+            if (elements.modules) elements.modules.textContent = `📦 ${loaded}/${totalModules}`;
+        }
+        
+        function loadModule(name, checkFn, loadFn) {
+            return new Promise((resolve) => {
+                // Verificar si ya está cargado
+                if (checkFn()) {
+                    loaded++;
+                    updateUI();
+                    console.log(`✅ ${name} ya cargado`);
+                    resolve(true);
+                    return;
+                }
+                
+                elements.text.textContent = `⏳ Cargando ${name}...`;
+                elements.status.textContent = `📦 Cargando ${name}`;
+                
+                // Ejecutar carga
+                loadFn(() => {
+                    // Verificar que se cargó
+                    setTimeout(() => {
+                        if (checkFn()) {
+                            loaded++;
+                            updateUI();
+                            console.log(`✅ ${name} cargado`);
+                            resolve(true);
+                        } else {
+                            console.error(`❌ Error cargando ${name}`);
+                            elements.text.textContent = `❌ Error cargando ${name}`;
+                            elements.text.style.color = '#ef4444';
+                            resolve(false);
+                        }
+                    }, 100);
+                });
+            });
+        }
+        
+        function loadScript(url, callback) {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = callback;
+            script.onerror = callback;
+            document.head.appendChild(script);
+        }
+        
+        async function startEngine() {
+            try {
+                // Verificar THREE.js
+                if (typeof THREE === 'undefined') {
+                    elements.text.textContent = '❌ THREE.js no cargado';
+                    elements.text.style.color = '#ef4444';
+                    return;
+                }
+                loaded++;
+                updateUI();
+                console.log('✅ THREE.js cargado:', THREE.REVISION);
+                
+                // Cargar módulos secuencialmente
+                const modules = [
+                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js' },
+                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js' },
+                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js' },
+                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js' },
+                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js' },
+                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js' },
+                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js' },
+                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js' },
+                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js' },
+                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js' },
+                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js' },
+                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js' },
+                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined', url: 'js/utils/Profiler.js' },
+                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js' }
+                ];
+                
+                for (const mod of modules) {
+                    if (hasError) break;
+                    
+                    const result = await loadModule(
+                        mod.name,
+                        mod.check,
+                        (callback) => loadScript(mod.url, callback)
+                    );
+                    
+                    if (!result) {
+                        hasError = true;
+                        break;
+                    }
+                }
+                
+                if (hasError) {
+                    elements.text.textContent = '❌ Error cargando módulos. Recarga la página.';
+                    elements.text.style.color = '#ef4444';
+                    return;
+                }
+                
+                // Todos los módulos cargados
+                elements.text.textContent = '🚀 ¡Todos los módulos cargados!';
+                elements.subtext.textContent = '🎮 Iniciando motor...';
+                elements.status.textContent = '✅ Listo';
+                
+                console.log('🎉 Todos los módulos cargados correctamente');
+                
+                // Iniciar motor
+                setTimeout(() => {
+                    try {
+                        // Asegurar CONFIG
+                        if (typeof CONFIG === 'undefined') {
+                            window.CONFIG = {
+                                version: '0.1.0',
+                                maxEntities: 50000,
+                                targetFPS: 60,
+                                quality: 'ultra',
+                                lodDistance: 200,
+                                waterEnabled: true,
+                                particlesEnabled: true,
+                                shadowsEnabled: true,
+                                bloomEnabled: true,
+                                ssaoEnabled: true,
+                                debug: false
+                            };
+                        }
+                        
+                        const engine = new PriomEngine();
+                        window.engine = engine;
+
+                        if (engine.hasError()) {
+                            const err = engine.getError();
+                            console.error('❌ El motor terminó en estado de error:', err);
+                            elements.text.textContent = '❌ Error: ' + (err ? err.message : 'desconocido');
+                            elements.text.style.color = '#ef4444';
+                            return;
+                        }
+
+                        console.log('✅ Motor iniciado correctamente');
+                        wireUI(engine);
+                        
+                        // Ocultar pantalla de carga
+                        setTimeout(() => {
+                            if (elements.screen) {
+                                elements.screen.classList.add('fade-out');
+                                setTimeout(() => {
+                                    elements.screen.style.display = 'none';
+                                }, 800);
+                            }
+                        }, 500);
+                        
+                    } catch (e) {
+                        console.error('❌ Error al iniciar motor:', e);
+                        elements.text.textContent = '❌ Error: ' + e.message;
+                        elements.text.style.color = '#ef4444';
+                    }
+                }, 300);
+                
+            } catch (e) {
+                console.error('❌ Error:', e);
+                elements.text.textContent = '❌ Error: ' + e.message;
+                elements.text.style.color = '#ef4444';
+            }
+        }
+        
+        // ============================================================
+        //  🔗 CONECTAR MOTOR <-> INTERFAZ (HUD, controles, geo lab)
+        // ============================================================
+        function wireUI(engine) {
+            const hud = {
+                fps: document.getElementById('fps'),
+                entities: document.getElementById('entities'),
+                ram: document.getElementById('ram'),
+                quality: document.getElementById('quality'),
+                confidence: document.getElementById('confidence'),
+                prediction: document.getElementById('prediction'),
+                aiDetail: document.getElementById('ai-detail'),
+                aiConf: document.getElementById('ai-conf'),
+                aiMeta: document.getElementById('ai-meta'),
+                aiProgress: document.getElementById('ai-progress-fill')
+            };
+            
+            // ----- Refresco periódico de estadísticas -----
+            setInterval(() => {
+                const stats = engine.getStats();
+                if (hud.fps) hud.fps.textContent = stats.fps || 0;
+                if (hud.entities) hud.entities.textContent = stats.entities || 0;
+                if (hud.ram) {
+                    const mb = stats.renderer ? Math.round((stats.renderer.vram || 0) / (1024 * 1024)) : 0;
+                    hud.ram.textContent = mb;
+                }
+                if (hud.confidence) {
+                    const c = engine.getModule('optimizerAI');
+                    if (c && typeof c.getStatus === 'function') {
+                        const st = c.getStatus();
+                        const conf = Math.round((st.confidence || 1) * 100);
+                        hud.confidence.textContent = conf + '%';
+                        if (hud.aiConf) hud.aiConf.textContent = conf + '%';
+                    }
+                }
+                const metaAI = engine.getModule('metaAI');
+                if (metaAI && typeof metaAI.getStatus === 'function') {
+                    const mstat = metaAI.getStatus();
+                    if (hud.aiMeta) hud.aiMeta.textContent = Math.round((mstat.confidence || 1) * 100) + '%';
+                }
+                if (hud.aiDetail) {
+                    hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
+                }
+            }, 500);
+            
+            // ----- Botones de calidad / IA dual -----
+            const qualityButtons = {
+                'btn-low': 'low',
+                'btn-medium': 'medium',
+                'btn-high': 'high',
+                'btn-ultra': 'ultra'
+            };
+            
+            function setActiveButton(activeId) {
+                const ids = ['btn-dual', 'btn-low', 'btn-medium', 'btn-high', 'btn-ultra'];
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.toggle('active', id === activeId);
+                });
+            }
+            
+            const dualBtn = document.getElementById('btn-dual');
+            if (dualBtn) {
+                dualBtn.addEventListener('click', () => {
+                    engine.manualQuality = false;
+                    setActiveButton('btn-dual');
+                });
+            }
+            
+            Object.keys(qualityButtons).forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                btn.addEventListener('click', () => {
+                    engine.manualQuality = true;
+                    const renderer = engine.getModule('renderer');
+                    if (renderer) renderer.setQuality(qualityButtons[btnId]);
+                    if (hud.quality) hud.quality.textContent = qualityButtons[btnId].toUpperCase();
+                    setActiveButton(btnId);
+                });
+            });
+            
+            // ----- Spawn -----
+            const spawnBtn = document.getElementById('btn-spawn');
+            if (spawnBtn) {
+                spawnBtn.addEventListener('click', () => {
+                    const factory = engine.getModule('entityFactory');
+                    if (!factory) return;
+                    for (let i = 0; i < 10; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 20 + Math.random() * 80;
+                        const x = Math.cos(angle) * dist;
+                        const z = Math.sin(angle) * dist;
+                        factory.createAnimal(x, 5, z, Math.random() < 0.3);
+                    }
+                });
+            }
+            
+            // ----- Reset -----
+            const resetBtn = document.getElementById('btn-reset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    engine.manualQuality = false;
+                    setActiveButton('btn-dual');
+                    engine.reset();
+                });
+            }
+            
+            // ----- Laboratorio geométrico -----
+            const geoFamily = document.getElementById('geo-family');
+            const geoBtn = document.getElementById('geo-generate');
+            const geoVerts = document.getElementById('geo-verts');
+            const geoTris = document.getElementById('geo-tris');
+            
+            if (geoBtn) {
+                geoBtn.addEventListener('click', () => {
+                    const lab = engine.getModule('geometryLab');
+                    if (!lab || !geoFamily) return;
+                    const result = lab.generate(geoFamily.value);
+                    if (result) {
+                        if (geoVerts) geoVerts.textContent = result.vertices;
+                        if (geoTris) geoTris.textContent = Math.round(result.triangles);
+                    }
+                });
+            }
+        }
+        
+        // Iniciar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startEngine);
+        } else {
+            startEngine();
+        }
+        
+    })();
+    </script>
+
+</body>
+</html>
