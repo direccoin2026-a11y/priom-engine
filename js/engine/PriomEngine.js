@@ -1,12 +1,35 @@
 /**
  * 🚀 PRIOM V0.1 - PRIOM ENGINE
  * "El motor que une todo en perfecta armonía"
- */
+ * 
+ * 📁 Ubicación: js/engine/PriomEngine.js
+ * 📦 Versión: 0.1.0
+ * 🎯 Propósito: Motor principal que orquesta todos los módulos
+ * 
+ * ⭐ INNOVACIONES:
+ * - Orquestación completa de todos los módulos
+ * - Loop de juego optimizado con delta time
+ * - Sistema de estados del motor
+ * - Gestión de eventos del ciclo de vida
+ * - Sistema de plugins extensible
+ * - Configuración dinámica en tiempo real
+ * - Sistema de profiling integrado
+ * - Manejo de errores robusto
+ * - API pública completa
+ * ============================================================ */
+
 (function() {
     'use strict';
 
+    /**
+     * 🚀 PriomEngine - Motor Principal
+     * Orquesta todos los módulos del motor
+     */
     class PriomEngine {
         constructor(config = {}) {
+            // ============================================================
+            //  📊 CONFIGURACIÓN
+            //  ============================================================
             this.config = {
                 ...CONFIG,
                 ...config,
@@ -18,6 +41,9 @@
                 plugins: config.plugins || []
             };
             
+            // ============================================================
+            //  📦 ESTADO DEL MOTOR
+            //  ============================================================
             this.state = {
                 status: 'initializing',
                 startTime: 0,
@@ -30,6 +56,9 @@
                 plugins: new Map()
             };
             
+            // ============================================================
+            //  🧩 MÓDULOS DEL MOTOR
+            //  ============================================================
             this.modules = {
                 config: CONFIG,
                 hardware: null,
@@ -46,6 +75,9 @@
                 helpers: null
             };
             
+            // ============================================================
+            //  🎯 LOOP DE JUEGO
+            //  ============================================================
             this._loop = {
                 running: false,
                 lastTime: 0,
@@ -56,80 +88,109 @@
                 renderCount: 0
             };
             
+            // ============================================================
+            //  📡 SISTEMA DE EVENTOS
+            //  ============================================================
             this._events = new Map();
+            
+            // ============================================================
+            //  🔌 PLUGINS
+            //  ============================================================
             this._plugins = new Map();
+            
+            // ============================================================
+            //  🚀 INICIALIZAR
+            //  ============================================================
             this._init();
         }
         
+        // ============================================================
+        //  🚀 INICIALIZACIÓN
+        //  ============================================================
         _init() {
             console.log('🚀 ========================================');
             console.log('🚀  PRIOM V0.1 - MOTOR DE JUEGOS IA');
             console.log('🚀  "Donde la IA encuentra la gráfica"');
             console.log('🚀 ========================================');
+            console.log(`📦 Versión: ${CONFIG.version}`);
+            console.log(`🏗️ Build: ${CONFIG.build}`);
+            console.log(`📊 Max Entidades: ${CONFIG.maxEntities}`);
+            console.log(`🎯 FPS Objetivo: ${CONFIG.targetFPS}`);
             
             try {
+                // ===== 1. INICIALIZAR MÓDULOS CORE =====
                 console.log('📦 Inicializando módulos core...');
                 this._initCore();
                 
+                // ===== 2. INICIALIZAR ECS =====
                 console.log('📊 Inicializando ECS...');
                 this._initECS();
                 
+                // ===== 3. INICIALIZAR IA =====
                 console.log('🧠 Inicializando IA...');
                 this._initAI();
                 
+                // ===== 4. INICIALIZAR RENDERER =====
                 console.log('🎮 Inicializando Renderer...');
                 this._initRenderer();
                 
+                // ===== 5. INICIALIZAR MUNDO =====
                 console.log('🌍 Inicializando Mundo...');
                 this._initWorld();
                 
+                // ===== 6. INICIALIZAR UTILS =====
                 console.log('🔧 Inicializando Utilidades...');
                 this._initUtils();
                 
+                // ===== 7. CARGAR PLUGINS =====
                 console.log('🔌 Cargando plugins...');
                 this._loadPlugins();
                 
+                // ===== 8. CONFIGURAR EVENTOS =====
                 this._setupEvents();
                 
+                // ===== 9. CONFIGURAR CONTROLES =====
+                this.setupControls();
+                
+                // ===== 10. ESTADO LISTO =====
                 this.state.status = 'ready';
                 this.state.startTime = performance.now();
                 
                 console.log('✅ Motor inicializado correctamente');
+                console.log(`📊 Módulos cargados: ${Object.keys(this.modules).filter(k => this.modules[k]).length}`);
                 
+                // ===== 11. AUTO-START =====
                 if (this.config.autoStart) {
                     this.start();
                 }
                 
+                // Emitir evento de inicialización
                 this.emit('init', { engine: this });
                 
                 // ============================================================
-                //  🌍 GENERAR MUNDO DEMO COMPLETO
+                //  🌍 GENERAR MUNDO DEMO AUTOMÁTICAMENTE
                 //  ============================================================
                 setTimeout(() => {
                     try {
-                        console.log('🌍 Generando mundo demo completo...');
-                        
-                        // Intentar con GameWorld
-                        if (this.modules.gameWorld) {
-                            this.modules.gameWorld._generateWorld();
-                            console.log('✅ Mundo generado desde GameWorld');
-                            this.showNotification('🌍 Mundo completo generado!');
-                            return;
-                        }
-                        
-                        // Fallback: generar directamente
-                        if (this.modules.ecs && this.modules.entityFactory) {
+                        console.log('🌍 Auto-spawn: generando mundo demo...');
+                        const btn = document.getElementById('btn-spawn');
+                        if (btn) {
+                            btn.click();
+                            console.log('✅ Auto-spawn: click en Spawn ejecutado');
+                        } else {
+                            console.warn('⚠️ Botón Spawn no encontrado, generando directamente...');
                             this._generateWorldDirect();
                         }
                     } catch(e) {
                         console.warn('⚠️ Auto-spawn falló:', e);
                     }
-                }, 1500);
+                }, 2500);
                 
             } catch (error) {
                 this.state.status = 'error';
                 this.state.error = error;
                 console.error('❌ Error al inicializar el motor:', error);
+                console.error('Stack trace:', error.stack);
                 this.emit('error', { error });
             }
         }
@@ -138,21 +199,24 @@
         //  🌍 GENERAR MUNDO DIRECTO (FALLBACK)
         //  ============================================================
         _generateWorldDirect() {
+            console.log('🌍 Generando mundo directo...');
+            
             const ecs = this.modules.ecs;
             const factory = this.modules.entityFactory;
             
             if (!ecs || !factory) {
                 console.error('❌ ECS o Factory no disponibles');
+                this.showNotification('❌ Error: Módulos no disponibles');
                 return;
             }
             
             ecs.reset();
             let total = 0;
             
-            // Árboles
-            for (let i = 0; i < 1500; i++) {
-                const x = (Math.random() - 0.5) * 500;
-                const z = (Math.random() - 0.5) * 500;
+            // Árboles (500)
+            for (let i = 0; i < 500; i++) {
+                const x = (Math.random() - 0.5) * 400;
+                const z = (Math.random() - 0.5) * 400;
                 const y = 0.5 + Math.random() * 4;
                 const id = factory.createTree(x, y, z);
                 if (id !== -1) {
@@ -162,8 +226,8 @@
                 }
             }
             
-            // Rocas
-            for (let i = 0; i < 300; i++) {
+            // Rocas (100)
+            for (let i = 0; i < 100; i++) {
                 const x = (Math.random() - 0.5) * 400;
                 const z = (Math.random() - 0.5) * 400;
                 const y = 0.5 + Math.random() * 3;
@@ -175,10 +239,10 @@
                 }
             }
             
-            // Animales
-            for (let i = 0; i < 150; i++) {
-                const x = (Math.random() - 0.5) * 400;
-                const z = (Math.random() - 0.5) * 400;
+            // Animales (50)
+            for (let i = 0; i < 50; i++) {
+                const x = (Math.random() - 0.5) * 300;
+                const z = (Math.random() - 0.5) * 300;
                 const y = 0.5 + Math.random() * 0.5;
                 const id = factory.createAnimal(x, y, z, Math.random() < 0.2);
                 if (id !== -1) {
@@ -188,9 +252,9 @@
                 }
             }
             
-            // Figuras geométricas
-            for (let i = 0; i < 80; i++) {
-                const angle = (i / 80) * Math.PI * 2;
+            // Figuras geométricas (30)
+            for (let i = 0; i < 30; i++) {
+                const angle = (i / 30) * Math.PI * 2;
                 const x = Math.cos(angle) * 40;
                 const z = Math.sin(angle) * 40;
                 const y = 5 + Math.sin(i * 0.5) * 3;
@@ -203,7 +267,10 @@
                 }
             }
             
-            document.getElementById('entities').textContent = ecs.count;
+            // Actualizar UI
+            const entitiesEl = document.getElementById('entities');
+            if (entitiesEl) entitiesEl.textContent = ecs.count;
+            
             console.log(`✅ Mundo generado con ${ecs.count} entidades`);
             this.showNotification(`🌍 Mundo creado con ${ecs.count} entidades`);
         }
@@ -530,54 +597,80 @@
         setupControls() {
             const controls = {
                 'btn-dual': () => {
-                    this.modules.renderer.setQuality('ultra');
-                    this.modules.optimizerAI.currentQuality = 3;
+                    if (this.modules.renderer) {
+                        this.modules.renderer.setQuality('ultra');
+                    }
+                    if (this.modules.optimizerAI) {
+                        this.modules.optimizerAI.currentQuality = 3;
+                    }
                     this.showNotification('🧠 IA Dual Activada');
                 },
                 'btn-low': () => {
-                    this.modules.renderer.setQuality('low');
-                    this.modules.optimizerAI.currentQuality = 0;
+                    if (this.modules.renderer) {
+                        this.modules.renderer.setQuality('low');
+                    }
+                    if (this.modules.optimizerAI) {
+                        this.modules.optimizerAI.currentQuality = 0;
+                    }
                     this.showNotification('🔽 Calidad: Bajo');
                 },
                 'btn-medium': () => {
-                    this.modules.renderer.setQuality('medium');
-                    this.modules.optimizerAI.currentQuality = 1;
+                    if (this.modules.renderer) {
+                        this.modules.renderer.setQuality('medium');
+                    }
+                    if (this.modules.optimizerAI) {
+                        this.modules.optimizerAI.currentQuality = 1;
+                    }
                     this.showNotification('🔄 Calidad: Medio');
                 },
                 'btn-high': () => {
-                    this.modules.renderer.setQuality('high');
-                    this.modules.optimizerAI.currentQuality = 2;
+                    if (this.modules.renderer) {
+                        this.modules.renderer.setQuality('high');
+                    }
+                    if (this.modules.optimizerAI) {
+                        this.modules.optimizerAI.currentQuality = 2;
+                    }
                     this.showNotification('🔼 Calidad: Alto');
                 },
                 'btn-ultra': () => {
-                    this.modules.renderer.setQuality('ultra');
-                    this.modules.optimizerAI.currentQuality = 3;
+                    if (this.modules.renderer) {
+                        this.modules.renderer.setQuality('ultra');
+                    }
+                    if (this.modules.optimizerAI) {
+                        this.modules.optimizerAI.currentQuality = 3;
+                    }
                     this.showNotification('⚡ Calidad: Ultra');
                 },
                 'btn-spawn': () => {
                     console.log('🔄 Spawn clickeado!');
                     try {
-                        if (this.modules.gameWorld) {
+                        // Opción 1: Usar GameWorld
+                        if (this.modules.gameWorld && typeof this.modules.gameWorld._generateWorld === 'function') {
                             this.modules.gameWorld._generateWorld();
                             this.showNotification('🌍 Mundo regenerado!');
-                        } else if (this.modules.ecs && this.modules.entityFactory) {
-                            this._generateWorldDirect();
-                            this.showNotification('🌍 Mundo regenerado!');
-                        } else {
-                            this.showNotification('❌ Error: Módulos no disponibles');
+                            return;
                         }
+                        
+                        // Opción 2: Generar directamente
+                        this._generateWorldDirect();
+                        
                     } catch(e) {
                         console.error('❌ Error en Spawn:', e);
                         this.showNotification('❌ Error: ' + e.message);
                     }
                 },
                 'btn-reset': () => {
-                    if (this.modules.gameWorld) {
-                        this.modules.gameWorld._generateWorld();
-                    } else {
-                        this._generateWorldDirect();
+                    try {
+                        if (this.modules.gameWorld && typeof this.modules.gameWorld._generateWorld === 'function') {
+                            this.modules.gameWorld._generateWorld();
+                        } else {
+                            this._generateWorldDirect();
+                        }
+                        this.showNotification('🔄 Mundo reiniciado');
+                    } catch(e) {
+                        console.error('❌ Error en Reset:', e);
+                        this.showNotification('❌ Error: ' + e.message);
                     }
-                    this.showNotification('🔄 Mundo reiniciado');
                 }
             };
             
@@ -591,6 +684,8 @@
                     });
                 }
             }
+            
+            console.log('✅ Controles configurados');
         }
         
         // ============================================================
@@ -632,11 +727,18 @@
         }
     }
     
+    // ============================================================
+    //  🚀 INSTANCIA GLOBAL
+    //  ============================================================
     window.PriomEngine = PriomEngine;
     console.log('🚀 PriomEngine cargado');
     
+    // ============================================================
+    //  📦 EXPORTAR
+    //  ============================================================
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = PriomEngine;
     }
     
 })();
+                
