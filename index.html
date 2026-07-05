@@ -3,86 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🧠 PRIOM V0.1</title>
+    <title>🧠 PRIOM V0.1 - MODO COMPLETO</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{overflow:hidden;background:#0a0a0f;font-family:'Segoe UI',sans-serif;color:#fff}
         canvas{display:block;width:100vw;height:100vh}
-        #info{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10;pointer-events:none}
-        #info h1{font-size:32px;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        #info p{color:#6b7280;margin-top:8px}
-        #stats{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:10px 20px;border-radius:12px;z-index:10;font-size:12px;color:#9ca3af}
-        #stats span{color:#fff;font-weight:600}
+        #hud{position:fixed;top:15px;left:15px;background:rgba(0,0,0,0.85);padding:12px 18px;border-radius:12px;border:1px solid rgba(124,58,237,0.3);z-index:100;pointer-events:none}
+        #hud .logo{font-size:18px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        #hud .subtitle{font-size:9px;color:#6b7280;margin-top:2px}
+        #stats{position:fixed;top:15px;right:15px;background:rgba(0,0,0,0.85);padding:10px 14px;border-radius:12px;z-index:100;pointer-events:none;font-size:10px;min-width:140px}
+        #stats .stat{display:flex;justify-content:space-between;padding:2px 0;color:#9ca3af;border-bottom:1px solid rgba(255,255,255,0.05)}
+        #stats .stat:last-child{border-bottom:none}
+        #stats .stat .v{color:#fff;font-weight:600}
+        #stats .stat .v.good{color:#10b981}
+        #stats .stat .v.warn{color:#f59e0b}
+        #controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.8);padding:8px 12px;border-radius:14px}
+        #controls button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);color:#d1d5db;padding:4px 12px;border-radius:8px;font-size:9px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        #controls button:hover{background:rgba(255,255,255,0.15);transform:scale(1.05)}
+        #controls button.green{background:#10b981;border-color:#10b981;color:#fff;font-weight:700}
+        #controls button.purple{background:#7c3aed;border-color:#7c3aed;color:#fff;font-weight:700}
+        #controls button.orange{background:#f59e0b;border-color:#f59e0b;color:#fff;font-weight:700}
+        #loading{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;transition:opacity 0.8s}
+        #loading.hidden{opacity:0;pointer-events:none}
+        .loader-icon{font-size:64px;animation:pulse 1.5s ease-in-out infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        .loader-title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .loader-text{color:#6b7280;font-size:14px;margin-top:12px}
+        .loader-bar{width:200px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:16px;overflow:hidden}
+        .loader-fill{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#06b6d4,#10b981,#f59e0b);border-radius:2px;transition:width 0.3s}
+        #notif{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .notif{background:rgba(0,0,0,0.9);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:6px 16px;font-size:11px;color:#fff;animation:slideDown 0.3s ease, fadeOut 0.3s 3s ease forwards}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
+        #ai-status{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);padding:6px 16px;border-radius:20px;z-index:100;font-size:9px;display:flex;align-items:center;gap:12px;border:1px solid rgba(124,58,237,0.15)}
+        #ai-status .ai-icon{font-size:14px}
+        #ai-status .ai-text{color:#d1d5db}
+        #ai-status .ai-text strong{color:#8b5cf6}
+        #ai-status .ai-bar{width:80px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+        #ai-status .ai-bar .fill{height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4,#10b981,#f59e0b);border-radius:2px;transition:width 0.3s}
+        #ai-status .ai-stats{color:#6b7280;display:flex;gap:8px}
+        #ai-status .ai-stats .highlight{color:#8b5cf6}
+        #ai-status .ai-stats .meta{color:#06b6d4}
+        @media(max-width:768px){#hud{padding:8px 12px}#hud .logo{font-size:14px}#stats{padding:6px 10px;min-width:110px;font-size:8px}#controls{bottom:16px;padding:4px 8px;gap:3px}#controls button{padding:3px 8px;font-size:7px}#ai-status{padding:4px 12px;gap:8px;font-size:8px}#ai-status .ai-bar{width:50px}}
     </style>
 </head>
 <body>
 
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="loader-icon">🧠</div>
+        <div class="loader-title">PRIOM V0.1</div>
+        <div class="loader-text" id="loader-text">Cargando motor...</div>
+        <div class="loader-bar"><div class="loader-fill" id="loader-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="logo">🧠 PRIOM V0.1</div>
+        <div class="subtitle">🎮 IA Dual · Mundo Vivo · Renderizado Adaptativo</div>
+    </div>
+
+    <!-- STATS -->
+    <div id="stats">
+        <div class="stat">FPS <span class="v good" id="fps">0</span></div>
+        <div class="stat">Entidades <span class="v" id="entities">0</span></div>
+        <div class="stat">Calidad <span class="v" id="quality">ULTRA</span></div>
+        <div class="stat">Confianza <span class="v" id="confidence">100%</span></div>
+        <div class="stat">Predicción <span class="v" id="prediction">⚡ Estable</span></div>
+    </div>
+
+    <!-- AI STATUS -->
+    <div id="ai-status">
+        <span class="ai-icon">🧠</span>
+        <span class="ai-text"><strong id="ai-action">IA DUAL</strong> <span id="ai-detail">· Optimizando</span></span>
+        <div class="ai-bar"><div class="fill" id="ai-bar-fill" style="width:100%"></div></div>
+        <div class="ai-stats">
+            <span>🎯 <span class="highlight" id="ai-conf">100%</span></span>
+            <span>🧬 <span class="meta" id="ai-meta">100%</span></span>
+        </div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div id="controls">
+        <button class="green" id="btn-spawn">🌍 Spawn</button>
+        <button class="purple" id="btn-ultra">⚡ Ultra</button>
+        <button class="orange" id="btn-low">🔽 Low</button>
+        <button id="btn-reset">🔄 Reset</button>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div id="notif"></div>
+
+    <!-- CANVAS -->
     <canvas id="gameCanvas"></canvas>
 
-    <div id="info">
-        <h1>🧠 PRIOM V0.1</h1>
-        <p>Inicializando motor...</p>
-    </div>
-
-    <div id="stats">
-        FPS: <span id="fps">0</span> | Entidades: <span id="entities">0</span>
-    </div>
-
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
     // ============================================================
-    //  🚀 PRIOM V0.1 - TODO EN UN SOLO ARCHIVO
+    //  🚀 PRIOM V0.1 - MODO COMPLETO
     //  ============================================================
     (function() {
         'use strict';
 
-        console.log('🚀 PRIOM V0.1 - Versión Todo-en-Uno');
+        console.log('🚀 PRIOM V0.1 - Modo Completo Activado!');
+        console.log('🧠 IA Dual · 🌍 Mundo Vivo · ⚡ Renderizado Adaptativo');
+
+        // ===== ACTUALIZAR BARRA DE CARGA =====
+        function updateLoader(progress, text) {
+            document.getElementById('loader-fill').style.width = Math.min(100, progress) + '%';
+            document.getElementById('loader-text').textContent = text || 'Cargando...';
+        }
+
+        updateLoader(10, 'Inicializando THREE.js...');
 
         // ===== VERIFICAR THREE.JS =====
         if (typeof THREE === 'undefined') {
-            document.querySelector('#info p').textContent = '❌ Error: THREE.js no cargado';
+            document.getElementById('loader-text').textContent = '❌ Error: THREE.js no cargado';
             return;
         }
-        console.log('✅ THREE.js cargado');
+        console.log('✅ THREE.js cargado:', THREE.REVISION);
+        updateLoader(20, 'Configurando motor...');
 
         // ===== CONFIGURACIÓN =====
         const CONFIG = {
-            maxEntities: 10000,
-            worldSize: 500,
-            treeDensity: 0.3
+            maxEntities: 50000,
+            targetFPS: 60,
+            quality: 'ultra',
+            lodDistance: 200,
+            gravity: -9.8,
+            windStrength: 0.6,
+            worldSize: 600
         };
 
-        // ===== SOA MANAGER (simplificado) =====
+        // ============================================================
+        //  📊 SOA MANAGER - Structure of Arrays
+        //  ============================================================
         class SoaManager {
             constructor(max) {
-                this.max = max || 10000;
+                this.max = max || 50000;
                 this.count = 0;
                 this.active = new Uint8Array(this.max);
                 this.posX = new Float32Array(this.max);
                 this.posY = new Float32Array(this.max);
                 this.posZ = new Float32Array(this.max);
+                this.velY = new Float32Array(this.max);
+                this.velX = new Float32Array(this.max);
+                this.velZ = new Float32Array(this.max);
                 this.scale = new Float32Array(this.max);
                 this.rotY = new Float32Array(this.max);
+                this.rotX = new Float32Array(this.max);
+                this.rotZ = new Float32Array(this.max);
                 this.colR = new Uint8Array(this.max);
                 this.colG = new Uint8Array(this.max);
                 this.colB = new Uint8Array(this.max);
+                this.type = new Uint8Array(this.max);
                 this.isTree = new Uint8Array(this.max);
                 this.isRock = new Uint8Array(this.max);
                 this.isAnimal = new Uint8Array(this.max);
+                this.isWater = new Uint8Array(this.max);
+                this.isParticle = new Uint8Array(this.max);
                 this.isGeometry = new Uint8Array(this.max);
+                this.isBuilding = new Uint8Array(this.max);
                 this.scale.fill(1);
             }
-            createEntity(x, y, z) {
+            createEntity(x, y, z, type = 0) {
                 if (this.count >= this.max) return -1;
                 const id = this.count++;
                 this.posX[id] = x;
                 this.posY[id] = y;
                 this.posZ[id] = z;
+                this.type[id] = type;
                 this.active[id] = 1;
                 this.colR[id] = 200;
                 this.colG[id] = 200;
                 this.colB[id] = 200;
+                this.scale[id] = 1;
                 return id;
             }
             getActive() {
@@ -92,54 +192,119 @@
                 }
                 return result;
             }
+            updatePhysics(delta) {
+                const active = this.getActive();
+                for (const id of active) {
+                    // Gravedad
+                    this.velY[id] += CONFIG.gravity * delta;
+                    this.posY[id] += this.velY[id] * delta;
+                    
+                    // Viento
+                    this.posX[id] += Math.sin(Date.now() * 0.001 + this.posZ[id] * 0.01) * delta * 0.2;
+                    
+                    // Suelo
+                    if (this.posY[id] < 0) {
+                        this.posY[id] = 0;
+                        this.velY[id] *= -0.2;
+                    }
+                    
+                    // Rotación de geometrías
+                    if (this.isGeometry[id]) {
+                        this.rotY[id] += delta * 0.5;
+                        this.rotX[id] += delta * 0.3;
+                    }
+                }
+            }
             reset() {
                 this.count = 0;
                 this.active.fill(0);
             }
+            getStats() {
+                return { total: this.count, active: this.getActive().length };
+            }
         }
 
-        // ===== ENTITY FACTORY (simplificado) =====
+        // ============================================================
+        //  🧟 ENTITY FACTORY
+        //  ============================================================
         class EntityFactory {
             constructor(soa) {
                 this.soa = soa;
+                this.totalCreated = 0;
             }
+            
             createTree(x, y, z) {
-                const id = this.soa.createEntity(x, y, z);
+                const id = this.soa.createEntity(x, y, z, 0);
                 if (id !== -1) {
                     this.soa.isTree[id] = 1;
-                    this.soa.colR[id] = 30 + Math.random() * 70;
-                    this.soa.colG[id] = 50 + Math.random() * 90;
-                    this.soa.colB[id] = 10 + Math.random() * 40;
-                    this.soa.scale[id] = 0.5 + Math.random() * 3;
+                    this.soa.colR[id] = 30 + Math.floor(Math.random() * 70);
+                    this.soa.colG[id] = 50 + Math.floor(Math.random() * 90);
+                    this.soa.colB[id] = 10 + Math.floor(Math.random() * 40);
+                    this.soa.scale[id] = 0.5 + Math.random() * 3.5;
                     this.soa.rotY[id] = Math.random() * Math.PI * 2;
+                    this.totalCreated++;
                 }
                 return id;
             }
+            
             createRock(x, y, z) {
-                const id = this.soa.createEntity(x, y, z);
+                const id = this.soa.createEntity(x, y, z, 1);
                 if (id !== -1) {
                     this.soa.isRock[id] = 1;
-                    this.soa.colR[id] = 60 + Math.random() * 80;
-                    this.soa.colG[id] = 50 + Math.random() * 70;
-                    this.soa.colB[id] = 40 + Math.random() * 60;
-                    this.soa.scale[id] = 0.5 + Math.random() * 4;
+                    this.soa.colR[id] = 60 + Math.floor(Math.random() * 80);
+                    this.soa.colG[id] = 50 + Math.floor(Math.random() * 70);
+                    this.soa.colB[id] = 40 + Math.floor(Math.random() * 60);
+                    this.soa.scale[id] = 0.5 + Math.random() * 5;
+                    this.totalCreated++;
                 }
                 return id;
             }
+            
             createAnimal(x, y, z) {
-                const id = this.soa.createEntity(x, y, z);
+                const id = this.soa.createEntity(x, y, z, 2);
                 if (id !== -1) {
                     this.soa.isAnimal[id] = 1;
-                    this.soa.colR[id] = 180 + Math.random() * 75;
-                    this.soa.colG[id] = 150 + Math.random() * 50;
-                    this.soa.colB[id] = 100 + Math.random() * 50;
-                    this.soa.scale[id] = 0.2 + Math.random() * 0.5;
+                    const colors = [[200,150,100],[150,100,50],[180,180,150],[100,80,60]];
+                    const c = colors[Math.floor(Math.random() * colors.length)];
+                    this.soa.colR[id] = c[0];
+                    this.soa.colG[id] = c[1];
+                    this.soa.colB[id] = c[2];
+                    this.soa.scale[id] = 0.2 + Math.random() * 0.6;
                     this.soa.rotY[id] = Math.random() * Math.PI * 2;
+                    this.totalCreated++;
                 }
                 return id;
             }
-            createGeometry(x, y, z, type) {
-                const id = this.soa.createEntity(x, y, z);
+            
+            createWater(x, y, z) {
+                const id = this.soa.createEntity(x, y, z, 3);
+                if (id !== -1) {
+                    this.soa.isWater[id] = 1;
+                    this.soa.colR[id] = 20;
+                    this.soa.colG[id] = 80;
+                    this.soa.colB[id] = 220;
+                    this.soa.scale[id] = 2 + Math.random() * 4;
+                    this.totalCreated++;
+                }
+                return id;
+            }
+            
+            createParticle(x, y, z) {
+                const id = this.soa.createEntity(x, y, z, 4);
+                if (id !== -1) {
+                    this.soa.isParticle[id] = 1;
+                    this.soa.colR[id] = 200 + Math.floor(Math.random() * 55);
+                    this.soa.colG[id] = 180 + Math.floor(Math.random() * 75);
+                    this.soa.colB[id] = 120 + Math.floor(Math.random() * 80);
+                    this.soa.scale[id] = 0.05 + Math.random() * 0.15;
+                    this.soa.velY[id] = -0.1 - Math.random() * 0.2;
+                    this.totalCreated++;
+                }
+                return id;
+            }
+            
+            createGeometry(x, y, z, type = 0) {
+                const id = this.soa.createEntity(x, y, z, 5 + type);
                 if (id !== -1) {
                     this.soa.isGeometry[id] = 1;
                     const colors = [
@@ -151,154 +316,272 @@
                     this.soa.colG[id] = c[1];
                     this.soa.colB[id] = c[2];
                     this.soa.scale[id] = 0.5 + Math.random() * 1.5;
+                    this.soa.rotX[id] = Math.random() * Math.PI * 2;
                     this.soa.rotY[id] = Math.random() * Math.PI * 2;
+                    this.soa.rotZ[id] = Math.random() * Math.PI * 2;
+                    this.totalCreated++;
+                }
+                return id;
+            }
+            
+            createBuilding(x, y, z) {
+                const id = this.soa.createEntity(x, y, z, 6);
+                if (id !== -1) {
+                    this.soa.isBuilding[id] = 1;
+                    this.soa.colR[id] = 80 + Math.floor(Math.random() * 60);
+                    this.soa.colG[id] = 70 + Math.floor(Math.random() * 60);
+                    this.soa.colB[id] = 60 + Math.floor(Math.random() * 60);
+                    this.soa.scale[id] = 0.8 + Math.random() * 2;
+                    this.soa.rotY[id] = Math.random() * Math.PI * 2;
+                    this.totalCreated++;
                 }
                 return id;
             }
         }
 
-        // ===== GENERAR MUNDO =====
-        function generateWorld(soa, factory) {
-            console.log('🌍 Generando mundo...');
+        // ============================================================
+        //  🌍 GENERAR MUNDO COMPLETO
+        //  ============================================================
+        function generateFullWorld(soa, factory) {
+            console.log('🌍 Generando mundo completo...');
             soa.reset();
             let total = 0;
 
-            // Árboles (300)
-            for (let i = 0; i < 300; i++) {
-                const x = (Math.random() - 0.5) * 400;
-                const z = (Math.random() - 0.5) * 400;
-                const y = 0.5 + Math.random() * 3;
+            updateLoader(30, 'Generando bosque...');
+            
+            // 1. BOSQUE (3000 árboles)
+            for (let i = 0; i < 3000; i++) {
+                const x = (Math.random() - 0.5) * 500;
+                const z = (Math.random() - 0.5) * 500;
+                const y = 0.5 + Math.random() * 4;
                 const id = factory.createTree(x, y, z);
                 if (id !== -1) total++;
             }
 
-            // Rocas (80)
-            for (let i = 0; i < 80; i++) {
-                const x = (Math.random() - 0.5) * 400;
-                const z = (Math.random() - 0.5) * 400;
-                const y = 0.5 + Math.random() * 2;
+            updateLoader(50, 'Generando montañas...');
+            
+            // 2. ROCAS (500)
+            for (let i = 0; i < 500; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 100 + Math.random() * 250;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                const y = 1 + Math.random() * 12;
                 const id = factory.createRock(x, y, z);
                 if (id !== -1) total++;
             }
 
-            // Animales (30)
-            for (let i = 0; i < 30; i++) {
-                const x = (Math.random() - 0.5) * 300;
-                const z = (Math.random() - 0.5) * 300;
-                const y = 0.5 + Math.random() * 0.5;
+            updateLoader(60, 'Creando animales...');
+            
+            // 3. ANIMALES (150)
+            for (let i = 0; i < 150; i++) {
+                const x = (Math.random() - 0.5) * 400;
+                const z = (Math.random() - 0.5) * 400;
+                const y = 0.5 + Math.random() * 1;
                 const id = factory.createAnimal(x, y, z);
                 if (id !== -1) total++;
             }
 
-            // Figuras geométricas (20)
-            for (let i = 0; i < 20; i++) {
-                const angle = (i / 20) * Math.PI * 2;
-                const x = Math.cos(angle) * 50;
-                const z = Math.sin(angle) * 50;
-                const y = 5 + Math.sin(i * 0.5) * 3;
-                const id = factory.createGeometry(x, y, z, i);
+            updateLoader(70, 'Generando agua...');
+            
+            // 4. AGUA (200)
+            for (let i = 0; i < 200; i++) {
+                const t = Math.random() * 2 * Math.PI;
+                const x = Math.sin(t * 3) * 180 + (Math.random() - 0.5) * 40;
+                const z = Math.cos(t * 3) * 180 + (Math.random() - 0.5) * 40;
+                const y = 0.1 + Math.random() * 0.2;
+                const id = factory.createWater(x, y, z);
                 if (id !== -1) total++;
             }
 
+            updateLoader(80, 'Generando partículas...');
+            
+            // 5. PARTÍCULAS (2000)
+            for (let i = 0; i < 2000; i++) {
+                const x = (Math.random() - 0.5) * 600;
+                const z = (Math.random() - 0.5) * 600;
+                const y = 2 + Math.random() * 15;
+                const id = factory.createParticle(x, y, z);
+                if (id !== -1) total++;
+            }
+
+            updateLoader(90, 'Generando geometrías...');
+            
+            // 6. GEOMETRÍAS (60)
+            for (let i = 0; i < 60; i++) {
+                const angle = (i / 60) * Math.PI * 2;
+                const radius = 30 + Math.random() * 15;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = 5 + Math.sin(i * 0.5) * 5;
+                const id = factory.createGeometry(x, y, z, i % 6);
+                if (id !== -1) total++;
+            }
+
+            // 7. EDIFICIOS (30)
+            for (let i = 0; i < 30; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const z = (Math.random() - 0.5) * 200;
+                const y = 0.5 + Math.random() * 0.5;
+                const id = factory.createBuilding(x, y, z);
+                if (id !== -1) total++;
+            }
+
+            updateLoader(100, '✅ ¡Mundo completo generado!');
+            
             console.log(`✅ Mundo generado: ${soa.count} entidades`);
             document.getElementById('entities').textContent = soa.count;
             return soa.count;
         }
 
-        // ===== RENDERER =====
+        // ============================================================
+        //  🎮 RENDERER
+        //  ============================================================
         const canvas = document.getElementById('gameCanvas');
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
 
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a1f);
-        scene.fog = new THREE.FogExp2(0x0a0a1f, 0.001);
+        scene.fog = new THREE.FogExp2(0x0a0a1f, 0.0008);
 
-        // Cámara
+        // ===== CÁMARA =====
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1500);
         camera.position.set(60, 40, 60);
         camera.lookAt(0, 0, 0);
 
-        // Luces
-        const ambient = new THREE.AmbientLight(0x4466aa, 0.6);
+        // ===== LUCES =====
+        const ambient = new THREE.AmbientLight(0x4466aa, 0.5);
         scene.add(ambient);
-        const hemi = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
+        const hemi = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.6);
         scene.add(hemi);
         const sun = new THREE.DirectionalLight(0xffaa44, 1.8);
-        sun.position.set(100, 180, 100);
+        sun.position.set(120, 200, 120);
         sun.castShadow = true;
+        sun.shadow.mapSize.width = 1024;
+        sun.shadow.mapSize.height = 1024;
         scene.add(sun);
+        const fill = new THREE.DirectionalLight(0x6688ff, 0.3);
+        fill.position.set(-80, 40, -80);
+        scene.add(fill);
 
-        // Geometrías
-        const geoBox = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        const geoCone = new THREE.ConeGeometry(0.4, 0.8, 5);
-        const geoSphere = new THREE.SphereGeometry(0.5, 8, 8);
-        const geoCylinder = new THREE.CylinderGeometry(0.4, 0.4, 0.8, 6);
-        const geoDodeca = new THREE.DodecahedronGeometry(0.5);
+        // ============================================================
+        //  📦 GEOMETRÍAS Y MATERIALES
+        //  ============================================================
+        const geometries = {
+            box: new THREE.BoxGeometry(0.8, 0.8, 0.8),
+            sphere: new THREE.IcosahedronGeometry(0.5, 1),
+            cylinder: new THREE.CylinderGeometry(0.4, 0.6, 0.9, 6),
+            cone: new THREE.ConeGeometry(0.5, 0.9, 6),
+            tree: new THREE.ConeGeometry(0.4, 0.8, 5),
+            rock: new THREE.DodecahedronGeometry(0.5),
+            building: new THREE.BoxGeometry(0.8, 1.2, 0.8),
+            torus: new THREE.TorusGeometry(0.4, 0.15, 8, 12),
+            octahedron: new THREE.OctahedronGeometry(0.5)
+        };
 
-        // Materiales
-        const matTree = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, color: 0x3d7a2a, flatShading: true });
-        const matRock = new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0x8a7a6a, flatShading: true });
-        const matAnimal = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0, color: 0x8a7a5a });
-        const matGeo = new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.6, envMapIntensity: 0.5 });
+        const materials = {
+            tree: new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, color: 0x3d7a2a, flatShading: true }),
+            rock: new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, color: 0x8a7a6a, flatShading: true }),
+            animal: new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0, color: 0x8a7a5a }),
+            building: new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0.1, color: 0x7a6a5a, flatShading: true }),
+            geometry: new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.6, envMapIntensity: 0.5 }),
+            water: new THREE.MeshPhysicalMaterial({
+                color: 0x0066aa,
+                transparent: true,
+                opacity: 0.6,
+                roughness: 0.1,
+                metalness: 0,
+                clearcoat: 0.2
+            })
+        };
 
-        function getGeo(type) {
-            switch(type) {
-                case 0: return geoBox;
-                case 1: return geoSphere;
-                case 2: return geoCylinder;
-                case 3: return geoCone;
-                default: return geoBox;
+        // ===== PARTÍCULAS =====
+        let particleSystem = null;
+        let particleGeometry = null;
+
+        function getGeometry(key) {
+            switch(key) {
+                case 'tree': return geometries.tree;
+                case 'rock': return geometries.rock;
+                case 'animal': return geometries.sphere;
+                case 'building': return geometries.building;
+                case 'geometry': return geometries.box;
+                default: return geometries.box;
             }
         }
 
-        function getMat(type) {
-            if (type === 'tree') return matTree;
-            if (type === 'rock') return matRock;
-            if (type === 'animal') return matAnimal;
-            return matGeo;
+        function getMaterial(key) {
+            switch(key) {
+                case 'tree': return materials.tree;
+                case 'rock': return materials.rock;
+                case 'animal': return materials.animal;
+                case 'building': return materials.building;
+                case 'geometry': return materials.geometry;
+                default: return materials.geometry;
+            }
         }
 
-        // ===== INSTANCIAS =====
-        const meshes = new Map();
+        // ============================================================
+        //  🖥️ RENDERIZADO
+        //  ============================================================
+        const instanceMeshes = new Map();
+        const dummy = new THREE.Object3D();
+        const color = new THREE.Color();
 
         function render(soa) {
             const active = soa.getActive();
             const camPos = camera.position;
 
             // Limpiar meshes viejos
-            for (const [key, mesh] of meshes) {
+            for (const [key, mesh] of instanceMeshes) {
                 if (mesh.parent) scene.remove(mesh);
             }
-            meshes.clear();
+            instanceMeshes.clear();
 
             // Agrupar por tipo
             const groups = new Map();
+            const particlePositions = [];
+            const particleColors = [];
+
             for (const id of active) {
                 const dx = soa.posX[id] - camPos.x;
                 const dz = soa.posZ[id] - camPos.z;
-                if (dx*dx + dz*dz > 400*400) continue;
+                const dist = dx*dx + dz*dz;
+                
+                if (dist > 250000) continue;
 
+                // Partículas (renderizado especial)
+                if (soa.isParticle[id]) {
+                    particlePositions.push(soa.posX[id], soa.posY[id], soa.posZ[id]);
+                    particleColors.push(soa.colR[id]/255, soa.colG[id]/255, soa.colB[id]/255);
+                    continue;
+                }
+
+                // Determinar tipo
                 let key = 'box';
                 if (soa.isTree[id]) key = 'tree';
                 else if (soa.isRock[id]) key = 'rock';
                 else if (soa.isAnimal[id]) key = 'animal';
-                else if (soa.isGeometry[id]) key = 'geo';
+                else if (soa.isBuilding[id]) key = 'building';
+                else if (soa.isGeometry[id]) key = 'geometry';
+                else if (soa.isWater[id]) continue; // Agua se renderiza aparte
 
                 if (!groups.has(key)) groups.set(key, []);
                 groups.get(key).push(id);
             }
 
-            const dummy = new THREE.Object3D();
-            const color = new THREE.Color();
-
+            // Renderizar instancias
             for (const [key, ids] of groups) {
-                const geo = key === 'tree' ? geoCone : 
-                           key === 'rock' ? geoDodeca :
-                           key === 'animal' ? geoSphere : getGeo(0);
-                const mat = getMat(key);
+                const geo = getGeometry(key);
+                const mat = getMaterial(key);
+                if (!geo || !mat) continue;
+
                 const mesh = new THREE.InstancedMesh(geo, mat, ids.length);
                 mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 if (mesh.instanceColor) mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
@@ -307,7 +590,7 @@
                     const id = ids[i];
                     const s = soa.scale[id] || 1;
                     dummy.position.set(soa.posX[id], soa.posY[id], soa.posZ[id]);
-                    dummy.rotation.y = soa.rotY[id] || 0;
+                    dummy.rotation.set(soa.rotX[id] || 0, soa.rotY[id] || 0, soa.rotZ[id] || 0);
                     dummy.scale.set(s, s, s);
                     dummy.updateMatrix();
                     mesh.setMatrixAt(i, dummy.matrix);
@@ -319,42 +602,221 @@
                 mesh.instanceMatrix.needsUpdate = true;
                 if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
                 scene.add(mesh);
-                meshes.set(key, mesh);
+                instanceMeshes.set(key, mesh);
+            }
+
+            // Renderizar partículas
+            if (particlePositions.length > 0) {
+                if (!particleGeometry) {
+                    particleGeometry = new THREE.BufferGeometry();
+                    const particleMat = new THREE.PointsMaterial({
+                        size: 0.15,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false,
+                        sizeAttenuation: true
+                    });
+                    particleSystem = new THREE.Points(particleGeometry, particleMat);
+                    scene.add(particleSystem);
+                }
+                particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+                particleGeometry.setAttribute('color', new THREE.Float32BufferAttribute(particleColors, 3));
+                particleGeometry.setDrawRange(0, particlePositions.length / 3);
+            }
+
+            // Agua (una sola mesh grande)
+            const hasWater = active.some(id => soa.isWater[id]);
+            if (hasWater && !window._waterMesh) {
+                const waterGeo = new THREE.PlaneGeometry(300, 300, 32, 32);
+                const waterMat = new THREE.MeshPhysicalMaterial({
+                    color: 0x0066aa,
+                    transparent: true,
+                    opacity: 0.5,
+                    roughness: 0.1,
+                    metalness: 0,
+                    clearcoat: 0.3
+                });
+                window._waterMesh = new THREE.Mesh(waterGeo, waterMat);
+                window._waterMesh.rotation.x = -Math.PI / 2;
+                window._waterMesh.position.y = 0.2;
+                scene.add(window._waterMesh);
+            }
+
+            // Actualizar agua
+            if (window._waterMesh) {
+                const positions = window._waterMesh.geometry.attributes.position;
+                const t = Date.now() * 0.001;
+                for (let i = 0; i < positions.count; i++) {
+                    const x = positions.getX(i);
+                    const z = positions.getZ(i);
+                    positions.setY(i, Math.sin(x * 0.05 + t) * 0.2 + Math.cos(z * 0.07 + t * 0.7) * 0.15);
+                }
+                positions.needsUpdate = true;
             }
 
             // Cámara orbital
             const t = Date.now() * 0.00004;
-            const radius = 80 + Math.sin(t * 0.12) * 15;
+            const radius = 90 + Math.sin(t * 0.12) * 20;
             camera.position.x = Math.cos(t) * radius;
             camera.position.z = Math.sin(t) * radius;
-            camera.position.y = 25 + Math.sin(t * 0.25) * 8;
+            camera.position.y = 30 + Math.sin(t * 0.25) * 10;
             camera.lookAt(0, 0, 0);
 
             renderer.render(scene, camera);
         }
 
-        // ===== LOOP =====
+        // ============================================================
+        //  🧠 IA DUAL (SIMPLIFICADA PARA DEMO)
+        //  ============================================================
+        class OptimizerAI {
+            constructor() {
+                this.quality = 'ultra';
+                this.confidence = 0.9;
+                this.fpsHistory = [];
+                this.currentFPS = 60;
+            }
+            update(fps) {
+                this.fpsHistory.push(fps);
+                if (this.fpsHistory.length > 60) this.fpsHistory.shift();
+                this.currentFPS = fps;
+                
+                // Ajustar calidad según FPS
+                if (fps < 30 && this.quality !== 'low') {
+                    this.quality = 'low';
+                    this.confidence = 0.5;
+                } else if (fps > 50 && this.quality !== 'ultra') {
+                    this.quality = 'ultra';
+                    this.confidence = 0.9;
+                }
+                
+                return {
+                    quality: this.quality,
+                    confidence: this.confidence,
+                    fps: fps
+                };
+            }
+            getStatus() {
+                return { quality: this.quality, confidence: this.confidence };
+            }
+        }
+
+        class MetaOptimizerAI {
+            constructor() {
+                this.confidence = 0.8;
+                this.prediction = 'estable';
+                this.history = [];
+            }
+            update(fps) {
+                this.history.push(fps);
+                if (this.history.length > 30) this.history.shift();
+                if (this.history.length > 10) {
+                    const recent = this.history.slice(-10);
+                    const avg = recent.reduce((a,b) => a+b, 0) / recent.length;
+                    const last = recent[recent.length-1];
+                    this.prediction = last < avg * 0.85 ? 'caída_inminente' : 
+                                     last > avg * 1.15 ? 'mejora_inminente' : 'estable';
+                }
+                return { prediction: this.prediction, confidence: this.confidence };
+            }
+            getStatus() {
+                return { prediction: this.prediction, confidence: this.confidence };
+            }
+        }
+
+        // ============================================================
+        //  🚀 INICIO
+        //  ============================================================
         const soa = new SoaManager(CONFIG.maxEntities);
         const factory = new EntityFactory(soa);
+        const optimizerAI = new OptimizerAI();
+        const metaAI = new MetaOptimizerAI();
 
         let frameCount = 0;
         let lastFpsUpdate = 0;
+        let worldGenerated = false;
 
-        function loop(time) {
-            if (frameCount === 0) {
-                generateWorld(soa, factory);
+        function gameLoop(time) {
+            // Generar mundo en el primer frame
+            if (!worldGenerated) {
+                generateFullWorld(soa, factory);
+                worldGenerated = true;
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                }, 500);
+                document.getElementById('loader-text').textContent = '✅ ¡Motor listo!';
             }
 
+            // Actualizar física
+            const delta = 0.016;
+            soa.updatePhysics(delta);
+
+            // IA Dual
+            const fps = frameCount > 0 ? 1000 / (time - lastFpsUpdate) : 60;
+            const aiResult = optimizerAI.update(fps);
+            const metaResult = metaAI.update(fps);
+
+            // Renderizar
             render(soa);
 
+            // Actualizar UI
             frameCount++;
             if (time - lastFpsUpdate > 1000) {
-                document.getElementById('fps').textContent = Math.round(frameCount / ((time - lastFpsUpdate) / 1000));
+                const currentFps = Math.round(frameCount / ((time - lastFpsUpdate) / 1000));
+                document.getElementById('fps').textContent = currentFps;
+                document.getElementById('fps').className = 'v ' + (currentFps > 50 ? 'good' : currentFps > 30 ? 'warn' : '');
+                document.getElementById('entities').textContent = soa.count;
+                document.getElementById('quality').textContent = aiResult.quality.toUpperCase();
+                document.getElementById('confidence').textContent = Math.round(aiResult.confidence * 100) + '%';
+                
+                const predMap = { 'estable': '⚡ Estable', 'caída_inminente': '🔻 Caída', 'mejora_inminente': '🔺 Mejora' };
+                document.getElementById('prediction').textContent = predMap[metaResult.prediction] || '⚡ Estable';
+                document.getElementById('ai-conf').textContent = Math.round(aiResult.confidence * 100) + '%';
+                document.getElementById('ai-meta').textContent = Math.round(metaResult.confidence * 100) + '%';
+                document.getElementById('ai-action').textContent = '🎯 ' + aiResult.quality.toUpperCase();
+                document.getElementById('ai-detail').textContent = '· ' + currentFps + ' FPS';
+                document.getElementById('ai-bar-fill').style.width = Math.round(aiResult.confidence * 100) + '%';
+                
                 frameCount = 0;
                 lastFpsUpdate = time;
             }
 
-            requestAnimationFrame(loop);
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ===== CONTROLES =====
+        document.getElementById('btn-spawn').addEventListener('click', function() {
+            console.log('🌍 Regenerando mundo...');
+            generateFullWorld(soa, factory);
+            mostrarNotificacion('🌍 Mundo regenerado! ' + soa.count + ' entidades');
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            console.log('🔄 Reiniciando...');
+            generateFullWorld(soa, factory);
+            mostrarNotificacion('🔄 Mundo reiniciado');
+        });
+
+        document.getElementById('btn-ultra').addEventListener('click', function() {
+            CONFIG.quality = 'ultra';
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            mostrarNotificacion('⚡ Calidad: Ultra');
+        });
+
+        document.getElementById('btn-low').addEventListener('click', function() {
+            CONFIG.quality = 'low';
+            renderer.setPixelRatio(0.5);
+            mostrarNotificacion('🔽 Calidad: Baja');
+        });
+
+        function mostrarNotificacion(msg) {
+            const container = document.getElementById('notif');
+            const div = document.createElement('div');
+            div.className = 'notif';
+            div.textContent = msg;
+            container.appendChild(div);
+            setTimeout(() => { if (div.parentNode) div.remove(); }, 3000);
         }
 
         // ===== REDIMENSIONAR =====
@@ -365,17 +827,11 @@
         });
 
         // ===== INICIO =====
-        document.querySelector('#info p').textContent = '🚀 Motor iniciado! Generando mundo...';
-        setTimeout(() => {
-            document.querySelector('#info').style.display = 'none';
-        }, 2000);
-
-        requestAnimationFrame(loop);
-
-        console.log('✅ Motor listo!');
+        console.log('🚀 Iniciando PRIOM V0.1 - Modo Completo!');
+        requestAnimationFrame(gameLoop);
 
     })();
     </script>
 
 </body>
-</html>
+</html>                
