@@ -3,302 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0a0f">
-    <title>🧠 PRIOM V0.1 - Motor de Juegos IA</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <title>🧠 PRIOM V0.1</title>
     <link rel="stylesheet" href="css/styles.css">
-    
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{overflow:hidden;background:#0a0a0f;font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
-        canvas{display:block;width:100vw;height:100vh;background:#0a0a0f}
-        #loading-screen{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.8s ease;flex-direction:column}
-        #loading-screen.fade-out{opacity:0;pointer-events:none}
-        .loader-container{text-align:center;max-width:480px;padding:40px 30px}
-        .loader-icon{font-size:72px;animation:pulse 2s ease-in-out infinite}
+        body{overflow:hidden;background:#0a0a0f;font-family:'Segoe UI',sans-serif;color:#fff}
+        canvas{display:block;width:100vw;height:100vh}
+        #hud{position:fixed;top:15px;left:15px;background:rgba(0,0,0,0.85);padding:12px 18px;border-radius:12px;border:1px solid rgba(124,58,237,0.3);z-index:100;pointer-events:none}
+        #hud .logo{font-size:18px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        #hud .subtitle{font-size:9px;color:#6b7280;margin-top:2px}
+        #stats{position:fixed;top:15px;right:15px;background:rgba(0,0,0,0.85);padding:10px 14px;border-radius:12px;z-index:100;pointer-events:none;font-size:10px;min-width:120px}
+        #stats .stat{display:flex;justify-content:space-between;padding:2px 0;color:#9ca3af;border-bottom:1px solid rgba(255,255,255,0.05)}
+        #stats .stat:last-child{border-bottom:none}
+        #stats .stat .v{color:#fff;font-weight:600}
+        #stats .stat .v.good{color:#10b981}
+        #controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.8);padding:8px 12px;border-radius:14px}
+        #controls button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);color:#d1d5db;padding:4px 12px;border-radius:8px;font-size:9px;cursor:pointer;transition:all 0.3s;font-family:inherit}
+        #controls button:hover{background:rgba(255,255,255,0.15)}
+        #controls button.green{background:#10b981;border-color:#10b981;color:#fff;font-weight:700}
+        #loading{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;transition:opacity 0.8s}
+        #loading.hidden{opacity:0;pointer-events:none}
+        .loader-icon{font-size:64px;animation:pulse 1.5s ease-in-out infinite}
         @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-        .loader-title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .loader-version{color:#6b7280;font-size:12px;letter-spacing:2px}
-        .loader-bar-wrapper{display:flex;align-items:center;gap:12px;margin:20px 0}
-        .loader-bar{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
-        .loader-fill{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#06b6d4,#10b981);border-radius:2px;transition:width 0.3s ease}
-        .loader-percent{color:#6b7280;font-size:14px;font-weight:600;min-width:40px}
-        .loader-text{color:#fff;font-size:14px;margin-top:8px;min-height:24px}
-        .loader-subtext{color:#6b7280;font-size:12px;margin-top:4px;min-height:20px}
-        .loader-error{color:#ef4444 !important}
-        .loader-details{display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:11px;color:#4b5563}
-        .loader-details span{background:rgba(255,255,255,0.03);padding:4px 10px;border-radius:4px}
-        .loader-particles{display:flex;justify-content:center;gap:6px;margin-top:20px}
-        .loader-particles .dot{width:6px;height:6px;border-radius:50%;background:#7c3aed;animation:float 1.5s ease-in-out infinite}
-        .loader-particles .dot:nth-child(2){animation-delay:0.2s;background:#06b6d4}
-        .loader-particles .dot:nth-child(3){animation-delay:0.4s;background:#10b981}
-        .loader-particles .dot:nth-child(4){animation-delay:0.6s;background:#f59e0b}
-        .loader-particles .dot:nth-child(5){animation-delay:0.8s;background:#7c3aed}
-        .loader-particles .dot:nth-child(6){animation-delay:1.0s;background:#06b6d4}
-        .loader-particles .dot:nth-child(7){animation-delay:1.2s;background:#10b981}
-        .loader-particles .dot:nth-child(8){animation-delay:1.4s;background:#f59e0b}
-        @keyframes float{0%,100%{transform:translateY(0px);opacity:0.3}50%{transform:translateY(-10px);opacity:1}}
-        .loader-footer{margin-top:24px;font-size:11px;color:#4b5563;letter-spacing:1px}
-        #hud{position:fixed;top:15px;left:15px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border:1px solid rgba(124,58,237,0.3);border-radius:16px;padding:12px 18px;min-width:200px;pointer-events:none;z-index:100}
-        #hud .logo{font-size:18px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        #hud .subtitle{font-size:9px;color:#6b7280;letter-spacing:1px;text-transform:uppercase}
-        .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:7px;font-weight:700;text-transform:uppercase;margin-top:4px;background:rgba(124,58,237,0.2);color:#8b5cf6;border:1px solid rgba(124,58,237,0.2)}
-        #stats-panel{position:fixed;top:15px;right:15px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.05);border-radius:16px;padding:10px 14px;min-width:150px;pointer-events:none;z-index:100}
-        #stats-panel .stat{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;color:#9ca3af;border-bottom:1px solid rgba(255,255,255,0.03)}
-        #stats-panel .stat:last-child{border-bottom:none}
-        #stats-panel .stat .value{color:#fff;font-weight:600}
-        #stats-panel .stat .value.good{color:#10b981}
-        #stats-panel .stat .value.ultra{color:#fbbf24}
-        #stats-panel .stat .value.ai{color:#8b5cf6}
-        #ai-status-bar{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border:1px solid rgba(124,58,237,0.2);border-radius:40px;padding:8px 20px;z-index:100;display:flex;align-items:center;gap:14px;min-width:400px;justify-content:center}
-        #ai-status-bar .ai-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:16px}
-        #ai-status-bar .ai-text{font-size:10px;color:#d1d5db}
-        #ai-status-bar .ai-text strong{color:#8b5cf6}
-        #ai-status-bar .ai-progress{width:100px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
-        #ai-status-bar .ai-progress .fill{height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4,#10b981,#f59e0b);border-radius:2px;transition:width 0.3s ease}
-        #ai-status-bar .ai-stats{font-size:9px;color:#6b7280;display:flex;gap:10px}
-        #ai-status-bar .ai-stats .highlight{color:#8b5cf6}
-        #ai-status-bar .ai-stats .meta{color:#06b6d4}
-        #controls{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
-        #controls button{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);color:#d1d5db;padding:3px 12px;border-radius:12px;font-size:8px;font-weight:500;cursor:pointer;transition:all 0.3s ease;font-family:inherit}
-        #controls button:hover{background:rgba(255,255,255,0.1);transform:scale(1.05)}
-        #controls button.active{background:rgba(124,58,237,0.2);border-color:#8b5cf6;color:#8b5cf6}
-        #controls button.dual-ai{background:linear-gradient(135deg,#7c3aed,#f59e0b);border-color:transparent;color:#fff;font-weight:700}
-        #notifications{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px}
-        .notification{background:rgba(0,0,0,0.9);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:6px 16px;font-size:11px;color:#fff;animation:slideDown 0.3s ease, fadeOut 0.3s 3s ease forwards}
+        .loader-title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#06b6d4,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .loader-text{color:#6b7280;font-size:14px;margin-top:12px}
+        #notif{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:200;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .notif{background:rgba(0,0,0,0.9);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:6px 16px;font-size:11px;color:#fff;animation:slideDown 0.3s ease, fadeOut 0.3s 3s ease forwards}
         @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
-        #geo-lab{position:fixed;top:80px;right:15px;width:220px;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);border:1px solid rgba(16,185,129,0.3);border-radius:16px;padding:12px 14px;z-index:100;font-size:10px;max-height:calc(100vh - 160px);overflow-y:auto}
-        #geo-lab .geo-title{font-size:12px;font-weight:900;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        #geo-lab select,#geo-lab button.geo-btn{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#e5e7eb;padding:4px 8px;border-radius:8px;font-size:10px;margin-bottom:6px;font-family:inherit;cursor:pointer}
-        #geo-lab button.geo-btn{background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:700}
-        #geo-lab .geo-stats{display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);font-size:9px;color:#6b7280}
+        #geo-lab{position:fixed;top:80px;right:15px;width:200px;background:rgba(0,0,0,0.85);padding:10px 12px;border-radius:12px;border:1px solid rgba(16,185,129,0.3);z-index:100;font-size:10px}
+        #geo-lab .geo-title{font-size:12px;font-weight:900;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        #geo-lab select{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:4px 6px;border-radius:6px;font-size:10px;margin:4px 0;font-family:inherit}
+        #geo-lab .geo-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:700;padding:4px;border-radius:6px;cursor:pointer;font-size:10px}
+        #geo-lab .geo-stats{display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);font-size:9px;color:#6b7280}
         #geo-lab .geo-stats b{color:#10b981}
-        @media(max-width:768px){#hud{padding:8px 12px;min-width:150px}#hud .logo{font-size:14px}#stats-panel{padding:6px 10px;min-width:120px}#stats-panel .stat{font-size:8px}#ai-status-bar{min-width:auto;padding:6px 14px;gap:10px;flex-wrap:wrap}#ai-status-bar .ai-progress{width:60px}#controls{bottom:70px;gap:3px}#controls button{padding:2px 8px;font-size:7px}}
+        #ai-status{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);padding:6px 16px;border-radius:20px;z-index:100;font-size:9px;display:flex;align-items:center;gap:12px;border:1px solid rgba(124,58,237,0.15)}
+        #ai-status .ai-icon{font-size:14px}
+        #ai-status .ai-text{color:#d1d5db}
+        #ai-status .ai-text strong{color:#8b5cf6}
+        #ai-status .ai-bar{width:60px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+        #ai-status .ai-bar .fill{height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4,#10b981);border-radius:2px;transition:width 0.3s}
+        #ai-status .ai-stats{color:#6b7280;display:flex;gap:8px}
+        #ai-status .ai-stats .highlight{color:#8b5cf6}
     </style>
 </head>
 <body>
 
-    <!-- ===== LOADING ===== -->
-    <div id="loading-screen">
-        <div class="loader-container">
-            <div class="loader-icon">🧠</div>
-            <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.1 · IA Dual</div>
-            <div class="loader-bar-wrapper">
-                <div class="loader-bar"><div class="loader-fill" id="loader-fill" style="width:0%"></div></div>
-                <div class="loader-percent" id="loader-percent">0%</div>
-            </div>
-            <p class="loader-text" id="loader-text">🚀 Inicializando...</p>
-            <p class="loader-subtext" id="loader-subtext">📦 Cargando módulos...</p>
-            <div class="loader-details">
-                <span id="loader-status">⏳ Esperando...</span>
-                <span id="loader-modules">📦 0/16</span>
-            </div>
-            <div class="loader-particles">
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-            </div>
-            <div class="loader-footer">🧠 IA Dual · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo</div>
-        </div>
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="loader-icon">🧠</div>
+        <div class="loader-title">PRIOM</div>
+        <div class="loader-text" id="loader-text">Cargando motor...</div>
     </div>
 
-    <!-- ===== HUD ===== -->
+    <!-- HUD -->
     <div id="hud">
         <div class="logo">🧠 PRIOM V0.1</div>
-        <div class="subtitle">🎮 IA Dual · Meta-optimización</div>
-        <div>
-            <span class="badge">🧬 IA DUAL</span>
-            <span class="badge">⚡ META</span>
-            <span class="badge">🎯 OPTIMIZANDO</span>
-        </div>
+        <div class="subtitle">IA Dual · Renderizado Adaptativo</div>
     </div>
 
-    <!-- ===== STATS ===== -->
-    <div id="stats-panel">
-        <div class="stat">📊 FPS <span class="value good" id="fps">0</span></div>
-        <div class="stat">👾 Entidades <span class="value" id="entities">0</span></div>
-        <div class="stat">💾 RAM <span class="value" id="ram">0</span> MB</div>
-        <div class="stat">⚡ Calidad <span class="value ultra" id="quality">MAX</span></div>
-        <div class="stat">🎯 Confianza IA <span class="value ai" id="confidence">100%</span></div>
-        <div class="stat">🔮 Predicción <span class="value" id="prediction">⚡ Estable</span></div>
+    <!-- STATS -->
+    <div id="stats">
+        <div class="stat">FPS <span class="v good" id="fps">0</span></div>
+        <div class="stat">Entidades <span class="v" id="entities">0</span></div>
+        <div class="stat">Calidad <span class="v" id="quality">MAX</span></div>
     </div>
 
-    <!-- ===== AI STATUS ===== -->
-    <div id="ai-status-bar">
-        <div class="ai-icon">🧠</div>
-        <div class="ai-text">
-            <strong id="ai-action">IA DUAL ACTIVA</strong>
-            <span id="ai-detail">· Inicializando...</span>
-        </div>
-        <div class="ai-progress"><div class="fill" id="ai-progress-fill" style="width:100%"></div></div>
-        <div class="ai-stats">
-            <span>🎯 IA: <span class="highlight" id="ai-conf">100%</span></span>
-            <span>🧬 Meta: <span class="meta" id="ai-meta">100%</span></span>
-        </div>
+    <!-- AI STATUS -->
+    <div id="ai-status">
+        <span class="ai-icon">🧠</span>
+        <span class="ai-text"><strong id="ai-action">IA DUAL</strong> <span id="ai-detail">· Iniciando</span></span>
+        <div class="ai-bar"><div class="fill" id="ai-bar-fill" style="width:100%"></div></div>
+        <div class="ai-stats"><span>🎯 <span class="highlight" id="ai-conf">100%</span></span></div>
     </div>
 
-    <!-- ===== CONTROLES ===== -->
+    <!-- CONTROLES -->
     <div id="controls">
-        <button class="active dual-ai" id="btn-dual">🧠 IA DUAL</button>
-        <button id="btn-low">🔽 Low</button>
-        <button id="btn-medium">🔄 Med</button>
-        <button id="btn-high">🔼 High</button>
-        <button id="btn-ultra">⚡ Ultra</button>
-        <button id="btn-spawn">➕ Spawn</button>
+        <button class="green" id="btn-spawn">➕ Spawn</button>
         <button id="btn-reset">🔄 Reset</button>
+        <button id="btn-low">Low</button>
+        <button id="btn-ultra">Ultra</button>
     </div>
 
-    <!-- ===== NOTIFICACIONES ===== -->
-    <div id="notifications"></div>
+    <!-- NOTIFICACIONES -->
+    <div id="notif"></div>
 
-    <!-- ===== LABORATORIO ===== -->
+    <!-- GEO LAB -->
     <div id="geo-lab">
-        <div class="geo-title">🔷 Laboratorio Geométrico</div>
+        <div class="geo-title">🔷 Laboratorio</div>
         <select id="geo-family">
-            <option value="supershape">🌀 Supershape 3D</option>
-            <option value="torusknot">🎀 Nudo tórico</option>
-            <option value="mobius">♾️ Cinta de Möbius</option>
-            <option value="menger">🧊 Esponja de Menger</option>
+            <option value="supershape">Supershape 3D</option>
+            <option value="torusknot">Nudo tórico</option>
         </select>
-        <button class="geo-btn" id="geo-generate">✨ Generar forma</button>
+        <button class="geo-btn" id="geo-generate">✨ Generar</button>
         <div class="geo-stats">
-            <span>📐 Vértices <b id="geo-verts">0</b></span>
-            <span>🔺 Triángulos <b id="geo-tris">0</b></span>
+            <span>Vértices <b id="geo-verts">0</b></span>
+            <span>Triángulos <b id="geo-tris">0</b></span>
         </div>
     </div>
 
-    <!-- ===== CANVAS ===== -->
+    <!-- CANVAS -->
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         📦 SCRIPTS
+         SCRIPTS - CARGA DIRECTA SIN SISTEMA DE MÓDULOS
          ============================================================ -->
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <!-- ===== CORE ===== -->
-    <script src="js/core/Config.js"></script>
-    <script src="js/core/HardwareDetector.js"></script>
-    <script src="js/core/PersistentMemory.js"></script>
-
-    <!-- ===== ECS ===== -->
-    <script src="js/ecs/SoaManager.js"></script>
-
-    <!-- ===== AI ===== -->
-    <script src="js/ai/OptimizerAI.js"></script>
-    <script src="js/ai/MetaOptimizerAI.js"></script>
-
-    <!-- ===== RENDERER ===== -->
-    <script src="js/renderer/MaxRenderer.js"></script>
-    <script src="js/renderer/ComplexGeometryLab.js"></script>
-
-    <!-- ===== GAME ===== -->
-    <script src="js/game/TerrainGenerator.js"></script>
-    <script src="js/game/EntityFactory.js"></script>
-    <script src="js/game/GameWorld.js"></script>
-
-    <!-- ===== UTILS ===== -->
-    <script src="js/utils/Helpers.js"></script>
-    <script src="js/utils/Profiler.js"></script>
-
-    <!-- ===== ENGINE ===== -->
-    <script src="js/engine/PriomEngine.js"></script>
-
-    <!-- ============================================================
-         🔥 FUERZA BRUTA - SPAWN MANUAL
-         ============================================================ -->
+    
     <script>
     // ============================================================
-    //  🔥 SPAWN AUTOMÁTICO - FUERZA BRUTA
+    //  CONFIG - Definido directamente
+    //  ============================================================
+    const CONFIG = {
+        version: '0.1.0',
+        build: '2025.01.01',
+        maxEntities: 50000,
+        targetFPS: 60,
+        quality: 'ultra',
+        lodDistance: 200,
+        waterEnabled: true,
+        particlesEnabled: true,
+        shadowsEnabled: true,
+        bloomEnabled: true,
+        ssaoEnabled: true,
+        debug: false,
+        worldSize: 1000,
+        terrainHeight: 30,
+        treeDensity: 0.3,
+        animalCount: 100,
+        gravity: -9.8,
+        windStrength: 0.6
+    };
+    console.log('✅ Config cargado');
+    </script>
+    
+    <script src="js/core/config.js"></script>
+    <script src="js/core/hardwaredetector.js"></script>
+    <script src="js/core/persistentmemory.js"></script>
+    <script src="js/ecs/soamanager.js"></script>
+    <script src="js/ai/optimizerai.js"></script>
+    <script src="js/ai/metaoptimizerai.js"></script>
+    <script src="js/renderer/maxrenderer.js"></script>
+    <script src="js/renderer/complexgeometrylab.js"></script>
+    <script src="js/game/terraingenerator.js"></script>
+    <script src="js/game/entityfactory.js"></script>
+    <script src="js/game/gameworld.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/profiler.js"></script>
+    <script src="js/engine/priomengine.js"></script>
+
+    <script>
+    // ============================================================
+    //  🚀 INICIO DEL MOTOR
     //  ============================================================
     (function() {
-        console.log('🔥 Script de fuerza bruta cargado');
+        console.log('🚀 Iniciando PRIOM V0.1');
         
-        // Intentar cada 2 segundos hasta que funcione
+        // Ocultar loading después de que cargue
+        setTimeout(function() {
+            document.getElementById('loading').classList.add('hidden');
+        }, 1000);
+        
+        // Verificar que THREE.js está cargado
+        if (typeof THREE === 'undefined') {
+            console.error('❌ THREE.js no cargado');
+            document.getElementById('loader-text').textContent = '❌ Error: THREE.js no cargado';
+            return;
+        }
+        console.log('✅ THREE.js cargado:', THREE.REVISION);
+        
+        // Verificar que CONFIG está cargado
+        if (typeof CONFIG === 'undefined') {
+            console.error('❌ CONFIG no cargado');
+            document.getElementById('loader-text').textContent = '❌ Error: CONFIG no cargado';
+            return;
+        }
+        console.log('✅ CONFIG cargado');
+        
+        // Esperar a que todos los módulos carguen
         let intentos = 0;
-        const maxIntentos = 10;
+        const maxIntentos = 20;
         
-        const intentarSpawn = function() {
+        function esperarMotor() {
             intentos++;
-            console.log('🔥 Intento ' + intentos + ' de ' + maxIntentos);
+            console.log('⏳ Esperando motor... intento ' + intentos);
             
+            if (typeof PriomEngine !== 'undefined') {
+                console.log('✅ PriomEngine encontrado!');
+                iniciarMotor();
+                return;
+            }
+            
+            if (intentos >= maxIntentos) {
+                console.error('❌ Tiempo de espera agotado');
+                document.getElementById('loader-text').textContent = '❌ Tiempo de espera agotado';
+                return;
+            }
+            
+            setTimeout(esperarMotor, 500);
+        }
+        
+        function iniciarMotor() {
             try {
-                // Opción 1: Click en el botón
-                var btn = document.getElementById('btn-spawn');
-                if (btn) {
-                    console.log('✅ Botón Spawn encontrado, haciendo click...');
-                    btn.click();
-                    console.log('✅ Click ejecutado');
-                    return true;
-                }
+                console.log('🚀 Creando instancia del motor...');
+                const engine = new PriomEngine();
+                window.engine = engine;
+                console.log('✅ Motor creado:', engine);
                 
-                // Opción 2: Generar directamente con GameWorld
-                if (window.engine && window.engine.modules && window.engine.modules.gameWorld) {
-                    console.log('✅ GameWorld encontrado, generando directamente...');
-                    window.engine.modules.gameWorld._generateWorld();
-                    console.log('✅ Mundo generado directamente');
-                    return true;
-                }
-                
-                // Opción 3: Generar con ECS
-                if (window.engine && window.engine.modules && window.engine.modules.ecs) {
-                    console.log('✅ ECS encontrado, generando con ECS...');
-                    var ecs = window.engine.modules.ecs;
-                    var factory = window.engine.modules.entityFactory;
-                    if (ecs && factory) {
-                        ecs.reset();
-                        for (var i = 0; i < 200; i++) {
-                            var x = (Math.random() - 0.5) * 300;
-                            var z = (Math.random() - 0.5) * 300;
-                            var y = 0.5 + Math.random() * 3;
-                            var id = factory.createTree(x, y, z);
-                            if (id !== -1) { ecs.isTree[id] = 1; ecs.scale[id] = 0.5 + Math.random() * 3; }
+                // Auto-spawn después de 3 segundos
+                setTimeout(function() {
+                    console.log('🌍 Auto-spawn...');
+                    try {
+                        if (engine.modules && engine.modules.gameWorld) {
+                            engine.modules.gameWorld._generateWorld();
+                            console.log('✅ Mundo generado desde GameWorld');
+                        } else {
+                            // Fallback: usar botón
+                            var btn = document.getElementById('btn-spawn');
+                            if (btn) btn.click();
                         }
-                        for (var i = 0; i < 50; i++) {
-                            var x = (Math.random() - 0.5) * 300;
-                            var z = (Math.random() - 0.5) * 300;
-                            var y = 0.5 + Math.random() * 2;
-                            var id = factory.createRock(x, y, z);
-                            if (id !== -1) { ecs.isRock[id] = 1; ecs.scale[id] = 0.5 + Math.random() * 3; }
-                        }
-                        document.getElementById('entities').textContent = ecs.count;
-                        console.log('✅ Mundo generado con ECS: ' + ecs.count + ' entidades');
-                        return true;
+                    } catch(e) {
+                        console.warn('⚠️ Auto-spawn falló:', e);
                     }
-                }
+                }, 3000);
                 
-                console.log('⚠️ No se pudo generar el mundo en el intento ' + intentos);
-                return false;
+                // Configurar botón Spawn
+                document.getElementById('btn-spawn').addEventListener('click', function() {
+                    console.log('🔄 Spawn clickeado');
+                    try {
+                        if (engine.modules && engine.modules.gameWorld) {
+                            engine.modules.gameWorld._generateWorld();
+                            mostrarNotificacion('🌍 Mundo regenerado!');
+                        }
+                    } catch(e) {
+                        console.error('❌ Error:', e);
+                        mostrarNotificacion('❌ Error: ' + e.message);
+                    }
+                });
+                
+                // Configurar botón Reset
+                document.getElementById('btn-reset').addEventListener('click', function() {
+                    console.log('🔄 Reset clickeado');
+                    try {
+                        if (engine.modules && engine.modules.gameWorld) {
+                            engine.modules.gameWorld._generateWorld();
+                            mostrarNotificacion('🔄 Mundo reiniciado');
+                        }
+                    } catch(e) {
+                        console.error('❌ Error:', e);
+                        mostrarNotificacion('❌ Error: ' + e.message);
+                    }
+                });
+                
+                // Configurar botones de calidad
+                document.getElementById('btn-low').addEventListener('click', function() {
+                    if (engine.modules && engine.modules.renderer) {
+                        engine.modules.renderer.setQuality('low');
+                        mostrarNotificacion('🔽 Calidad: Baja');
+                    }
+                });
+                
+                document.getElementById('btn-ultra').addEventListener('click', function() {
+                    if (engine.modules && engine.modules.renderer) {
+                        engine.modules.renderer.setQuality('ultra');
+                        mostrarNotificacion('⚡ Calidad: Ultra');
+                    }
+                });
+                
+                document.getElementById('loader-text').textContent = '✅ ¡Motor listo!';
                 
             } catch(e) {
-                console.error('❌ Error en intento ' + intentos + ':', e);
-                return false;
+                console.error('❌ Error al iniciar motor:', e);
+                document.getElementById('loader-text').textContent = '❌ Error: ' + e.message;
             }
-        };
+        }
         
-        // Primer intento a los 3 segundos
-        setTimeout(function() {
-            console.log('🔥 Primer intento de spawn...');
-            if (!intentarSpawn()) {
-                // Si falla, seguir intentando
-                var intervalo = setInterval(function() {
-                    if (intentarSpawn() || intentos >= maxIntentos) {
-                        clearInterval(intervalo);
-                        if (intentos >= maxIntentos) {
-                            console.log('❌ Máximo de intentos alcanzado');
-                        } else {
-                            console.log('✅ Spawn exitoso!');
-                        }
-                    }
-                }, 2000);
-            }
-        }, 3000);
+        function mostrarNotificacion(msg) {
+            const container = document.getElementById('notif');
+            const div = document.createElement('div');
+            div.className = 'notif';
+            div.textContent = msg;
+            container.appendChild(div);
+            setTimeout(function() {
+                if (div.parentNode) div.remove();
+            }, 3000);
+        }
+        
+        // Iniciar espera
+        setTimeout(esperarMotor, 1000);
         
     })();
     </script>
 
 </body>
-    </html>
+</html>
