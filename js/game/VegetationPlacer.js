@@ -30,11 +30,28 @@
         // Genera un campo de flores dentro de las reglas de bioma bajo/húmedo/plano
         plantFlowers(count = 800) {
             try {
+                // FUGA REAL CORREGIDA: esto se llama cada ~20s desde WorldAI
+                // para siempre, y cada vez creaba 5 InstancedMesh nuevos sin
+                // límite ni reemplazo — con el tiempo se acumulan decenas de
+                // grupos extra en la escena (cada uno un draw call), lo que
+                // explica un rendimiento que empieza bien y se degrada solo
+                // con el paso del tiempo. Ahora hay un tope real: al llegar
+                // al límite de grupos, se reemplaza el más viejo en vez de
+                // seguir sumando indefinidamente.
+                const maxGroups = 25; // tope duro de grupos de flores en escena
+                
                 const colors = [0xff5c8a, 0xffe066, 0xff8c42, 0xffffff, 0xb388ff];
                 const geometry = new THREE.ConeGeometry(0.06, 0.18, 5);
                 geometry.translate(0, 0.09, 0);
 
                 for (const color of colors) {
+                    if (this.flowerMeshes.length >= maxGroups) {
+                        const oldest = this.flowerMeshes.shift();
+                        this.scene.remove(oldest);
+                        if (oldest.geometry) oldest.geometry.dispose();
+                        if (oldest.material) oldest.material.dispose();
+                    }
+                    
                     const material = new THREE.MeshStandardMaterial({
                         color,
                         roughness: 0.6,
@@ -75,7 +92,7 @@
                     this.flowerMeshes.push(mesh);
                 }
 
-                console.log(`🌼 VegetationPlacer: flores plantadas (${this.flowerMeshes.length} grupos)`);
+                console.log(`🌼 VegetationPlacer: flores plantadas (${this.flowerMeshes.length} grupos activos, tope ${maxGroups})`);
             } catch (e) {
                 console.warn('⚠️ VegetationPlacer: no se pudieron plantar flores', e);
             }

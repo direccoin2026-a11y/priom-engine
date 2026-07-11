@@ -86,7 +86,103 @@
             return texture;
         }
 
-        // Normal map "falso" a partir de un mapa de alturas simple (para detalle superficial)
+        // Mapa de oclusión ambiental procedural (manchas suaves oscuras)
+        static ambientOcclusion(size = 256, intensity = 0.6) {
+            const key = 'ao_' + size + '_' + intensity;
+            if (this._cache.has(key)) return this._cache.get(key);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+
+            for (let i = 0; i < 120; i++) {
+                const x = Math.random() * size;
+                const y = Math.random() * size;
+                const r = size * (0.02 + Math.random() * 0.06);
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                const dark = 1 - intensity;
+                grad.addColorStop(0, `rgba(${dark * 255},${dark * 255},${dark * 255},0.5)`);
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            this._cache.set(key, texture);
+            return texture;
+        }
+
+        // Mapa de altura/desplazamiento (grises de baja frecuencia, tipo colinas)
+        static heightMap(size = 256, octaves = 4) {
+            const key = 'height_' + size + '_' + octaves;
+            if (this._cache.has(key)) return this._cache.get(key);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const data = new Float32Array(size * size);
+
+            for (let o = 0; o < octaves; o++) {
+                const freq = Math.pow(2, o);
+                const amp = 1 / freq;
+                const cellsX = Math.max(2, Math.floor(size / (32 / freq)));
+                const cellsY = cellsX;
+                const cellW = size / cellsX;
+                const cellH = size / cellsY;
+                const cellValues = [];
+                for (let cy = 0; cy <= cellsY; cy++) {
+                    cellValues.push([]);
+                    for (let cx = 0; cx <= cellsX; cx++) {
+                        cellValues[cy].push(Math.random());
+                    }
+                }
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const cx = Math.floor(x / cellW);
+                        const cy = Math.floor(y / cellH);
+                        const v = cellValues[cy][cx];
+                        data[y * size + x] += v * amp;
+                    }
+                }
+            }
+
+            let maxVal = 0;
+            for (let i = 0; i < data.length; i++) maxVal = Math.max(maxVal, data[i]);
+
+            const imgData = ctx.createImageData(size, size);
+            for (let i = 0; i < data.length; i++) {
+                const v = (data[i] / maxVal) * 255;
+                imgData.data[i * 4] = v;
+                imgData.data[i * 4 + 1] = v;
+                imgData.data[i * 4 + 2] = v;
+                imgData.data[i * 4 + 3] = 255;
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            this._cache.set(key, texture);
+            return texture;
+        }
+
+        // Genera el set PBR completo (diffuse/roughness/normal/AO/height) para un material dado
+        static pbrSet(options = {}) {
+            const size = options.size || 256;
+            return {
+                map: this.noise(size, { base: options.base || 200, variance: options.variance || 55 }),
+                roughnessMap: this.noise(size, { base: 180, variance: 90 }),
+                normalMap: this.fakeNormalFromNoise(size, options.normalStrength || 1.0),
+                aoMap: this.ambientOcclusion(size, options.aoIntensity || 0.6),
+                displacementMap: this.heightMap(size, 3)
+            };
+        }
         static fakeNormalFromNoise(size = 256, strength = 1.0) {
             const key = 'normal_' + size + '_' + strength;
             if (this._cache.has(key)) return this._cache.get(key);

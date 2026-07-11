@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
-    <title>🧠 PRIOM V0.1 - Motor de Juegos IA</title>
+    <title>🧠 PRIOM V0.2 - Motor de Juegos IA</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
-    <link rel="stylesheet" href="css/styles.css?v=20260705l">
+    <link rel="stylesheet" href="css/styles.css?v=20260705u">
     
     <style>
         /* ===== PANTALLA DE CARGA ===== */
@@ -116,7 +116,7 @@
         <div class="loader-container">
             <div class="loader-icon">🧠</div>
             <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.1 · IA Dual</div>
+            <div class="loader-version">v0.2 · Trinity AI</div>
             
             <div class="loader-bar-wrapper">
                 <div class="loader-bar">
@@ -140,16 +140,16 @@
                 <span class="dot"></span><span class="dot"></span>
             </div>
             
-            <div class="loader-footer">🧠 IA Dual · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo</div>
+            <div class="loader-footer">🧠 Trinity AI · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo</div>
         </div>
     </div>
 
     <!-- ===== HUD ===== -->
     <div id="hud">
-        <div class="logo">🧠 PRIOM V0.1</div>
-        <div class="subtitle">🎮 IA Dual · Meta-optimización</div>
+        <div class="logo">🧠 PRIOM V0.2</div>
+        <div class="subtitle">🎮 Trinity AI · Optimización + Mundo Vivo</div>
         <div>
-            <span class="badge">🧬 IA DUAL</span>
+            <span class="badge">🧬 TRINITY AI</span>
             <span class="badge">⚡ META</span>
             <span class="badge">🎯 OPTIMIZANDO</span>
         </div>
@@ -169,8 +169,9 @@
     <div id="ai-status-bar">
         <div class="ai-icon">🧠</div>
         <div class="ai-text">
-            <strong id="ai-action">IA DUAL ACTIVA</strong>
+            <strong id="ai-action">TRINITY AI ACTIVA</strong>
             <span id="ai-detail">· Inicializando...</span>
+            <div id="world-ai-status" style="font-size:10px; color:#8fe0a8; margin-top:2px;"></div>
         </div>
         <div class="ai-progress">
             <div class="fill" id="ai-progress-fill" style="width:100%"></div>
@@ -183,7 +184,7 @@
 
     <!-- ===== CONTROLES ===== -->
     <div id="controls">
-        <button class="active dual-ai" id="btn-dual">🧠 IA DUAL</button>
+        <button class="active dual-ai" id="btn-dual">🧠 TRINITY AI</button>
         <button id="btn-low">🔽 Low</button>
         <button id="btn-medium">🔄 Med</button>
         <button id="btn-high">🔼 High</button>
@@ -191,6 +192,11 @@
         <button id="btn-spawn">➕ Spawn</button>
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">☀️ Clima</button>
+        <button id="btn-sound">🔊 Sonido</button>
+        <div style="display:flex; align-items:center; gap:6px; width:100%; padding:4px 8px;">
+            <span style="font-size:14px;">🕐</span>
+            <input type="range" id="time-slider" min="0" max="0.999" step="0.001" value="0.5" style="flex:1;">
+        </div>
     </div>
 
     <!-- ===== NOTIFICACIONES ===== -->
@@ -240,7 +246,10 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/BokehShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/BokehPass.js"></script>
     
     <script>
     // ============================================================
@@ -249,7 +258,7 @@
     (function() {
         'use strict';
         
-        const totalModules = 15;
+        const totalModules = 29;
         let loaded = 0;
         let hasError = false;
         
@@ -326,28 +335,35 @@
                 
                 // Cargar módulos secuencialmente
                 const modules = [
-                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260705l' },
-                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260705l' },
-                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260705l' },
-                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260705l' },
-                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260705l' },
-                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260705l' },
-                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260705l' },
-                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260705l' },
-                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260705l' },
-                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260705l' },
-                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260705l' },
-                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260705l' },
-                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260705l' },
-                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260705l' },
-                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260705l' },
-                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260705l' },
-                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260705l' },
-                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260705l' },
-                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260705l' },
-                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260705l' },
-                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260705l' },
-                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260705l' }
+                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260705u' },
+                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260705u' },
+                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260705u' },
+                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260705u' },
+                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260705u' },
+                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260705u' },
+                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260705u' },
+                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260705u' },
+                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260705u' },
+                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260705u' },
+                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260705u' },
+                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260705u' },
+                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260705u' },
+                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260705u' },
+                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260705u' },
+                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260705u' },
+                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260705u' },
+                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260705u' },
+                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260705u' },
+                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260705u' },
+                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260705u' },
+                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260705u' },
+                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260705u' },
+                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260705u' },
+                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260705v' },
+                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260705w' },
+                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260705u' },
+                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260705u' },
+                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260705u' }
                 ];
                 
                 for (const mod of modules) {
@@ -502,6 +518,14 @@
                 if (hud.aiDetail) {
                     hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
                 }
+                const worldAI = engine.getModule('worldAI');
+                const worldStatusEl = document.getElementById('world-ai-status');
+                if (worldAI && worldStatusEl) {
+                    const ws = worldAI.getStatus();
+                    worldStatusEl.textContent = `🌍 Trinity AI #3 · ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
+                } else if (worldStatusEl) {
+                    worldStatusEl.textContent = '';
+                }
                 if (engine._lastLoopError) {
                     errorBanner.textContent = '⚠️ Loop error: ' + engine._lastLoopError;
                     errorBanner.style.display = 'block';
@@ -560,6 +584,29 @@
                         const x = Math.cos(angle) * dist;
                         const z = Math.sin(angle) * dist;
                         factory.createAnimal(x, 5, z, Math.random() < 0.3);
+                    }
+                });
+            }
+            
+            // ----- Hora del día -----
+            const timeSlider = document.getElementById('time-slider');
+            if (timeSlider) {
+                timeSlider.addEventListener('input', (e) => {
+                    const renderer = engine.getModule('renderer');
+                    if (renderer && renderer.setTimeOfDay) {
+                        renderer.setTimeOfDay(parseFloat(e.target.value));
+                    }
+                });
+            }
+            
+            // ----- Sonido -----
+            const soundBtn = document.getElementById('btn-sound');
+            if (soundBtn) {
+                soundBtn.addEventListener('click', () => {
+                    const audio = engine.getModule('audioSystem');
+                    if (audio) {
+                        audio.start();
+                        soundBtn.textContent = '🔈 Sonido ON';
                     }
                 });
             }

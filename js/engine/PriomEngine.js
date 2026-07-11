@@ -278,6 +278,74 @@
                 console.warn('⚠️ VegetationPlacer no disponible', e);
             }
             
+            // Decoración de alta montaña (rocas con escarcha, cristales de hielo) - tanda 2
+            try {
+                if (window.AlpineDecor && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
+                    this.modules.alpineDecor = new AlpineDecor(
+                        this.modules.renderer.scene,
+                        this.modules.gameWorld.generators.terrain,
+                        { worldSize: CONFIG.worldSize }
+                    );
+                    this.modules.alpineDecor.plant(250);
+                }
+            } catch (e) {
+                console.warn('⚠️ AlpineDecor no disponible', e);
+            }
+            
+            // Chunk Manager (primer paso hacia streaming: culling de decoración por distancia)
+            try {
+                if (window.ChunkManager && this.modules.renderer) {
+                    this.modules.chunkManager = new ChunkManager();
+                    this.modules.chunkManager.registerRegion('grass', 0, 0, 220, this.modules.renderer.grassMeshes);
+                    this.modules.chunkManager.registerRegion(
+                        'flowers', 0, 0, 220,
+                        this.modules.vegetationPlacer ? this.modules.vegetationPlacer.flowerMeshes : []
+                    );
+                    this.modules.chunkManager.registerRegion(
+                        'alpine', 0, 0, 220,
+                        this.modules.alpineDecor ? this.modules.alpineDecor.meshes : []
+                    );
+                    this.modules.renderer.chunkManager = this.modules.chunkManager;
+                }
+            } catch (e) {
+                console.warn('⚠️ ChunkManager no disponible', e);
+            }
+            
+            // Tercera IA: WorldAI (le da vida al mundo — estaciones, incendios, crecimiento, fauna)
+            try {
+                if (window.WorldAI) {
+                    this.modules.worldAI = new WorldAI(this);
+                }
+            } catch (e) {
+                console.warn('⚠️ WorldAI no disponible', e);
+            }
+            
+            // Sistema de sonido procedural (no se inicia aquí: requiere gesto del usuario)
+            try {
+                if (window.AudioSystem) {
+                    this.modules.audioSystem = new AudioSystem(this);
+                }
+            } catch (e) {
+                console.warn('⚠️ AudioSystem no disponible', e);
+            }
+            
+            // Ajustar pasto/niebla/polvo/espuma a la altura real del terreno
+            // (el renderer los crea antes de que el mundo exista)
+            try {
+                const terrain = this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain;
+                const waterBodies = this.modules.gameWorld.ecosystems && this.modules.gameWorld.ecosystems.waterBodies
+                    ? Array.from(this.modules.gameWorld.ecosystems.waterBodies.values())
+                    : [];
+                if (terrain && this.modules.renderer.conformGroundFXToTerrain) {
+                    this.modules.renderer.conformGroundFXToTerrain(terrain, waterBodies);
+                }
+                if (terrain && this.modules.renderer.focusOnScenicSpot) {
+                    this.modules.renderer.focusOnScenicSpot(terrain);
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo ajustar efectos de suelo al terreno', e);
+            }
+            
             console.log('✅ Mundo inicializado');
         }
         
@@ -373,6 +441,42 @@
             
             this.on('stop', () => {
                 console.log('⏹️ Motor detenido');
+            });
+            
+            // ============================================================
+            //  👁️ VISIBILIDAD DE PÁGINA (bug real corregido)
+            //  Cuando se cambia de app, se bloquea la pantalla, o la
+            //  pestaña queda en segundo plano, el navegador pausa o
+            //  limita requestAnimationFrame para ahorrar batería. Al
+            //  volver, el siguiente frame calculaba su delta contra la
+            //  última vez que corrió ANTES de la pausa — un salto de
+            //  segundos o minutos — contaminando el cálculo de FPS con
+            //  valores imposibles (300+ de golpe, luego un desplome).
+            //  Esto reinicia el reloj del motor limpio al volver, en vez
+            //  de medir a través del hueco de tiempo oculto.
+            // ============================================================
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this._wasHiddenAt = performance.now();
+                    console.log('👁️ Página oculta — pausando medición de tiempo');
+                } else {
+                    const hiddenDuration = this._wasHiddenAt ? performance.now() - this._wasHiddenAt : 0;
+                    console.log(`👁️ Página visible de nuevo (oculta ${Math.round(hiddenDuration)}ms) — reiniciando reloj`);
+                    
+                    // Reiniciar el reloj del loop para no medir el hueco oculto
+                    this._loop.lastTime = performance.now();
+                    this._loop.accumulator = 0;
+                    this._loop.fixedAccumulator = 0;
+                    
+                    // Limpiar muestras de FPS viejas/contaminadas
+                    this._fpsSamples = [];
+                    
+                    // Avisar a WorldAI para que tampoco salte sus temporizadores
+                    // de golpe (estaciones/crecimiento/fauna) por el hueco oculto
+                    if (this.modules.worldAI && typeof this.modules.worldAI.onResume === 'function') {
+                        this.modules.worldAI.onResume();
+                    }
+                }
             });
             
             this.on('error', ({ error }) => {
@@ -521,7 +625,8 @@
             
             try {
                 const now = performance.now();
-                let delta = Math.min(now - this._loop.lastTime, this.config.maxDeltaTime * 1000);
+                const rawDelta = now - this._loop.lastTime; // sin recortar, para medir FPS real
+                let delta = Math.min(rawDelta, this.config.maxDeltaTime * 1000);
                 this._loop.lastTime = now;
                 
                 // Convertir a segundos
@@ -558,10 +663,23 @@
                 this.state.uptime = now - this.state.startTime;
                 this.state.deltaTime = deltaSeconds;
                 
-                // Calcular FPS
-                if (this.state.frameCount % 60 === 0) {
-                    const fps = 1000 / delta;
-                    this.state.fps = Math.round(fps);
+                // Calcular FPS (promedio real de los últimos frames, sin el
+                // recorte de maxDeltaTime — antes SIEMPRE daba exactamente 20,
+                // sin importar el rendimiento real, porque 1000/50ms = 20 fijo)
+                if (rawDelta > 0) {
+                    const instantFps = 1000 / rawDelta;
+                    // Descartar lecturas imposibles (ninguna pantalla real
+                    // pasa de ~150hz) — protege contra cualquier artefacto
+                    // de medición, venga de donde venga
+                    if (instantFps > 0 && instantFps <= 150) {
+                        this._fpsSamples = this._fpsSamples || [];
+                        this._fpsSamples.push(instantFps);
+                        if (this._fpsSamples.length > 20) this._fpsSamples.shift();
+                    }
+                }
+                if (this.state.frameCount % 15 === 0 && this._fpsSamples && this._fpsSamples.length > 0) {
+                    const avg = this._fpsSamples.reduce((a, b) => a + b, 0) / this._fpsSamples.length;
+                    this.state.fps = Math.round(avg);
                 }
                 
                 // ===== EVENTO DE FRAME =====
@@ -590,18 +708,42 @@
             // Actualizar física
             if (this.modules.ecs) {
                 const visible = this.modules.renderer?.lastVisible || null;
+                const terrain = this.modules.gameWorld && this.modules.gameWorld.generators
+                    ? this.modules.gameWorld.generators.terrain : null;
+                const getGroundHeight = terrain && terrain.getHeight
+                    ? (x, z) => terrain.getHeight(x, z)
+                    : null;
                 this.modules.ecs.updatePhysics(
                     delta,
                     CONFIG.gravity || -9.8,
                     CONFIG.windStrength || 0.6,
                     this.state.frameCount,
-                    visible
+                    visible,
+                    getGroundHeight
                 );
             }
             
             // Actualizar mundo del juego
             if (this.modules.gameWorld) {
                 this.modules.gameWorld.update(delta);
+            }
+            
+            // Tercera IA: WorldAI (vida del mundo)
+            if (this.modules.worldAI) {
+                try {
+                    this.modules.worldAI.update(delta);
+                } catch (e) {
+                    console.warn('⚠️ Error en WorldAI', e);
+                }
+            }
+            
+            // Sistema de sonido
+            if (this.modules.audioSystem) {
+                try {
+                    this.modules.audioSystem.update(delta);
+                } catch (e) {
+                    console.warn('⚠️ Error en AudioSystem', e);
+                }
             }
             
             // Actualizar IA
@@ -710,6 +852,12 @@
             // Calidad
             this.modules.renderer.setQuality(action.quality);
             this.modules.renderer.setLODDistance(action.lodDistance);
+            
+            // Nota: la resolución dinámica (DRS) ya no se controla desde
+            // aquí — el MaxRenderer tiene su propio controlador dedicado
+            // que mide el tiempo real de frame directamente. Tener dos
+            // sistemas escribiendo el mismo valor fue justo la causa de
+            // la regresión anterior (1 FPS por pelea entre ambos).
             
             // Efectos
             if (CONFIG) {

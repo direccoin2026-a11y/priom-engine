@@ -100,6 +100,26 @@
             };
             
             // ============================================================
+            //  🎰 MEMORIA POR NIVEL (bandit): aprende el FPS real que
+            //  este hardware logra en cada nivel de calidad, para tomar
+            //  decisiones de "subir" mucho más informadas que solo EMA
+            //  ============================================================
+            this.tierStats = this.qualityLevels.map(() => ({ avgFps: 0, samples: 0 }));
+            if (savedProfile && savedProfile.tierStats) {
+                this.tierStats = savedProfile.tierStats;
+            }
+            
+            // Dynamic Resolution Scaling: escala continua de renderizado
+            this.renderScale = 1.0;
+            
+            // ============================================================
+            //  🔁 DETECCIÓN DE OSCILACIÓN (thrashing)
+            //  ============================================================
+            this.recentDirections = []; // últimos cambios: 'up' | 'down'
+            this.thrashPenaltyUntil = 0;
+            this._tick = 0;
+            
+            // ============================================================
             //  🚀 INICIALIZAR
             //  ============================================================
             this._init();
@@ -132,6 +152,14 @@
         update(performance, renderStats, soa) {
             const fps = performance.fps || 60;
             const targetFPS = this.targetFPS;
+            this._tick++;
+            
+            // ============================================================
+            //  🎰 APRENDER RENDIMIENTO REAL POR NIVEL (bandit)
+            //  ============================================================
+            const tierStat = this.tierStats[this.currentQuality];
+            tierStat.samples++;
+            tierStat.avgFps += (fps - tierStat.avgFps) / Math.min(tierStat.samples, 120);
             
             // ============================================================
             //  📊 REGISTRAR DATOS
@@ -176,21 +204,33 @@
                 
             } else if (this.cooldown === 0) {
                 // Decisión normal basada en aprendizaje
-                const action = this._decideAction(fpsRatio, prediction);
+                let action = this._decideAction(fpsRatio, prediction);
+                
+                // Filtro bandit: no subir si el nivel superior históricamente
+                // no sostuvo buen FPS en este hardware (evita subir para
+                // bajar de nuevo dos segundos después)
+                if (action === 'up' && this.currentQuality < this.qualityLevels.length - 1) {
+                    const nextStat = this.tierStats[this.currentQuality + 1];
+                    if (nextStat.samples > 8 && nextStat.avgFps < targetFPS * 0.75) {
+                        action = 'stable';
+                    }
+                }
                 
                 if (action === 'up' && this.currentQuality < this.qualityLevels.length - 1) {
                     this.currentQuality++;
-                    this.cooldown = 180;
+                    this.cooldown = this._adaptiveCooldown(180);
                     changed = true;
                     decision = 'up';
                     reward = 0.3;
+                    this._registerDirection('up');
                     
                 } else if (action === 'down' && this.currentQuality > 0) {
                     this.currentQuality--;
-                    this.cooldown = 90;
+                    this.cooldown = this._adaptiveCooldown(90);
                     changed = true;
                     decision = 'down';
                     reward = -0.2;
+                    this._registerDirection('down');
                     
                 } else {
                     // Decisión de mantener
@@ -236,6 +276,20 @@
             }
             
             // ============================================================
+            //  🎚️ DYNAMIC RESOLUTION SCALING (continuo, sin cooldown)
+            //  A diferencia del nivel de calidad (que cambia por escalones
+            //  con cooldown para no oscilar), la resolución interna se
+            //  ajusta suavemente cada tick — reacciona mucho más rápido
+            //  y con más precisión que saltar de nivel completo, que es
+            //  justo lo que más ayuda en hardware de gama baja.
+            // ============================================================
+            this.renderScale = this.renderScale ?? 1.0;
+            const targetScale = fpsRatio < 0.7
+                ? Math.max(0.35, this.renderScale - 0.03)
+                : (fpsRatio > 1.1 ? Math.min(1.0, this.renderScale + 0.015) : this.renderScale);
+            this.renderScale += (targetScale - this.renderScale) * 0.3; // suavizado
+            
+            // ============================================================
             //  📊 GENERAR ACCIÓN DE SALIDA
             //  ============================================================
             const quality = this.qualityLevels[this.currentQuality];
@@ -255,6 +309,7 @@
                 quality: quality,
                 qualityIndex: this.currentQuality,
                 lodDistance: lodDistance,
+                renderScale: this.renderScale,
                 entitiesToRender: entitiesToRender,
                 entityMultiplier: entityMultiplier,
                 fps: fps,
@@ -502,6 +557,7 @@
                 bestFPS: this.bestFPS,
                 worstFPS: this.worstFPS,
                 emaFps: this.emaFps,
+                tierStats: this.tierStats,
                 updatedAt: Date.now()
             });
         }
@@ -509,6 +565,45 @@
         // ============================================================
         //  📊 ESTADÍSTICAS
         //  ============================================================
+        // ============================================================
+        //  🔁 DETECCIÓN DE OSCILACIÓN (thrashing) Y COOLDOWN ADAPTATIVO
+        // ============================================================
+        _registerDirection(dir) {
+            this.recentDirections.push({ dir, tick: this._tick });
+            if (this.recentDirections.length > 6) this.recentDirections.shift();
+            
+            // Si en los últimos cambios se alterna up/down repetidamente,
+            // es oscilación: penalizar con más cooldown por un rato
+            if (this.recentDirections.length >= 4) {
+                let alternations = 0;
+                for (let i = 1; i < this.recentDirections.length; i++) {
+                    if (this.recentDirections[i].dir !== this.recentDirections[i - 1].dir) alternations++;
+                }
+                if (alternations >= 3) {
+                    this.thrashPenaltyUntil = this._tick + 600;
+                    console.log('⚠️ OptimizerAI: oscilación detectada, estabilizando decisiones');
+                }
+            }
+        }
+        
+        _adaptiveCooldown(base) {
+            if (this._tick < this.thrashPenaltyUntil) {
+                return base * 2.5; // en penalización: decisiones mucho más espaciadas
+            }
+            return base;
+        }
+        
+        // ============================================================
+        //  🔗 SEÑAL PARA OTRAS IAs (Trinity): qué tan estresado está el
+        //  rendimiento ahora mismo, para que WorldAI frene crecimiento/
+        //  fauna si el motor ya está al límite
+        // ============================================================
+        getLoadPressure() {
+            const tierPressure = 1 - (this.currentQuality / (this.qualityLevels.length - 1));
+            const fpsPressure = Math.max(0, Math.min(1, 1 - (this.emaFps / this.targetFPS)));
+            return Math.max(0, Math.min(1, fpsPressure * 0.7 + (1 - tierPressure) * 0.3));
+        }
+        
         getStatus() {
             return {
                 quality: this.qualityLevels[this.currentQuality],
@@ -587,6 +682,10 @@
                 confidence: 0.5,
                 samples: []
             };
+            this.tierStats = this.qualityLevels.map(() => ({ avgFps: 0, samples: 0 }));
+            this.recentDirections = [];
+            this.thrashPenaltyUntil = 0;
+            this._tick = 0;
             
             console.log('🔄 OptimizerAI reseteado');
         }

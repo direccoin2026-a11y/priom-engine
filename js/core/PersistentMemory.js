@@ -38,7 +38,8 @@
                 compressionEnabled: true,
                 encryptionEnabled: false,
                 autoSaveInterval: 30000, // 30 segundos
-                version: '0.1.0',
+                version: '0.2.0', // subido: fuerza migración limpia de datos de rendimiento
+                                  // que pudieron "aprenderse" mal durante sesiones con bugs
                 
                 // Sistema de olvido
                 forgetThreshold: 30, // días sin uso
@@ -192,16 +193,30 @@
                 // Intentar cargar desde localStorage
                 const raw = localStorage.getItem(this._config.storageKey);
                 if (raw) {
-                    const data = JSON.parse(raw);
+                    let jsonStr = raw;
+                    if (raw.startsWith('LZW1:')) {
+                        try {
+                            jsonStr = this._lzwDecompress(raw.slice(5));
+                        } catch (decompErr) {
+                            console.warn('⚠️ Datos comprimidos corruptos, intentando respaldo', decompErr);
+                            const backupData = await this._recoverFromBackup();
+                            if (backupData) return;
+                            jsonStr = null;
+                        }
+                    }
                     
-                    // Verificar versión
-                    if (data.version === this._config.version) {
-                        this._memory = this._deepMerge(this._memory, data);
-                        console.log('📂 Memoria cargada desde localStorage');
-                        return;
-                    } else {
-                        console.log(`🔄 Migrando memoria de versión ${data.version} a ${this._config.version}`);
-                        this._memory = this._migrateMemory(data);
+                    if (jsonStr) {
+                        const data = JSON.parse(jsonStr);
+                        
+                        // Verificar versión
+                        if (data.version === this._config.version) {
+                            this._memory = this._deepMerge(this._memory, data);
+                            console.log('📂 Memoria cargada desde localStorage');
+                            return;
+                        } else {
+                            console.log(`🔄 Migrando memoria de versión ${data.version} a ${this._config.version}`);
+                            this._memory = this._migrateMemory(data);
+                        }
                     }
                 }
                 
@@ -295,12 +310,84 @@
             }
         }
         
+        // ============================================================
+        //  🗜️ COMPRESIÓN LZW (el flag compressionEnabled existía en la
+        //  config pero nunca se usaba — el JSON se guardaba siempre sin
+        //  comprimir). Reduce bastante el espacio en localStorage a
+        //  medida que crece el historial de las IAs.
+        // ============================================================
+        _lzwCompress(str) {
+            const dict = {};
+            const data = (str + '').split('');
+            const out = [];
+            let phrase = data[0];
+            let code = 256;
+            
+            for (let i = 1; i < data.length; i++) {
+                const next = data[i];
+                if (dict[phrase + next] !== undefined) {
+                    phrase += next;
+                } else {
+                    out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+                    dict[phrase + next] = code++;
+                    phrase = next;
+                }
+            }
+            out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+            
+            // Codificar como string usando fromCharCode (compacto y seguro para localStorage)
+            return out.map(c => String.fromCharCode(c)).join('');
+        }
+        
+        _lzwDecompress(compressed) {
+            const data = compressed.split('').map(c => c.charCodeAt(0));
+            const dict = {};
+            let code = 256;
+            let phrase = String.fromCharCode(data[0]);
+            let out = phrase;
+            let entry = '';
+            
+            for (let i = 1; i < data.length; i++) {
+                const k = data[i];
+                if (k < 256) {
+                    entry = String.fromCharCode(k);
+                } else if (dict[k] !== undefined) {
+                    entry = dict[k];
+                } else if (k === code) {
+                    entry = phrase + phrase.charAt(0);
+                } else {
+                    throw new Error('LZW: secuencia comprimida inválida');
+                }
+                
+                out += entry;
+                dict[code++] = phrase + entry.charAt(0);
+                phrase = entry;
+            }
+            
+            return out;
+        }
+        
         _saveToStorage() {
             try {
-                const data = JSON.stringify(this._memory);
-                localStorage.setItem(this._config.storageKey, data);
+                const json = JSON.stringify(this._memory);
+                let payload = json;
                 
-                // Guardar backup en IndexedDB
+                if (this._config.compressionEnabled) {
+                    try {
+                        const compressed = this._lzwCompress(json);
+                        // Solo usar la versión comprimida si de verdad pesa menos
+                        // (textos muy cortos a veces no comprimen bien)
+                        if (compressed.length < json.length) {
+                            payload = 'LZW1:' + compressed;
+                        }
+                    } catch (compErr) {
+                        console.warn('⚠️ No se pudo comprimir, guardando sin comprimir', compErr);
+                    }
+                }
+                
+                localStorage.setItem(this._config.storageKey, payload);
+                
+                // Guardar backup en IndexedDB (sin comprimir, IndexedDB no tiene el límite de localStorage)
                 this._saveToIndexedDB(this._memory);
                 
                 this._dirty = false;
@@ -333,7 +420,103 @@
             const newData = this._deepMerge(this._memory, oldData);
             newData.version = this._config.version;
             newData.migratedAt = Date.now();
+            
+            // ============================================================
+            //  🧹 LIMPIEZA DE APRENDIZAJE ENVENENADO
+            //  Los perfiles de hardware (tierStats, confianza, FPS
+            //  aprendido) pudieron "aprenderse" mal durante sesiones con
+            //  bugs graves de rendimiento — un perfil que aprendió "este
+            //  hardware rinde pésimo en todo" no se corrige solo aunque
+            //  el motor ya esté arreglado. Se limpia SOLO esto, el resto
+            //  de la memoria (progreso, sesiones) se conserva igual.
+            // ============================================================
+            if (newData.hardwareProfiles) {
+                const cleaned = {};
+                for (const [fingerprint, profile] of Object.entries(newData.hardwareProfiles)) {
+                    cleaned[fingerprint] = {
+                        // Se conserva la identidad/fecha, se descarta lo aprendido
+                        fingerprint,
+                        resetAt: Date.now(),
+                        resetReason: 'migración v0.1.0 → v0.2.0: aprendizaje de rendimiento reiniciado'
+                    };
+                }
+                newData.hardwareProfiles = cleaned;
+                console.log('🧹 Perfiles de rendimiento aprendidos reiniciados (posible aprendizaje envenenado de sesiones con bugs)');
+            }
+            
             return newData;
+        }
+        
+        // ============================================================
+        //  🔍 VALIDACIÓN DE DATOS APRENDIDOS (detectar envenenamiento)
+        //  Si un perfil "aprendió" que TODOS los niveles de calidad dan
+        //  un FPS absurdamente bajo, es más probable que sea memoria de
+        //  una sesión rota que un reflejo real del hardware — se
+        //  descarta en vez de confiar ciegamente en ella.
+        // ============================================================
+        _isProfileSuspicious(profile) {
+            if (!profile || !profile.tierStats) return false;
+            const withSamples = profile.tierStats.filter(t => t.samples > 5);
+            if (withSamples.length < 2) return false;
+            
+            // Si hasta el nivel de calidad más alto "aprendió" menos de
+            // 10fps con suficientes muestras, algo salió mal midiendo
+            const highestTier = withSamples[withSamples.length - 1];
+            return highestTier.avgFps > 0 && highestTier.avgFps < 10;
+        }
+        
+        // Permite forzar un reinicio manual del aprendizaje si se sospecha
+        // de datos envenenados (ej. desde la consola: memory.resetLearning())
+        resetLearning() {
+            this._memory.hardwareProfiles = {};
+            this._saveToStorage();
+            console.log('🧹 Aprendizaje de rendimiento reiniciado manualmente');
+        }
+        
+        // ============================================================
+        //  🌐 EXPORTAR/IMPORTAR APRENDIZAJE (paso intermedio hacia
+        //  aprendizaje compartido en red, mientras no exista un backend)
+        //  Permite llevar manualmente lo aprendido de un dispositivo/
+        //  navegador a otro, o guardar un respaldo fuera de localStorage.
+        // ============================================================
+        exportLearnedProfile() {
+            try {
+                const exportData = {
+                    exportedAt: Date.now(),
+                    version: this._config.version,
+                    hardwareProfiles: this._memory.hardwareProfiles
+                };
+                return JSON.stringify(exportData, null, 2);
+            } catch (e) {
+                console.warn('⚠️ No se pudo exportar el aprendizaje', e);
+                return null;
+            }
+        }
+        
+        importLearnedProfile(jsonString) {
+            try {
+                const data = JSON.parse(jsonString);
+                if (!data.hardwareProfiles) {
+                    console.warn('⚠️ Formato de importación inválido');
+                    return false;
+                }
+                
+                // Validar cada perfil antes de aceptarlo (no importar datos envenenados)
+                let imported = 0;
+                for (const [fingerprint, profile] of Object.entries(data.hardwareProfiles)) {
+                    if (!this._isProfileSuspicious(profile)) {
+                        this._memory.hardwareProfiles[fingerprint] = profile;
+                        imported++;
+                    }
+                }
+                
+                this._saveToStorage();
+                console.log(`🌐 ${imported} perfil(es) de aprendizaje importado(s)`);
+                return true;
+            } catch (e) {
+                console.warn('⚠️ No se pudo importar el aprendizaje', e);
+                return false;
+            }
         }
         
         // ============================================================
@@ -624,7 +807,13 @@
         //  💻 HARDWARE PROFILES
         //  ============================================================
         getHardwareProfile(fingerprint) {
-            return this._memory.hardwareProfiles[fingerprint] || null;
+            const profile = this._memory.hardwareProfiles[fingerprint] || null;
+            if (profile && this._isProfileSuspicious(profile)) {
+                console.warn('⚠️ Perfil de rendimiento sospechoso (posible aprendizaje envenenado), descartado');
+                delete this._memory.hardwareProfiles[fingerprint];
+                return null;
+            }
+            return profile;
         }
         
         saveHardwareProfile(fingerprint, profile) {

@@ -292,6 +292,7 @@
                     const id = factory.createAnimal(pos.x, pos.y, pos.z, isPredator);
                     if (id !== -1) {
                         this.ecosystems.entities.animals.add(id);
+                        this._animalIdsDirty = true;
                         this.behaviors.animals.set(id, {
                             state: 'wandering',
                             target: { x: pos.x, z: pos.z },
@@ -505,6 +506,7 @@
                         const id = this.generators.entities.createAnimal(pos.x, pos.y, pos.z, isPredator);
                         if (id !== -1) {
                             this.ecosystems.entities.animals.add(id);
+                        this._animalIdsDirty = true;
                             this.behaviors.animals.set(id, {
                                 state: 'wandering',
                                 target: { x: pos.x, z: pos.z },
@@ -525,6 +527,7 @@
                 for (const id of toRemove) {
                     this.soa.destroyEntity(id);
                     this.ecosystems.entities.animals.delete(id);
+                    this._animalIdsDirty = true;
                     this.behaviors.animals.delete(id);
                 }
             }
@@ -534,13 +537,44 @@
         //  🐾 ACTUALIZAR ANIMALES
         //  ============================================================
         _updateAnimals(delta) {
-            const ids = Array.from(this.ecosystems.entities.animals);
+            // Cachear la conversión Set->Array: antes se reasignaba
+            // por completo CADA tick sin importar si la población cambió
+            if (this._animalIdsDirty !== false) {
+                this._cachedAnimalIds = Array.from(this.ecosystems.entities.animals);
+                this._animalIdsDirty = false;
+            }
+            const ids = this._cachedAnimalIds || [];
+            
+            this._simTick = (this._simTick || 0) + 1;
+            const camPos = this.renderer && this.renderer.camera ? this.renderer.camera.position : null;
             
             for (const id of ids) {
                 const behavior = this.behaviors.animals.get(id);
                 if (!behavior) continue;
                 
-                behavior.timer += delta;
+                // ============================================================
+                //  🧠 LOD DE SIMULACIÓN: animales lejos de cámara piensan
+                //  menos seguido (misma lógica, menos frecuencia) — el
+                //  resultado visual es indistinguible pero el costo de CPU
+                //  baja mucho con cientos de animales activos a la vez
+                // ============================================================
+                if (camPos) {
+                    const dx = this.soa.posX[id] - camPos.x;
+                    const dz = this.soa.posZ[id] - camPos.z;
+                    const distSq = dx * dx + dz * dz;
+                    
+                    if (distSq > 22500) { // > 150 unidades: piensa 1 de cada 8 ticks
+                        if (this._simTick % 8 !== 0) continue;
+                        behavior.timer += delta * 8; // compensar el tiempo saltado
+                    } else if (distSq > 6400) { // > 80 unidades: 1 de cada 3 ticks
+                        if (this._simTick % 3 !== 0) continue;
+                        behavior.timer += delta * 3;
+                    } else {
+                        behavior.timer += delta;
+                    }
+                } else {
+                    behavior.timer += delta;
+                }
                 
                 switch(behavior.state) {
                     case 'wandering':

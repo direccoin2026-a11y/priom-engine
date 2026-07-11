@@ -34,7 +34,7 @@
             this.config = {
                 worldSize: config.worldSize || 1000,
                 terrainHeight: config.terrainHeight || 30,
-                seed: config.seed || 42,
+                seed: config.seed || Math.floor(Math.random() * 2147483647),
                 resolution: config.resolution || 256,
                 octaves: config.octaves || 6,
                 persistence: config.persistence || 0.5,
@@ -239,42 +239,99 @@
         }
         
         // ============================================================
-        //  💧 EROSIÓN HIDRÁULICA
-        //  ============================================================
+        //  💧 EROSIÓN HIDRÁULICA REAL (simulación por gotas)
+        //  Técnica estándar de la industria: cada gota de agua fluye
+        //  cuesta abajo siguiendo el gradiente real del terreno (con
+        //  muestreo bilineal), recoge sedimento en tramos rápidos/
+        //  empinados y lo deposita al frenar — esto crea valles y
+        //  crestas con forma orgánica real, no solo ruido suavizado.
+        // ============================================================
         _applyErosion() {
             const res = this.config.resolution;
-            const iterations = this.config.erosionIterations;
-            const strength = this.config.erosionStrength;
+            const dropletCount = Math.min(this.config.erosionIterations * 400, 6000);
+            const map = this.heightMap;
             
-            for (let iter = 0; iter < iterations; iter++) {
-                const newHeight = new Float32Array(this.heightMap);
+            const height = (x, y) => {
+                const xi = Math.floor(x), yi = Math.floor(y);
+                const fx = x - xi, fy = y - yi;
+                const i00 = Math.min(res - 1, Math.max(0, xi)) * res + Math.min(res - 1, Math.max(0, yi));
+                const i10 = Math.min(res - 1, Math.max(0, xi + 1)) * res + Math.min(res - 1, Math.max(0, yi));
+                const i01 = Math.min(res - 1, Math.max(0, xi)) * res + Math.min(res - 1, Math.max(0, yi + 1));
+                const i11 = Math.min(res - 1, Math.max(0, xi + 1)) * res + Math.min(res - 1, Math.max(0, yi + 1));
+                const top = map[i00] * (1 - fx) + map[i10] * fx;
+                const bot = map[i01] * (1 - fx) + map[i11] * fx;
+                return top * (1 - fy) + bot * fy;
+            };
+            
+            const deposit = (x, y, amount) => {
+                const xi = Math.floor(x), yi = Math.floor(y);
+                const fx = x - xi, fy = y - yi;
+                const idx = (dx, dy, w) => {
+                    const ix = Math.min(res - 1, Math.max(0, xi + dx));
+                    const iy = Math.min(res - 1, Math.max(0, yi + dy));
+                    map[ix * res + iy] += amount * w;
+                };
+                idx(0, 0, (1 - fx) * (1 - fy));
+                idx(1, 0, fx * (1 - fy));
+                idx(0, 1, (1 - fx) * fy);
+                idx(1, 1, fx * fy);
+            };
+            
+            const inertia = 0.05;
+            const capacityFactor = this.config.erosionStrength * 4 + 1;
+            const minSlope = 0.01;
+            const erosionRate = 0.3;
+            const depositRate = 0.3;
+            const evaporateRate = 0.02;
+            const gravity = 4;
+            const maxSteps = 30;
+            
+            for (let d = 0; d < dropletCount; d++) {
+                let x = Math.random() * (res - 1);
+                let y = Math.random() * (res - 1);
+                let dirX = 0, dirY = 0;
+                let speed = 1, water = 1, sediment = 0;
                 
-                for (let i = 1; i < res - 1; i++) {
-                    for (let j = 1; j < res - 1; j++) {
-                        const idx = i * res + j;
-                        const current = this.heightMap[idx];
-                        
-                        // Calcular pendientes
-                        const dX = (this.heightMap[(i + 1) * res + j] - this.heightMap[(i - 1) * res + j]) / 2;
-                        const dZ = (this.heightMap[i * res + (j + 1)] - this.heightMap[i * res + (j - 1)]) / 2;
-                        
-                        // Movimiento de agua
-                        const flowX = -dX * strength;
-                        const flowZ = -dZ * strength;
-                        
-                        // Aplicar erosión
-                        const erosion = (Math.abs(dX) + Math.abs(dZ)) * 0.1 * strength;
-                        newHeight[idx] = current - erosion;
-                        
-                        // Depositar en puntos bajos
-                        if (dX > 0) newHeight[(i + 1) * res + j] += erosion * 0.5;
-                        if (dX < 0) newHeight[(i - 1) * res + j] += erosion * 0.5;
-                        if (dZ > 0) newHeight[i * res + (j + 1)] += erosion * 0.5;
-                        if (dZ < 0) newHeight[i * res + (j - 1)] += erosion * 0.5;
+                for (let step = 0; step < maxSteps; step++) {
+                    const xi = Math.floor(x), yi = Math.floor(y);
+                    if (xi < 1 || xi >= res - 2 || yi < 1 || yi >= res - 2) break;
+                    
+                    // Gradiente real por diferencias centrales (bilineal)
+                    const h = height(x, y);
+                    const gradX = (height(x + 1, y) - height(x - 1, y)) / 2;
+                    const gradY = (height(x, y + 1) - height(x, y - 1)) / 2;
+                    
+                    dirX = dirX * inertia - gradX * (1 - inertia);
+                    dirY = dirY * inertia - gradY * (1 - inertia);
+                    const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+                    dirX /= len; dirY /= len;
+                    
+                    const newX = x + dirX, newY = y + dirY;
+                    const newH = height(newX, newY);
+                    const deltaH = newH - h;
+                    
+                    const capacity = Math.max(-deltaH, minSlope) * speed * water * capacityFactor;
+                    
+                    if (sediment > capacity || deltaH > 0) {
+                        // Depositar (subiendo cuesta o ya cargada de más)
+                        const depositAmount = deltaH > 0
+                            ? Math.min(deltaH, sediment)
+                            : (sediment - capacity) * depositRate;
+                        sediment -= depositAmount;
+                        deposit(x, y, depositAmount);
+                    } else {
+                        // Erosionar
+                        const erodeAmount = Math.min((capacity - sediment) * erosionRate, -deltaH);
+                        deposit(x, y, -erodeAmount);
+                        sediment += erodeAmount;
                     }
+                    
+                    speed = Math.sqrt(Math.max(0, speed * speed + deltaH * -gravity));
+                    water *= (1 - evaporateRate);
+                    x = newX; y = newY;
+                    
+                    if (water < 0.01) break;
                 }
-                
-                this.heightMap = newHeight;
             }
         }
         
@@ -556,10 +613,35 @@
             geometry.computeVertexNormals();
             
             // Material
+            const detailTexture = this._getDetailTexture();
+            let normalTexture = null;
+            let roughnessTexture = null;
+            let aoTexture = null;
+            try {
+                if (window.TextureFactory) {
+                    normalTexture = window.TextureFactory.fakeNormalFromNoise(256, 1.4);
+                    roughnessTexture = window.TextureFactory.noise(256, { base: 170, variance: 100 });
+                    aoTexture = window.TextureFactory.ambientOcclusion(256, 0.5);
+                    [normalTexture, roughnessTexture, aoTexture].forEach(t => {
+                        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+                        t.repeat.copy(detailTexture.repeat);
+                    });
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo generar set PBR de terreno', e);
+            }
+            
+            geometry.setAttribute('uv2', geometry.attributes.uv);
+            
             const material = new THREE.MeshStandardMaterial({
                 vertexColors: true,
-                map: this._getDetailTexture(),
-                roughness: 0.8,
+                map: detailTexture,
+                normalMap: normalTexture,
+                normalScale: normalTexture ? new THREE.Vector2(0.6, 0.6) : undefined,
+                roughnessMap: roughnessTexture,
+                aoMap: aoTexture,
+                aoMapIntensity: 0.7,
+                roughness: 0.85,
                 metalness: 0.0,
                 flatShading: false,
                 side: THREE.DoubleSide,
@@ -635,7 +717,7 @@
             color = mix(color, ROCK, rockFactor);
             
             // Nieve en las cumbres (por encima de cierta altura, menos en pendientes muy verticales)
-            const snowLine = maxHeight * 0.55;
+            const snowLine = maxHeight * 0.72;
             const snowFactor = Math.min(1, Math.max(0, (y - snowLine) / (maxHeight * 0.25))) * (1 - rockFactor * 0.6);
             color = mix(color, SNOW, snowFactor);
             

@@ -27,6 +27,7 @@
      * Gestiona entidades con acceso cache-friendly
      */
     class SoaManager {
+        static FLAG_SLEEPING = 1 << 0;
         constructor(maxEntities = 100000) {
             // ============================================================
             //  📦 CONFIGURACIÓN
@@ -263,6 +264,53 @@
             }
         }
         
+        // ============================================================
+        //  🔎 BÚSQUEDA ESPACIAL EFICIENTE (usa el grid existente en vez
+        //  de recorrer todas las entidades — O(vecindario) en vez de O(n))
+        // ============================================================
+        queryRadius(x, z, radius) {
+            const results = [];
+            const chunkRadius = Math.ceil(radius / this.chunkSize) + 1;
+            const centerCx = Math.floor(x / this.chunkSize);
+            const centerCz = Math.floor(z / this.chunkSize);
+            const r2 = radius * radius;
+            
+            for (let dcx = -chunkRadius; dcx <= chunkRadius; dcx++) {
+                for (let dcz = -chunkRadius; dcz <= chunkRadius; dcz++) {
+                    const key = (centerCx + dcx) + ',' + (centerCz + dcz);
+                    const chunk = this.spatialGrid.get(key);
+                    if (!chunk) continue;
+                    
+                    for (const id of chunk) {
+                        const dx = this.posX[id] - x;
+                        const dz = this.posZ[id] - z;
+                        if (dx * dx + dz * dz <= r2) results.push(id);
+                    }
+                }
+            }
+            return results;
+        }
+        
+        // ============================================================
+        //  😴 DORMIR / DESPERTAR ENTIDADES (optimización de física)
+        //  Props estáticos (árboles, rocas) no necesitan física cada
+        //  tick. Dormirlos ahorra trabajo real en mundos con miles de
+        //  entidades sin cambiar nada visualmente.
+        // ============================================================
+        sleep(id) {
+            if (id < 0 || id >= this.count) return;
+            this.flags[id] |= SoaManager.FLAG_SLEEPING;
+        }
+        
+        wake(id) {
+            if (id < 0 || id >= this.count) return;
+            this.flags[id] &= ~SoaManager.FLAG_SLEEPING;
+        }
+        
+        isSleeping(id) {
+            return (this.flags[id] & SoaManager.FLAG_SLEEPING) !== 0;
+        }
+        
         moveEntity(id, x, y, z) {
             if (id < 0 || id >= this.count) return false;
             if (!this.active[id]) return false;
@@ -475,13 +523,19 @@
         // ============================================================
         //  ⚛️ SISTEMA DE SIMULACIÓN POR TIERS
         //  ============================================================
-        updatePhysics(delta, gravity = -9.8, wind = 0, frameCount = 0, visible = null) {
+        updatePhysics(delta, gravity = -9.8, wind = 0, frameCount = 0, visible = null, getGroundHeight = null) {
             const startTime = performance.now();
             
             const ids = visible ? visible.visibleIds : this.getActive();
             
             for (let i = 0; i < ids.length; i++) {
                 const id = ids[i];
+                
+                // Entidades dormidas (estáticas: árboles, rocas, edificios) se
+                // saltan por completo — no tiene sentido calcular gravedad y
+                // colisión cada tick para miles de props que nunca se mueven
+                if (this.flags[id] & SoaManager.FLAG_SLEEPING) continue;
+                
                 const tier = visible ? this.tier[id] : 0;
                 
                 // Saltar frames según tier (optimización)
@@ -503,9 +557,11 @@
                 this.posY[id] += this.velY[id] * effDelta;
                 this.posZ[id] += this.velZ[id] * effDelta;
                 
-                // Colisión con el suelo
-                if (this.posY[id] < 0) {
-                    this.posY[id] = 0;
+                // Colisión con el suelo (altura real del terreno si está disponible,
+                // en vez de un plano plano en y=0 que hacía flotar/hundir todo en pendientes)
+                const groundY = getGroundHeight ? getGroundHeight(this.posX[id], this.posZ[id]) : 0;
+                if (this.posY[id] < groundY) {
+                    this.posY[id] = groundY;
                     this.velY[id] *= -this.restitution[id];
                     this.velX[id] *= (1 - this.friction[id]);
                     this.velZ[id] *= (1 - this.friction[id]);

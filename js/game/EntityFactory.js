@@ -379,6 +379,13 @@
             this.stats.byType[templateName] = (this.stats.byType[templateName] || 0) + 1;
             this.stats.lastCreated = { template: templateName, id: id };
             
+            // Optimización: los props estáticos (árboles, rocas, edificios)
+            // nunca se mueven, así que los dormimos para que la física
+            // no los procese cada tick — mismo resultado visual, menos costo
+            if ((template.isTree || template.isRock || template.isBuilding) && !overrides.velY) {
+                this.soa.sleep(id);
+            }
+            
             return id;
         }
         

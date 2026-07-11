@@ -174,13 +174,53 @@
             // ============================================================
             //  📈 PREDICCIÓN DE RENDIMIENTO
             //  ============================================================
-            const prediction = this._predictPerformance();
+            const rawPrediction = this._predictPerformance();
+            // Traducir a las claves que el motor/HUD esperan (bug real:
+            // antes esto siempre caía en 'estable' por defecto porque
+            // 'falling'/'rising' no coincidían con ninguna clave)
+            const predictionMap = { falling: 'caída_inminente', rising: 'mejora_inminente', stable: 'estable' };
+            const prediction = predictionMap[rawPrediction] || 'estable';
+            
             this.history.predictions.push({
                 timestamp: Date.now(),
-                prediction: prediction,
+                prediction: rawPrediction,
                 actual: fps,
-                accuracy: prediction === this._getTrend() ? 1 : 0
+                accuracy: rawPrediction === this._getTrend() ? 1 : 0
             });
+            
+            // ============================================================
+            //  🚨 DETECCIÓN DE ANOMALÍAS (z-score): caídas bruscas que la
+            //  predicción normal (basada en tendencia suave) puede tardar
+            //  en notar
+            //  ============================================================
+            const anomaly = this._detectAnomaly(fps);
+            
+            // ============================================================
+            //  🔍 MEJORA CIRCUNSTANCIAL: distinguir "picos periódicos"
+            //  (ej. una operación cara que se repite cada tantos segundos)
+            //  de "dispositivo sostenidamente débil" (FPS bajo todo el
+            //  tiempo). Son problemas distintos con respuestas distintas:
+            //  - Picos periódicos → culpa de UNA operación puntual, no
+            //    hace falta bajar la calidad base para siempre.
+            //  - Degradación sostenida → el hardware de verdad no da,
+            //    hay que bajar la calidad base en serio.
+            // ============================================================
+            this._anomalyLog = this._anomalyLog || [];
+            if (anomaly) this._anomalyLog.push(this.history.fps.length);
+            this._anomalyLog = this._anomalyLog.filter(t => this.history.fps.length - t < 300); // ventana ~5s a 60fps
+            
+            const recentFpsWindow = this.history.fps.slice(-60);
+            const avgRecent = recentFpsWindow.length
+                ? recentFpsWindow.reduce((a, b) => a + b, 0) / recentFpsWindow.length
+                : fps;
+            
+            let stabilityPattern = 'stable';
+            if (this._anomalyLog.length >= 3) {
+                stabilityPattern = 'periodic_spikes'; // varias anomalías seguidas = algo puntual se repite
+            } else if (avgRecent < this.targetFPS * 0.4) {
+                stabilityPattern = 'sustained_low'; // promedio real bajo, no solo picos
+            }
+            this.context.stabilityPattern = stabilityPattern;
             
             // ============================================================
             //  🧠 AJUSTE DE PARÁMETROS META
@@ -190,7 +230,11 @@
             // ============================================================
             //  🎯 OPTIMIZACIONES GRÁFICAS
             //  ============================================================
-            const graphicsOpt = this._optimizeGraphics(renderStats, fpsRatio);
+            const effectiveFpsRatio = (stabilityPattern === 'periodic_spikes')
+                ? avgRecent / this.targetFPS  // usar el promedio real, no el instante del pico
+                : fpsRatio;
+            const graphicsOpt = this._optimizeGraphics(renderStats, effectiveFpsRatio);
+            graphicsOpt.stabilityPattern = stabilityPattern;
             
             // ============================================================
             //  📊 ANÁLISIS DE RENDIMIENTO
@@ -205,7 +249,7 @@
             // ============================================================
             //  🧠 APRENDIZAJE META
             //  ============================================================
-            this._learn(fpsRatio, prediction, mainAI);
+            this._learn(fpsRatio, rawPrediction, mainAI);
             
             // ============================================================
             //  💾 GUARDAR ESTADO
@@ -219,12 +263,13 @@
             //  ============================================================
             const result = {
                 prediction: prediction,
+                anomaly: anomaly,
                 metaParams: { ...this.metaParams },
                 graphicsOptimizations: graphicsOpt,
                 adjustments: adjustments,
                 analysis: analysis,
                 alerts: alerts,
-                confidence: this.confidence,
+                confidence: anomaly ? Math.min(this.confidence, 0.4) : this.confidence,
                 context: { ...this.context }
             };
             
@@ -291,6 +336,26 @@
         // ============================================================
         //  📈 PREDICCIÓN DE RENDIMIENTO
         //  ============================================================
+        // ============================================================
+        //  🚨 DETECCIÓN DE ANOMALÍAS (z-score sobre el historial de FPS)
+        //  Detecta caídas bruscas que se salen mucho de lo normal para
+        //  este hardware, más rápido que la tendencia suave habitual
+        // ============================================================
+        _detectAnomaly(fps) {
+            const history = this.history.fps;
+            if (history.length < 20) return false;
+            
+            const recent = history.slice(-30);
+            const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const variance = recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length;
+            const std = Math.sqrt(variance);
+            
+            if (std < 1) return false; // demasiado estable para calcular z-score útil
+            
+            const zScore = (fps - mean) / std;
+            return zScore < -2.2; // caída de más de ~2.2 desviaciones estándar
+        }
+        
         _predictPerformance() {
             const history = this.history.fps;
             
@@ -804,7 +869,8 @@
             this.predictionModel.trainingEpochs++;
             
             // ===== ACTUALIZAR CONFIANZA =====
-            // Si la predicción fue correcta
+            // Si la predicción fue correcta (comparar en el mismo idioma
+            // que devuelve _getTrend(), no la versión traducida para el HUD)
             const actualTrend = this._getTrend();
             if (prediction === actualTrend) {
                 this.confidence = Math.min(1, this.confidence + 0.01);

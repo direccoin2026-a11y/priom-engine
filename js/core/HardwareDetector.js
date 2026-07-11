@@ -821,19 +821,19 @@
         }
         
         // ============================================================
-        //  📊 BENCHMARK (Opcional)
-        //  ============================================================
-        async runBenchmark(duration = 1000) {
+        //  📊 BENCHMARK REAL DE GPU
+        //  El benchmark anterior solo llamaba a gl.clear() cada frame,
+        //  lo cual mide la tasa de refresco de pantalla, no la capacidad
+        //  real de la GPU (siempre daba ~60fps sin importar el hardware).
+        //  Este sí dibuja miles de triángulos con un shader por frame y
+        //  mide cuántos aguanta el dispositivo antes de caer de 60fps.
+        // ============================================================
+        async runBenchmark(duration = 1200) {
             if (this._benchmarkRan) {
                 return this._hardware.benchmarkResults;
             }
             
-            console.log('📊 Ejecutando benchmark...');
-            
-            // Benchmark de renderizado
-            const startTime = performance.now();
-            let frames = 0;
-            let drawCalls = 0;
+            console.log('📊 Ejecutando benchmark real de GPU...');
             
             const canvas = document.createElement('canvas');
             canvas.width = 256;
@@ -845,40 +845,128 @@
                 return null;
             }
             
-            // Loop de benchmark
-            const run = () => {
-                const now = performance.now();
-                if (now - startTime >= duration) {
-                    const elapsed = (now - startTime) / 1000;
-                    const fps = frames / elapsed;
-                    
-                    this._hardware.benchmarkResults = {
-                        fps: Math.round(fps),
-                        drawCalls: drawCalls,
-                        duration: elapsed,
-                        score: Math.round(fps / 60 * 100)
+            try {
+                // Shader mínimo pero real (vértices + color variable, no trivial)
+                const vsSource = `
+                    attribute vec2 aPos;
+                    uniform float uTime;
+                    void main() {
+                        vec2 p = aPos;
+                        p += vec2(sin(uTime + aPos.x * 10.0), cos(uTime + aPos.y * 10.0)) * 0.01;
+                        gl_Position = vec4(p, 0.0, 1.0);
+                    }
+                `;
+                const fsSource = `
+                    precision mediump float;
+                    uniform float uTime;
+                    void main() {
+                        gl_FragColor = vec4(sin(uTime) * 0.5 + 0.5, 0.4, cos(uTime) * 0.5 + 0.5, 1.0);
+                    }
+                `;
+                
+                const compile = (type, src) => {
+                    const shader = gl.createShader(type);
+                    gl.shaderSource(shader, src);
+                    gl.compileShader(shader);
+                    return shader;
+                };
+                
+                const program = gl.createProgram();
+                gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource));
+                gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsSource));
+                gl.linkProgram(program);
+                gl.useProgram(program);
+                
+                // Malla de prueba: varios miles de triángulos (grid de puntos)
+                const gridSize = 80; // 80x80x2 triángulos ≈ 12,800 triángulos/frame
+                const positions = [];
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const x0 = (x / gridSize) * 2 - 1;
+                        const x1 = ((x + 1) / gridSize) * 2 - 1;
+                        const y0 = (y / gridSize) * 2 - 1;
+                        const y1 = ((y + 1) / gridSize) * 2 - 1;
+                        positions.push(x0, y0, x1, y0, x0, y1, x1, y0, x1, y1, x0, y1);
+                    }
+                }
+                const vertexBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+                
+                const aPos = gl.getAttribLocation(program, 'aPos');
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+                const uTime = gl.getUniformLocation(program, 'uTime');
+                
+                const triangleCount = positions.length / 6;
+                const startTime = performance.now();
+                let frames = 0;
+                
+                await new Promise((resolve) => {
+                    const run = () => {
+                        const now = performance.now();
+                        if (now - startTime >= duration) { resolve(); return; }
+                        
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                        gl.uniform1f(uTime, now * 0.001);
+                        gl.drawArrays(gl.TRIANGLES, 0, positions.length / 2);
+                        frames++;
+                        
+                        requestAnimationFrame(run);
                     };
+                    run();
+                });
+                
+                const elapsed = (performance.now() - startTime) / 1000;
+                const fps = frames / elapsed;
+                const trianglesPerSecond = fps * triangleCount;
+                
+                // Puntaje normalizado: 100 = capaz de sostener 60fps con esta carga
+                const score = Math.round((fps / 60) * 100);
+                
+                this._hardware.benchmarkResults = {
+                    fps: Math.round(fps),
+                    triangleCount,
+                    trianglesPerSecond: Math.round(trianglesPerSecond),
+                    duration: elapsed,
+                    score
+                };
+                
+                // Refinar la recomendación de calidad con el dato medido real,
+                // en vez de depender solo del sniffing del string de GPU
+                if (this._hardware.recommendations) {
+                    const tiers = ['low', 'medium', 'high', 'ultra', 'quantum'];
+                    let measuredTier = 'low';
+                    if (score >= 220) measuredTier = 'quantum';
+                    else if (score >= 150) measuredTier = 'ultra';
+                    else if (score >= 90) measuredTier = 'high';
+                    else if (score >= 50) measuredTier = 'medium';
                     
-                    this._benchmarkRan = true;
-                    console.log(`✅ Benchmark completado: ${Math.round(fps)} FPS`);
-                    return;
+                    this._hardware.recommendations.measuredQuality = measuredTier;
+                    
+                    // Si la medición real es más de un escalón distinta a la
+                    // heurística por GPU string, confiar más en la medición real
+                    const heuristicIdx = tiers.indexOf(this._hardware.recommendations.quality);
+                    const measuredIdx = tiers.indexOf(measuredTier);
+                    if (Math.abs(heuristicIdx - measuredIdx) >= 2) {
+                        console.log(`📊 Benchmark real (${measuredTier}) difiere mucho de la heurística por GPU (${this._hardware.recommendations.quality}) — usando el dato medido`);
+                        this._hardware.recommendations.quality = measuredTier;
+                    }
                 }
                 
-                // Renderizar un frame simple
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                drawCalls++;
-                frames++;
+                this._benchmarkRan = true;
+                console.log(`✅ Benchmark real completado: ${Math.round(fps)}fps con ${triangleCount} triángulos/frame (score ${score})`);
                 
-                requestAnimationFrame(run);
-            };
-            
-            return new Promise((resolve) => {
-                run();
-                // Esperar a que termine
-                setTimeout(() => {
-                    resolve(this._hardware.benchmarkResults);
-                }, duration + 100);
-            });
+                // Limpieza
+                gl.deleteBuffer(vertexBuffer);
+                gl.deleteProgram(program);
+                
+                return this._hardware.benchmarkResults;
+                
+            } catch (e) {
+                console.warn('⚠️ Error ejecutando benchmark real:', e);
+                return null;
+            }
         }
         
         // ============================================================

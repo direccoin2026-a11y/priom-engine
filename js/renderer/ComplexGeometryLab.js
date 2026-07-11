@@ -132,6 +132,9 @@
                 case 'heart':
                     geometry = this._generateHeart(effectiveScale);
                     break;
+                case 'lsystem_tree':
+                    geometry = this._generateLSystemTree(effectiveScale);
+                    break;
                 default:
                     console.warn(`⚠️ Familia no soportada: ${family}`);
                     return null;
@@ -316,6 +319,90 @@
             this.stats.instances = cubes.length;
             
             // No devolver geometry, usar mesh directamente
+            return null;
+        }
+        
+        // ============================================================
+        //  🌳 ÁRBOL FRACTAL (L-SYSTEM REAL)
+        //  Reescritura de cadena L-system + interpretación "tortuga"
+        //  (turtle graphics) — la misma técnica usada en gráficos
+        //  procedurales académicos para vegetación realista.
+        // ============================================================
+        _generateLSystemTree(scale) {
+            const iterations = Math.max(2, Math.min(5, Math.round((this.params.lsystemIter || 4) * scale)));
+            const rules = { 'F': 'FF+[+F-F-F]-[-F+F+F]' };
+            
+            let str = 'F';
+            for (let i = 0; i < iterations; i++) {
+                let next = '';
+                for (const c of str) next += rules[c] || c;
+                str = next;
+                if (str.length > 15000) break; // límite de seguridad
+            }
+            
+            const angle = ((this.params.lsystemAngle || 25) * Math.PI) / 180;
+            const segments = [];
+            const stack = [];
+            let pos = new THREE.Vector3(0, 0, 0);
+            let dir = new THREE.Vector3(0, 1, 0);
+            const up = new THREE.Vector3(0, 0, 1);
+            let stepLength = 1.4;
+            let depth = 0;
+            
+            for (const c of str) {
+                if (c === 'F') {
+                    const next = pos.clone().add(dir.clone().multiplyScalar(stepLength));
+                    segments.push({ from: pos.clone(), to: next.clone(), depth });
+                    pos = next;
+                } else if (c === '+') {
+                    dir.applyAxisAngle(up, angle);
+                } else if (c === '-') {
+                    dir.applyAxisAngle(up, -angle);
+                } else if (c === '[') {
+                    stack.push({ pos: pos.clone(), dir: dir.clone(), depth });
+                    depth++;
+                    stepLength *= 0.78; // ramas más finas/cortas con la profundidad
+                } else if (c === ']') {
+                    const s = stack.pop();
+                    if (s) { pos = s.pos; dir = s.dir; depth = s.depth; }
+                    stepLength /= 0.78;
+                }
+                if (segments.length > 4000) break; // límite de seguridad
+            }
+            
+            const branchGeo = new THREE.CylinderGeometry(0.06, 0.09, 1, 5);
+            branchGeo.translate(0, 0.5, 0);
+            const material = window.MaterialLibrary
+                ? window.MaterialLibrary.wood(0x5a3c22)
+                : this._getMaterial('#5a3c22', 0.8, 0);
+            
+            const inst = new THREE.InstancedMesh(branchGeo, material, Math.max(1, segments.length));
+            const dummy = new THREE.Object3D();
+            const upAxis = new THREE.Vector3(0, 1, 0);
+            
+            for (let i = 0; i < segments.length; i++) {
+                const seg = segments[i];
+                const delta = new THREE.Vector3().subVectors(seg.to, seg.from);
+                const length = delta.length() || 0.001;
+                const dirNorm = delta.clone().normalize();
+                
+                dummy.position.copy(seg.from);
+                dummy.quaternion.setFromUnitVectors(upAxis, dirNorm);
+                const thickness = Math.max(0.12, 1 - seg.depth * 0.13);
+                dummy.scale.set(thickness, length, thickness);
+                dummy.updateMatrix();
+                inst.setMatrixAt(i, dummy.matrix);
+            }
+            inst.instanceMatrix.needsUpdate = true;
+            
+            inst.position.set(0, 20, 0);
+            inst.scale.setScalar(this.params.scale * 0.4);
+            
+            this.currentMesh = inst;
+            this.stats.vertices = 16 * segments.length;
+            this.stats.triangles = 18 * segments.length;
+            this.stats.instances = segments.length;
+            
             return null;
         }
         

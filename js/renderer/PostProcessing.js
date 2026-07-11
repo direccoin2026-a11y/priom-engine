@@ -44,6 +44,38 @@
                 // silencioso: no crítico
             }
         }
+        
+        // ============================================================
+        //  🎥 PROFUNDIDAD DE CAMPO CINEMATOGRÁFICA (BokehPass)
+        // ============================================================
+        static addDepthOfField(composer, scene, camera, options = {}) {
+            try {
+                if (!THREE.BokehPass) {
+                    console.warn('⚠️ PostProcessing: BokehPass no disponible');
+                    return null;
+                }
+                const pass = new THREE.BokehPass(scene, camera, {
+                    focus: options.focus ?? 40,
+                    aperture: options.aperture ?? 0.00025,
+                    maxblur: options.maxblur ?? 0.006,
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+                composer.addPass(pass);
+                console.log('🎥 Profundidad de campo activada');
+                return pass;
+            } catch (e) {
+                console.warn('⚠️ PostProcessing: no se pudo activar profundidad de campo', e);
+                return null;
+            }
+        }
+        
+        // Actualiza el punto de enfoque (ej. la distancia a cameraTarget)
+        static setFocusDistance(pass, distance) {
+            if (pass && pass.uniforms && pass.uniforms['focus']) {
+                pass.uniforms['focus'].value = distance;
+            }
+        }
     }
 
     window.PostProcessing = PostProcessing;

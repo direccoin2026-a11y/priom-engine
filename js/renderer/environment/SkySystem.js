@@ -76,7 +76,7 @@
 
                 this.aurora = new THREE.Mesh(geometry, material);
                 this.aurora.rotation.x = Math.PI / 2.3;
-                this.aurora.position.set(0, 180, -300);
+                this.aurora.position.set(0, 140, -180);
                 this.scene.add(this.aurora);
             } catch (e) {
                 console.warn('⚠️ SkySystem: no se pudo crear la aurora', e);
@@ -89,7 +89,7 @@
 
             if (this.cloudDome) {
                 this.cloudDome.rotation.y += delta * 0.006;
-                this.cloudDome.material.opacity = 0.15 + Math.max(0, sunHeight) * 0.25;
+                this.cloudDome.material.opacity = 0.22 + Math.max(0, sunHeight) * 0.25;
             }
 
             if (this.aurora && this.aurora.material.uniforms) {
