@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
-    <title>🧠 PRIOM V0.2 - Motor de Juegos IA</title>
+    <title>🧠 PRIOM V0.3 - Motor de Juegos IA</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
     <link rel="stylesheet" href="css/styles.css?v=20260705u">
     
@@ -116,7 +116,7 @@
         <div class="loader-container">
             <div class="loader-icon">🧠</div>
             <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.2 · Trinity AI</div>
+            <div class="loader-version">v0.3 · Trinity AI</div>
             
             <div class="loader-bar-wrapper">
                 <div class="loader-bar">
@@ -146,7 +146,7 @@
 
     <!-- ===== HUD ===== -->
     <div id="hud">
-        <div class="logo">🧠 PRIOM V0.2</div>
+        <div class="logo">🧠 PRIOM V0.3</div>
         <div class="subtitle">🎮 Trinity AI · Optimización + Mundo Vivo</div>
         <div>
             <span class="badge">🧬 TRINITY AI</span>
@@ -193,6 +193,12 @@
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">☀️ Clima</button>
         <button id="btn-sound">🔊 Sonido</button>
+        <button id="btn-editor">✏️ Editor OFF</button>
+        <button id="btn-editor-type">🌲 Árbol</button>
+        <button id="btn-editor-mode">📍 Colocar</button>
+        <button id="btn-editor-delete">🗑️ Borrar</button>
+        <button id="btn-save-world">💾 Guardar</button>
+        <button id="btn-load-world">📂 Cargar</button>
         <div style="display:flex; align-items:center; gap:6px; width:100%; padding:4px 8px;">
             <span style="font-size:14px;">🕐</span>
             <input type="range" id="time-slider" min="0" max="0.999" step="0.001" value="0.5" style="flex:1;">
@@ -203,6 +209,8 @@
     <div id="notifications"></div>
 
     <!-- ===== LABORATORIO ===== -->
+    <canvas id="minimap-canvas" width="140" height="140" style="position:fixed; bottom:110px; left:15px; z-index:110; border-radius:50%; box-shadow:0 0 12px rgba(0,0,0,0.6); background:transparent; pointer-events:none;"></canvas>
+    
     <div id="geo-lab">
         <div class="geo-title" id="geo-title" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
             <span><span class="geo-icon">🔷</span> <span class="geo-title-text">Laboratorio Geométrico</span></span>
@@ -258,7 +266,7 @@
     (function() {
         'use strict';
         
-        const totalModules = 29;
+        const totalModules = 33;
         let loaded = 0;
         let hasError = false;
         
@@ -361,6 +369,10 @@
                     { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260705u' },
                     { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260705v' },
                     { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260705w' },
+                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260705x' },
+                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260705y' },
+                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260705z' },
+                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260706a' },
                     { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260705u' },
                     { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260705u' },
                     { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260705u' }
@@ -607,6 +619,73 @@
                     if (audio) {
                         audio.start();
                         soundBtn.textContent = '🔈 Sonido ON';
+                    }
+                });
+            }
+            
+            // ----- Editor (v0.3) -----
+            const editorBtn = document.getElementById('btn-editor');
+            const editorTypeBtn = document.getElementById('btn-editor-type');
+            const editorTypes = { tree: '🌲 Árbol', rock: '🪨 Roca', animal: '🦌 Animal', flower: '🌼 Flor' };
+            const editorTypeKeys = Object.keys(editorTypes);
+            let editorTypeIdx = 0;
+            
+            if (editorBtn) {
+                editorBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (!editor) return;
+                    const enabled = editor.toggle();
+                    editorBtn.textContent = enabled ? '✏️ Editor ON' : '✏️ Editor OFF';
+                });
+            }
+            if (editorTypeBtn) {
+                editorTypeBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (!editor) return;
+                    editorTypeIdx = (editorTypeIdx + 1) % editorTypeKeys.length;
+                    const type = editorTypeKeys[editorTypeIdx];
+                    editor.setPlacementType(type);
+                    editorTypeBtn.textContent = editorTypes[type];
+                });
+            }
+            
+            // ----- Modo del editor (colocar / seleccionar) y borrar (v0.3) -----
+            const editorModeBtn = document.getElementById('btn-editor-mode');
+            const editorDeleteBtn = document.getElementById('btn-editor-delete');
+            if (editorModeBtn) {
+                editorModeBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (!editor) return;
+                    const newMode = editor.mode === 'place' ? 'select' : 'place';
+                    editor.setMode(newMode);
+                    editorModeBtn.textContent = newMode === 'place' ? '📍 Colocar' : '👆 Seleccionar';
+                });
+            }
+            if (editorDeleteBtn) {
+                editorDeleteBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (editor) editor.deleteSelected();
+                });
+            }
+            
+            // ----- Guardar / cargar mundo (v0.3) -----
+            const saveBtn = document.getElementById('btn-save-world');
+            const loadBtn = document.getElementById('btn-load-world');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const serializer = engine.getModule('worldSerializer');
+                    if (serializer && serializer.save()) {
+                        saveBtn.textContent = '💾 ¡Guardado!';
+                        setTimeout(() => { saveBtn.textContent = '💾 Guardar'; }, 1500);
+                    }
+                });
+            }
+            if (loadBtn) {
+                loadBtn.addEventListener('click', () => {
+                    const serializer = engine.getModule('worldSerializer');
+                    if (serializer && serializer.load()) {
+                        loadBtn.textContent = '📂 ¡Cargado!';
+                        setTimeout(() => { loadBtn.textContent = '📂 Cargar'; }, 1500);
                     }
                 });
             }
