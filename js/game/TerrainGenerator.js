@@ -201,9 +201,12 @@
                     // Múltiples capas de ruido
                     let height = this.fbm(x * scale, z * scale, this.config.octaves, this.config.persistence, this.config.lacunarity);
                     
-                    // Elevar montañas
+                    // Elevar montañas (reducido: antes las montañas dominaban
+                    // casi todo el mapa, dejando poco espacio real para
+                    // bosque/pradera — ahora son más un accidente puntual
+                    // del paisaje que la regla)
                     const mountainFactor = this.fbm(x * scale * 0.5, z * scale * 0.5, 3, 0.5, 2.0);
-                    height += mountainFactor * 0.3;
+                    height += mountainFactor * 0.08;
                     
                     // Suavizar
                     height = Math.max(-0.8, Math.min(0.8, height));
@@ -478,7 +481,7 @@
                         biome = BIOMES.OCEAN;
                     } else if (height < waterLevel + 1) {
                         biome = BIOMES.BEACH;
-                    } else if (height > this.config.terrainHeight * 0.7) {
+                    } else if (height > this.config.terrainHeight * 0.9) {
                         biome = BIOMES.MOUNTAIN;
                     } else if (moisture > 0.7 && height < this.config.terrainHeight * 0.4) {
                         biome = BIOMES.SWAMP;
@@ -717,7 +720,7 @@
             color = mix(color, ROCK, rockFactor);
             
             // Nieve en las cumbres (por encima de cierta altura, menos en pendientes muy verticales)
-            const snowLine = maxHeight * 0.72;
+            const snowLine = maxHeight * 0.92;
             const snowFactor = Math.min(1, Math.max(0, (y - snowLine) / (maxHeight * 0.25))) * (1 - rockFactor * 0.6);
             color = mix(color, SNOW, snowFactor);
             
