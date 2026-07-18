@@ -20,6 +20,10 @@
             this.engine = engine;
             this.enabled = false;
             this.placementType = 'tree';
+            this.mode = 'place'; // 'place' | 'select'
+            this.selectedId = -1;
+            this.selectedMesh = null;
+            this.selectedInstanceIdx = -1;
             
             this._raycaster = new THREE.Raycaster();
             this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -32,9 +36,48 @@
             
             this.placedCount = 0;
             this.onPlace = null; // callback opcional: (type, x, y, z) => {}
+            this.onSelect = null; // callback opcional: (entityId) => {}
             
             this._boundDown = this._onPointerDown.bind(this);
             this._boundUp = this._onPointerUp.bind(this);
+        }
+
+        // Cambia entre colocar entidades nuevas y seleccionar/borrar existentes
+        setMode(mode) {
+            if (mode === 'place' || mode === 'select') {
+                this.mode = mode;
+                console.log('✏️ Editor: modo ' + mode);
+            }
+        }
+
+        // Borra la entidad actualmente seleccionada
+        deleteSelected() {
+            if (this.selectedId === -1) {
+                console.log('✏️ Editor: nada seleccionado para borrar');
+                return false;
+            }
+            
+            try {
+                const ecs = this.engine.getModule('ecs');
+                const gameWorld = this.engine.getModule('gameWorld');
+                if (ecs) ecs.destroyEntity(this.selectedId);
+                
+                // Quitarlo también de los sets de ecosistema si aplica
+                if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
+                    for (const set of Object.values(gameWorld.ecosystems.entities)) {
+                        if (set instanceof Set) set.delete(this.selectedId);
+                    }
+                }
+                
+                console.log(`🗑️ Editor: entidad ${this.selectedId} borrada`);
+                this.selectedId = -1;
+                this.selectedMesh = null;
+                this.selectedInstanceIdx = -1;
+                return true;
+            } catch (e) {
+                console.warn('⚠️ Editor: no se pudo borrar', e);
+                return false;
+            }
         }
 
         toggle(forceState) {
@@ -75,10 +118,53 @@
             const elapsed = performance.now() - this._downTime;
             this._downPos = null;
             
-            // Solo colocar si fue un TOQUE corto, no un arrastre de cámara
+            // Solo actuar si fue un TOQUE corto, no un arrastre de cámara
             if (dist > this._dragThresholdPx || elapsed > this._tapMaxMs) return;
             
-            this._placeAt(e.clientX, e.clientY);
+            if (this.mode === 'select') {
+                this._selectAt(e.clientX, e.clientY);
+            } else {
+                this._placeAt(e.clientX, e.clientY);
+            }
+        }
+
+        // Busca qué entidad (si alguna) está bajo el punto tocado,
+        // recorriendo todas las InstancedMesh del renderer (v0.3)
+        _selectAt(clientX, clientY) {
+            try {
+                const renderer = this.engine.getModule('renderer');
+                if (!renderer || !renderer.instanceMeshes) return;
+                
+                this._pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+                this._pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+                this._raycaster.setFromCamera(this._pointerNDC, renderer.camera);
+                
+                const meshes = Array.from(renderer.instanceMeshes.values());
+                const hits = this._raycaster.intersectObjects(meshes, false);
+                
+                if (hits.length === 0) {
+                    console.log('✏️ Editor: nada bajo el toque');
+                    this.selectedId = -1;
+                    return;
+                }
+                
+                const hit = hits[0];
+                const mesh = hit.object;
+                const entityIds = mesh.userData.entityIds;
+                if (!entityIds || hit.instanceId === undefined) return;
+                
+                const id = entityIds[hit.instanceId];
+                if (id === undefined) return;
+                
+                this.selectedId = id;
+                this.selectedMesh = mesh;
+                this.selectedInstanceIdx = hit.instanceId;
+                
+                console.log(`✏️ Editor: entidad ${id} seleccionada (toca "Borrar" para quitarla)`);
+                if (typeof this.onSelect === 'function') this.onSelect(id);
+            } catch (e) {
+                console.warn('⚠️ Editor: no se pudo seleccionar', e);
+            }
         }
 
         _placeAt(clientX, clientY) {
@@ -136,8 +222,10 @@
         getStats() {
             return {
                 enabled: this.enabled,
+                mode: this.mode,
                 placementType: this.placementType,
-                placedCount: this.placedCount
+                placedCount: this.placedCount,
+                selectedId: this.selectedId
             };
         }
     }
