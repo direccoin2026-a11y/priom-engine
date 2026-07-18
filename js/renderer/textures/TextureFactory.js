@@ -183,6 +183,46 @@
                 displacementMap: this.heightMap(size, 3)
             };
         }
+        // Silueta de árbol para impostores billboard (v0.3): tronco +
+        // copa dibujados en canvas, con forma real (no un cuadrado verde)
+        static treeBillboard(size = 128) {
+            const key = 'tree_billboard_' + size;
+            if (this._cache.has(key)) return this._cache.get(key);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, size, size);
+
+            const cx = size / 2;
+            
+            // Tronco
+            ctx.fillStyle = '#4a3018';
+            ctx.fillRect(cx - size * 0.035, size * 0.72, size * 0.07, size * 0.24);
+            
+            // 3 capas de copa (misma silueta que el árbol 3D, para que combine)
+            const layers = [
+                { r: size * 0.32, y: size * 0.62, shade: '#2f6524' },
+                { r: size * 0.26, y: size * 0.42, shade: '#3a7a2e' },
+                { r: size * 0.18, y: size * 0.24, shade: '#4a8f3a' }
+            ];
+            for (const layer of layers) {
+                ctx.beginPath();
+                ctx.moveTo(cx, layer.y - layer.r * 1.3);
+                ctx.lineTo(cx - layer.r, layer.y + layer.r * 0.5);
+                ctx.lineTo(cx + layer.r, layer.y + layer.r * 0.5);
+                ctx.closePath();
+                ctx.fillStyle = layer.shade;
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            this._cache.set(key, texture);
+            return texture;
+        }
+
         static fakeNormalFromNoise(size = 256, strength = 1.0) {
             const key = 'normal_' + size + '_' + strength;
             if (this._cache.has(key)) return this._cache.get(key);
