@@ -173,6 +173,14 @@
                     this.start();
                 }
                 
+                // Nota: el benchmark de GPU en segundo plano se quitó — corría
+                // un render loop de WebGL EN PARALELO con la escena principal
+                // justo al arrancar (el peor momento posible), contaminando
+                // la medición real de FPS justo cuando la IA está calibrando
+                // la calidad inicial. La recalibración por rendimiento real
+                // ya ocurre de forma natural via OptimizerAI/DRS mientras el
+                // motor corre, sin necesitar un benchmark aparte que compita
+                // por los mismos recursos.
                 // Emitir evento de inicialización
                 this.emit('init', { engine: this });
                 
@@ -292,6 +300,20 @@
                 console.warn('⚠️ AlpineDecor no disponible', e);
             }
             
+            // Sotobosque (arbustos, helechos) - llena el hueco entre árboles y pasto
+            try {
+                if (window.ForestDecor && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
+                    this.modules.forestDecor = new ForestDecor(
+                        this.modules.renderer.scene,
+                        this.modules.gameWorld.generators.terrain,
+                        { worldSize: CONFIG.worldSize }
+                    );
+                    this.modules.forestDecor.plant(1200);
+                }
+            } catch (e) {
+                console.warn('⚠️ ForestDecor no disponible', e);
+            }
+            
             // Chunk Manager (primer paso hacia streaming: culling de decoración por distancia)
             try {
                 if (window.ChunkManager && this.modules.renderer) {
@@ -304,6 +326,10 @@
                     this.modules.chunkManager.registerRegion(
                         'alpine', 0, 0, 220,
                         this.modules.alpineDecor ? this.modules.alpineDecor.meshes : []
+                    );
+                    this.modules.chunkManager.registerRegion(
+                        'forest_decor', 0, 0, 220,
+                        this.modules.forestDecor ? this.modules.forestDecor.meshes : []
                     );
                     this.modules.renderer.chunkManager = this.modules.chunkManager;
                 }
@@ -329,6 +355,34 @@
                 console.warn('⚠️ AudioSystem no disponible', e);
             }
             
+            // Editor (v0.3): colocar entidades tocando el suelo
+            try {
+                if (window.Editor) {
+                    this.modules.editor = new Editor(this);
+                    
+                    // Guardado/carga del mundo (v0.3): cada colocación del
+                    // editor se registra para poder guardarla después
+                    if (window.WorldSerializer) {
+                        this.modules.worldSerializer = new WorldSerializer(this);
+                        this.modules.editor.onPlace = (type, x, y, z) => {
+                            this.modules.worldSerializer.recordPlacement(type, x, y, z);
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Editor no disponible', e);
+            }
+            
+            // Minimapa (v0.3)
+            try {
+                const canvas = document.getElementById('minimap-canvas');
+                if (window.Minimap && canvas) {
+                    this.modules.minimap = new Minimap(this, canvas, { worldRange: 200 });
+                }
+            } catch (e) {
+                console.warn('⚠️ Minimap no disponible', e);
+            }
+            
             // Ajustar pasto/niebla/polvo/espuma a la altura real del terreno
             // (el renderer los crea antes de que el mundo exista)
             try {
@@ -340,13 +394,68 @@
                     this.modules.renderer.conformGroundFXToTerrain(terrain, waterBodies);
                 }
                 if (terrain && this.modules.renderer.focusOnScenicSpot) {
-                    this.modules.renderer.focusOnScenicSpot(terrain);
+                    this.modules.renderer.focusOnScenicSpot(terrain, waterBodies);
+                }
+                
+                // Bisontes de demostración cerca del lago (v0.3: pradera + lago)
+                if (waterBodies.length > 0 && this.modules.entityFactory) {
+                    const lake = waterBodies[Math.floor(Math.random() * waterBodies.length)];
+                    for (let i = 0; i < 2; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 4 + Math.random() * 8; // cerca de la orilla, como bebiendo agua
+                        const bx = lake.x + Math.cos(angle) * dist;
+                        const bz = lake.z + Math.sin(angle) * dist;
+                        const by = terrain.getHeight(bx, bz);
+                        const id = this.modules.entityFactory.createAnimal(bx, by + 0.3, bz, false);
+                        if (id !== -1) {
+                            this.modules.ecs.subType[id] = 1; // marca como bisonte para el renderer
+                            this.modules.ecs.scaleX[id] = 1.8;
+                            this.modules.ecs.scaleY[id] = 1.8;
+                            this.modules.ecs.scaleZ[id] = 1.8;
+                            if (this.modules.gameWorld.ecosystems && this.modules.gameWorld.ecosystems.entities) {
+                                this.modules.gameWorld.ecosystems.entities.animals.add(id);
+                            }
+                        }
+                    }
+                    console.log('🦬 Bisontes de demostración colocados junto al lago');
                 }
             } catch (e) {
                 console.warn('⚠️ No se pudo ajustar efectos de suelo al terreno', e);
             }
             
             console.log('✅ Mundo inicializado');
+        }
+        
+        // ============================================================
+        //  📊 BENCHMARK REAL EN SEGUNDO PLANO (recalibración de calidad)
+        //  El benchmark real (dibuja miles de triángulos, mide fps de
+        //  verdad) existía pero nunca se llamaba desde ningún lado — la
+        //  calidad inicial dependía solo de specs estáticas (nombre de
+        //  GPU + RAM total), que no reflejan cuántos recursos están
+        //  libres AHORA MISMO en este navegador/pestaña/momento.
+        // ============================================================
+        async _runBackgroundBenchmark() {
+            try {
+                if (!this.modules.hardware || typeof this.modules.hardware.runBenchmark !== 'function') return;
+                
+                const results = await this.modules.hardware.runBenchmark(800);
+                if (!results || !this.modules.optimizerAI) return;
+                
+                const recommendations = this.modules.hardware.getRecommendations();
+                const measuredQuality = recommendations ? recommendations.measuredQuality : null;
+                if (!measuredQuality) return;
+                
+                const tiers = ['low', 'medium', 'high', 'ultra', 'quantum'];
+                const measuredIdx = tiers.indexOf(measuredQuality);
+                const currentIdx = this.modules.optimizerAI.currentQuality;
+                
+                if (measuredIdx !== -1 && Math.abs(measuredIdx - currentIdx) >= 1) {
+                    console.log(`📊 Benchmark real recalibrando calidad: ${tiers[currentIdx]} → ${measuredQuality} (condiciones actuales del dispositivo, no solo specs en papel)`);
+                    this.modules.optimizerAI.currentQuality = measuredIdx;
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo ejecutar el benchmark en segundo plano', e);
+            }
         }
         
         _initUtils() {
@@ -743,6 +852,15 @@
                     this.modules.audioSystem.update(delta);
                 } catch (e) {
                     console.warn('⚠️ Error en AudioSystem', e);
+                }
+            }
+            
+            // Minimapa
+            if (this.modules.minimap) {
+                try {
+                    this.modules.minimap.update(delta);
+                } catch (e) {
+                    console.warn('⚠️ Error en Minimap', e);
                 }
             }
             
