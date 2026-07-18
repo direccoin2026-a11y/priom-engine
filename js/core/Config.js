@@ -69,7 +69,7 @@
                 // ---- MUNDO ----
                 worldSeed: 42,
                 worldSize: 1000,
-                terrainHeight: 30,
+                terrainHeight: 11, // bajado de 30: mundo mucho más plano y verde, sin picos nevados dramáticos
                 treeDensity: 0.3,
                 animalCount: 100,
                 waterLevel: 0.5,
