@@ -242,6 +242,20 @@
             // ===== GEOMETRÍAS DE ENTORNO =====
             // ===== ÁRBOLES (geometría compuesta: tronco + copa multicapa) =====
             this.geometryCache.set('tree', this._buildTreeGeometry());
+            
+            // ===== IMPOSTORES BILLBOARD (v0.3): árboles lejanos =====
+            // Antes: TODOS los árboles usaban la misma malla detallada de
+            // 7 piezas sin importar la distancia — el LOD solo escalaba/
+            // saltaba frames, pero nunca reducía polígonos de verdad.
+            // Ahora, a partir de LOD 3, el árbol es un simple plano con
+            // una silueta texturizada que SIEMPRE mira a cámara (calculado
+            // en GPU vía shader, cero costo extra de CPU).
+            const billboardGeo = this._buildBillboardGeometry();
+            const billboardMat = this._buildBillboardMaterial(window.TextureFactory ? window.TextureFactory.treeBillboard(128) : null);
+            this.geometryCache.set('tree_lod3', billboardGeo);
+            this.geometryCache.set('tree_lod4', billboardGeo);
+            this.materialCache.set('tree_lod3', billboardMat);
+            this.materialCache.set('tree_lod4', billboardMat);
             this.geometryCache.set('tree_trunk', new THREE.CylinderGeometry(0.08, 0.12, 0.3, 4));
             
             // ===== ROCAS (cúmulo de rocas en vez de un solo dodecaedro) =====
@@ -249,6 +263,9 @@
             
             // ===== ANIMAL (cuadrúpedo real: cuerpo+cabeza+patas+cola) =====
             this.geometryCache.set('animal', this._buildAnimalGeometry());
+            
+            // ===== BISONTE (cuerpo grande, joroba, cuernos) =====
+            this.geometryCache.set('bison', this._buildBisonGeometry());
             this.geometryCache.set('building', this._buildBuildingGeometry());
             
             // ===== LODS =====
@@ -491,6 +508,176 @@
             }
         }
         
+        // ============================================================
+        //  🦬 GEOMETRÍA DE BISONTE (torso grande + joroba + cabeza baja
+        //  + cuernos + patas gruesas — claramente distinto del animal
+        //  genérico, para la demo de pradera)
+        // ============================================================
+        _buildBisonGeometry() {
+            try {
+                const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
+                const parts = [];
+                
+                const colorize = (geo, r, g, b) => {
+                    const count = geo.attributes.position.count;
+                    const colors = new Float32Array(count * 3);
+                    for (let i = 0; i < count; i++) {
+                        colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
+                    }
+                    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                    return geo;
+                };
+                
+                const darkBrown = [0.28, 0.19, 0.12];
+                const midBrown = [0.36, 0.25, 0.16];
+                
+                // Torso grande
+                const torso = new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.36, 0.75, 4, 8) : new THREE.CylinderGeometry(0.36, 0.36, 0.75, 8);
+                torso.rotateZ(Math.PI / 2);
+                torso.translate(-0.05, 0.55, 0);
+                colorize(torso, ...midBrown);
+                parts.push(torso);
+                
+                // Joroba (característica distintiva del bisonte)
+                const hump = new THREE.SphereGeometry(0.28, 8, 6);
+                hump.scale(1, 0.8, 0.9);
+                hump.translate(0.28, 0.85, 0);
+                colorize(hump, ...darkBrown);
+                parts.push(hump);
+                
+                // Cabeza (baja, característica de pastar)
+                const head = new THREE.SphereGeometry(0.22, 8, 6);
+                head.translate(0.62, 0.5, 0);
+                colorize(head, ...darkBrown);
+                parts.push(head);
+                
+                // Hocico
+                const snout = new THREE.ConeGeometry(0.13, 0.22, 6);
+                snout.rotateZ(-Math.PI / 2);
+                snout.translate(0.85, 0.45, 0);
+                colorize(snout, ...darkBrown);
+                parts.push(snout);
+                
+                // Cuernos
+                for (const side of [1, -1]) {
+                    const horn = new THREE.ConeGeometry(0.035, 0.18, 5);
+                    horn.rotateZ(side * 0.5);
+                    horn.translate(0.6, 0.65, side * 0.16);
+                    colorize(horn, 0.15, 0.13, 0.1);
+                    parts.push(horn);
+                }
+                
+                // 4 patas gruesas
+                const legPositions = [
+                    [0.35, 0, 0.22], [0.35, 0, -0.22],
+                    [-0.3, 0, 0.22], [-0.3, 0, -0.22]
+                ];
+                for (const [x, y, z] of legPositions) {
+                    const leg = new THREE.CylinderGeometry(0.075, 0.08, 0.5, 6);
+                    leg.translate(x, 0.25, z);
+                    colorize(leg, ...darkBrown);
+                    parts.push(leg);
+                }
+                
+                // Cola corta
+                const tail = new THREE.CylinderGeometry(0.03, 0.04, 0.25, 5);
+                tail.rotateZ(Math.PI / 3);
+                tail.translate(-0.55, 0.65, 0);
+                colorize(tail, ...darkBrown);
+                parts.push(tail);
+                
+                const merged = merge(parts, false);
+                merged.computeVertexNormals();
+                if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
+                return merged;
+            } catch (e) {
+                console.warn('⚠️ No se pudo construir bisonte compuesto, usando animal genérico', e);
+                return this._buildAnimalGeometry();
+            }
+        }
+        
+        // ============================================================
+        //  🌳 IMPOSTOR BILLBOARD (v0.3): plano simple para LOD lejano
+        // ============================================================
+        _buildBillboardGeometry() {
+            const geo = new THREE.PlaneGeometry(1.4, 1.4);
+            geo.translate(0, 0.7, 0); // pivote en la base, igual que el árbol 3D
+            return geo;
+        }
+        
+        // Material con shader de billboard real: la copa siempre mira a
+        // cámara sin importar la rotación de la instancia, calculado en
+        // GPU (truco estándar: anular la rotación en espacio de vista y
+        // desplazar el vértice directamente en los ejes X/Y de cámara)
+        _buildBillboardMaterial(texture) {
+            try {
+                return new THREE.ShaderMaterial({
+                    uniforms: {
+                        map: { value: texture },
+                        fogColor: { value: new THREE.Color(0x0a0a1f) },
+                        fogNear: { value: 50 },
+                        fogFar: { value: 400 }
+                    },
+                    vertexShader: `
+                        #ifdef USE_INSTANCING
+                        attribute mat4 instanceMatrix;
+                        #endif
+                        varying vec2 vUv;
+                        varying float vFogDepth;
+                        
+                        void main() {
+                            vUv = uv;
+                            
+                            #ifdef USE_INSTANCING
+                                mat4 instanced = instanceMatrix;
+                            #else
+                                mat4 instanced = mat4(1.0);
+                            #endif
+                            
+                            // Centro de la instancia en espacio de vista
+                            // (posición, ignorando su rotación/escala propia)
+                            vec4 center = modelViewMatrix * instanced * vec4(0.0, 0.0, 0.0, 1.0);
+                            
+                            // Escala tomada de la matriz de instancia (columna 0)
+                            float instScale = length(instanced[0].xyz);
+                            
+                            // Desplazar el vértice directamente en los ejes
+                            // X/Y de la CÁMARA (espacio de vista) — esto es
+                            // lo que hace que siempre mire de frente, sin
+                            // importar hacia dónde "rote" la instancia
+                            vec3 offset = vec3(position.x, position.y, 0.0) * instScale;
+                            vec4 mvPosition = center + vec4(offset, 0.0);
+                            
+                            vFogDepth = -mvPosition.z;
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform sampler2D map;
+                        uniform vec3 fogColor;
+                        uniform float fogNear;
+                        uniform float fogFar;
+                        varying vec2 vUv;
+                        varying float vFogDepth;
+                        
+                        void main() {
+                            vec4 texColor = texture2D(map, vUv);
+                            if (texColor.a < 0.4) discard; // recorte real de silueta
+                            
+                            float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+                            vec3 color = mix(texColor.rgb, fogColor, fogFactor * 0.7);
+                            gl_FragColor = vec4(color, 1.0);
+                        }
+                    `,
+                    transparent: false,
+                    side: THREE.DoubleSide
+                });
+            } catch (e) {
+                console.warn('⚠️ No se pudo crear material de billboard, usando estándar', e);
+                return new THREE.MeshBasicMaterial({ color: 0x2f6524, side: THREE.DoubleSide });
+            }
+        }
+        
         _setupMaterials() {
             // ===== MATERIAL POR DEFECTO =====
             this.materialCache.set('default', new THREE.MeshStandardMaterial({
@@ -532,6 +719,13 @@
             
             this.materialCache.set('animal', new THREE.MeshStandardMaterial({
                 roughness: 0.75,
+                metalness: 0.0,
+                vertexColors: true,
+                flatShading: false
+            }));
+            
+            this.materialCache.set('bison', new THREE.MeshStandardMaterial({
+                roughness: 0.85,
                 metalness: 0.0,
                 vertexColors: true,
                 flatShading: false
@@ -805,9 +999,11 @@
             try {
                 if (window.AnimationSystem) {
                     this.animationSystem = new AnimationSystem();
-                    if (this.grassMeshes) {
-                        this.animationSystem.registerSwayGroup(this.grassMeshes, { amplitude: 0.025, speed: 0.9 });
-                    }
+                    // Nota v0.3: el pasto ya NO se registra aquí — antes
+                    // se mecía rotando la malla ENTERA como truco de
+                    // viento, ahora el shader del pasto mece cada brizna
+                    // individualmente de verdad (ver _buildGrassMaterial),
+                    // así que registrarlo aquí también se vería doblado.
                 }
             } catch (e) { console.warn('⚠️ AnimationSystem no disponible', e); }
         }
@@ -948,6 +1144,84 @@
         // ============================================================
         //  🌾 CAMPO DE PASTO INSTANCIADO (miles de briznas, costo estático)
         // ============================================================
+        // Material de pasto con shader propio: viento real por brizna
+        // (no rotar la malla entera) + desvanecido por distancia en GPU
+        // (LOD gratis, sin costo de CPU, sin necesidad de ocultar/mostrar
+        // instancias a mano)
+        _buildGrassMaterial(color) {
+            try {
+                return new THREE.ShaderMaterial({
+                    uniforms: {
+                        color: { value: new THREE.Color(color) },
+                        uTime: { value: 0 },
+                        uWindStrength: { value: 0.15 },
+                        uCameraPos: { value: new THREE.Vector3() },
+                        uFadeStart: { value: 55 },
+                        uFadeEnd: { value: 85 }
+                    },
+                    vertexShader: `
+                        #ifdef USE_INSTANCING
+                        attribute mat4 instanceMatrix;
+                        #endif
+                        uniform float uTime;
+                        uniform float uWindStrength;
+                        varying float vFade;
+                        varying vec2 vUv;
+                        
+                        void main() {
+                            vUv = uv;
+                            
+                            #ifdef USE_INSTANCING
+                                mat4 instanced = instanceMatrix;
+                            #else
+                                mat4 instanced = mat4(1.0);
+                            #endif
+                            
+                            vec4 worldPos = modelMatrix * instanced * vec4(position, 1.0);
+                            
+                            // Viento real por brizna: cada una se mece con
+                            // fase distinta según su posición en el mundo,
+                            // y SOLO la punta se dobla (uv.y alto = punta),
+                            // la base queda fija — así se ve como pasto de
+                            // verdad, no un bloque sólido rotando
+                            float phase = worldPos.x * 0.6 + worldPos.z * 0.6;
+                            float sway = sin(uTime * 1.8 + phase) * uWindStrength * uv.y * uv.y;
+                            worldPos.x += sway;
+                            worldPos.z += sway * 0.6;
+                            
+                            vec4 mvPosition = viewMatrix * worldPos;
+                            gl_Position = projectionMatrix * mvPosition;
+                            
+                            vFade = -mvPosition.z; // distancia a cámara, para el fragment shader
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 color;
+                        uniform float uFadeStart;
+                        uniform float uFadeEnd;
+                        varying float vFade;
+                        varying vec2 vUv;
+                        
+                        void main() {
+                            // LOD por distancia: desvanece y recorta antes
+                            // de desaparecer del todo, en vez de un corte
+                            // brusco — y ahorra rasterizar pasto que apenas
+                            // se ve, sin necesidad de tocar la CPU
+                            float fadeAlpha = 1.0 - smoothstep(uFadeStart, uFadeEnd, vFade);
+                            if (fadeAlpha < 0.05) discard;
+                            
+                            gl_FragColor = vec4(color, fadeAlpha);
+                        }
+                    `,
+                    side: THREE.DoubleSide,
+                    transparent: true
+                });
+            } catch (e) {
+                console.warn('⚠️ No se pudo crear shader de pasto, usando material estándar', e);
+                return new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.9 });
+            }
+        }
+        
         _setupGrassField() {
             const bladeGeo = new THREE.PlaneGeometry(0.09, 0.42);
             bladeGeo.translate(0, 0.21, 0);
@@ -962,12 +1236,7 @@
             const dummy = new THREE.Object3D();
             
             for (const tone of tones) {
-                const mat = new THREE.MeshStandardMaterial({
-                    color: tone.color,
-                    side: THREE.DoubleSide,
-                    roughness: 0.9,
-                    metalness: 0.0
-                });
+                const mat = this._buildGrassMaterial(tone.color);
                 
                 const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
                 mesh.castShadow = false;
@@ -1324,38 +1593,57 @@
         //  (en vez de orbitar siempre el origen del mundo, que por azar
         //  del ruido podía caer siempre en zona nevada/rocosa)
         // ============================================================
-        focusOnScenicSpot(terrain) {
+        focusOnScenicSpot(terrain, waterBodies = null) {
             if (!terrain || !terrain.getHeight) return;
             
             try {
                 let best = null;
                 let bestScore = -Infinity;
-                const samples = 60;
-                const range = 180;
+                let bestIsPrairieLake = false;
+                const samples = 150;
+                const range = 400;
                 
                 for (let i = 0; i < samples; i++) {
                     const x = (Math.random() - 0.5) * range;
                     const z = (Math.random() - 0.5) * range;
                     const y = terrain.getHeight(x, z);
                     const moisture = terrain.getMoisture ? terrain.getMoisture(x, z) : 0.5;
+                    const biome = terrain.getBiome ? terrain.getBiome(x, z) : 2;
+                    const isGrassland = biome === 2;
                     
-                    // Preferimos: altura baja/media (verde, no nieve), buena humedad (vegetación),
-                    // y algo de variación cercana (para que se vea interesante, no una llanura plana)
+                    // Distancia al cuerpo de agua más cercano (lago/río)
+                    let waterDist = Infinity;
+                    if (waterBodies && waterBodies.length > 0) {
+                        for (const body of waterBodies) {
+                            const d = Math.hypot(x - body.x, z - body.z);
+                            if (d < waterDist) waterDist = d;
+                        }
+                    }
+                    const nearWater = waterDist < 35;
+                    const isPrairieLake = isGrassland && nearWater;
+                    
                     const heightScore = 1 - Math.min(1, Math.abs(y - 6) / 10);
                     const moistureScore = moisture;
-                    const score = heightScore * 1.4 + moistureScore * 1.0 + Math.random() * 0.3;
+                    const waterBonus = nearWater ? Math.max(0, 1.4 - waterDist / 35) : 0;
+                    const score = heightScore * 1.0 + moistureScore * 0.5 + waterBonus + Math.random() * 0.3;
                     
-                    if (score > bestScore) {
-                        bestScore = score;
-                        best = { x, y, z };
+                    // Preferir SIEMPRE pradera+agua sobre cualquier otra cosa
+                    if (isPrairieLake && !bestIsPrairieLake) {
+                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = true;
+                    } else if (isPrairieLake === bestIsPrairieLake && score > bestScore) {
+                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = isPrairieLake;
                     }
                 }
                 
+                if (!bestIsPrairieLake) {
+                    console.warn('🌾 No se encontró pradera junto a un lago cerca — usando el punto más verde disponible');
+                }
+                
                 if (best) {
-                    this.cameraTarget.set(best.x, best.y + 3, best.z);
-                    this.cameraDistance = 90 + Math.random() * 40;
-                    this.cameraHeight = 18 + Math.random() * 14;
-                    console.log('🏞️ Cámara enfocada en punto escénico', best);
+                    this.cameraTarget.set(best.x, best.y + 1.5, best.z);
+                    this.cameraDistance = 45 + Math.random() * 25;
+                    this.cameraHeight = 8 + Math.random() * 6;
+                    console.log(`🏞️ Cámara enfocada (pradera+lago: ${bestIsPrairieLake})`, best);
                 }
             } catch (e) {
                 console.warn('⚠️ No se pudo enfocar un punto escénico', e);
@@ -1392,6 +1680,14 @@
                     0.1 + intensity * 0.1
                 );
                 this.scene.fog.color.copy(fogColor);
+                
+                // Sincronizar el shader de billboard con la niebla real
+                const billboardMat = this.materialCache.get('tree_lod3');
+                if (billboardMat && billboardMat.uniforms) {
+                    billboardMat.uniforms.fogColor.value.copy(fogColor);
+                    billboardMat.uniforms.fogNear.value = this.scene.fog.near || 50;
+                    billboardMat.uniforms.fogFar.value = this.scene.fog.far || 400;
+                }
             }
             
             // Actualizar skybox
@@ -1431,6 +1727,16 @@
             } catch (e) { /* silencioso */ }
             try {
                 if (this.animationSystem) this.animationSystem.update(0.016);
+            } catch (e) { /* silencioso */ }
+            try {
+                if (this.grassMeshes) {
+                    const t = Date.now() * 0.001;
+                    for (const mesh of this.grassMeshes) {
+                        if (mesh.material.uniforms) {
+                            mesh.material.uniforms.uTime.value = t;
+                        }
+                    }
+                }
             } catch (e) { /* silencioso */ }
             try {
                 if (this.chunkManager) this.chunkManager.update(0.016, this.camera.position);
@@ -1474,7 +1780,7 @@
                 if (soa.isTree[id]) typeKey = 'tree';
                 else if (soa.isRock[id]) typeKey = 'rock';
                 else if (soa.isBuilding[id]) typeKey = 'building';
-                else if (soa.isAnimal[id]) typeKey = 'animal';
+                else if (soa.isAnimal[id]) typeKey = (soa.subType[id] === 1) ? 'bison' : 'animal';
                 else if (soa.isGeometry[id]) {
                     const geoType = soa.type[id];
                     const geoMap = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'octahedron'];
@@ -1514,7 +1820,7 @@
             if (!geo) return;
             
             // Obtener material
-            let mat = this.materialCache.get(type) || this.materialCache.get('default');
+            let mat = this.materialCache.get(geoKey) || this.materialCache.get(type) || this.materialCache.get('default');
             if (type === 'geometry') mat = this.materialCache.get('geometry');
             if (!mat) return;
             
@@ -1552,6 +1858,8 @@
             }
             
             // Configurar instancias
+            if (!mesh.userData.entityIds) mesh.userData.entityIds = [];
+            
             for (let i = 0; i < needed; i++) {
                 const { id, lod: lodLevel } = entities[i];
                 const scale = soa.scaleX[id] * (lodLevel > 0 ? Math.max(0.3, 1 - lodLevel * 0.15) : 1);
@@ -1565,6 +1873,10 @@
                 this._dummy.scale.set(scale, scale, scale);
                 this._dummy.updateMatrix();
                 mesh.setMatrixAt(i, this._dummy.matrix);
+                
+                // v0.3: recordar qué entidad real ocupa cada índice, para
+                // que el Editor pueda seleccionar/borrar por clic (picking)
+                mesh.userData.entityIds[i] = id;
                 
                 // Antes: brightness = 0.7 + Math.random()*0.3 recalculado
                 // cada frame (miles de Math.random()/seg + parpadeo visual
