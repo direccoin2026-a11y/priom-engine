@@ -1079,66 +1079,48 @@
             }
         }
         
+        // ============================================================
+        //  🌧️ CLIMA (v0.3: reemplazado por ParticleSystem unificado —
+        //  antes tenía su propio bucle de CPU idéntico al del polvo
+        //  ambiental, ahora ambos comparten la misma clase GPU-driven)
+        // ============================================================
         _setupWeather() {
-            const count = 2000;
-            const positions = new Float32Array(count * 3);
-            for (let i = 0; i < count; i++) {
-                positions[i * 3] = (Math.random() - 0.5) * 140;
-                positions[i * 3 + 1] = Math.random() * 60;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 140;
+            if (!window.ParticleSystem) {
+                console.warn('⚠️ ParticleSystem no disponible, clima desactivado');
+                return;
             }
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
-            const rainMat = new THREE.PointsMaterial({
-                color: 0xaad4ff, size: 0.12, transparent: true, opacity: 0.55,
-                blending: THREE.AdditiveBlending, depthWrite: false
+            this._rainSystem = new window.ParticleSystem(1800, {
+                spread: 140, height: 60, fallSpeed: 22, drift: 0.4,
+                size: 0.12, color: 0xaad4ff, opacity: 0.55, blending: 'additive'
             });
-            const snowMat = new THREE.PointsMaterial({
-                color: 0xffffff, size: 0.22, transparent: true, opacity: 0.85,
-                depthWrite: false
+            this._snowSystem = new window.ParticleSystem(1200, {
+                spread: 140, height: 60, fallSpeed: 3, drift: 1.2,
+                size: 0.22, color: 0xffffff, opacity: 0.85
             });
             
-            this.weatherSystem = new THREE.Points(geometry, rainMat);
-            this.weatherSystem.visible = false;
-            this.scene.add(this.weatherSystem);
+            this._rainSystem.setVisible(false);
+            this._snowSystem.setVisible(false);
+            this.scene.add(this._rainSystem.mesh);
+            this.scene.add(this._snowSystem.mesh);
             
-            this._weatherMats = { rain: rainMat, snow: snowMat };
             this.weatherType = 'clear';
         }
         
         // Cambia el clima: 'clear' | 'rain' | 'snow'
         setWeather(type) {
             this.weatherType = type;
-            if (!this.weatherSystem) return;
+            if (!this._rainSystem || !this._snowSystem) return;
             
-            if (type === 'clear') {
-                this.weatherSystem.visible = false;
-                return;
-            }
-            
-            this.weatherSystem.material = this._weatherMats[type] || this._weatherMats.rain;
-            this.weatherSystem.visible = true;
+            this._rainSystem.setVisible(type === 'rain');
+            this._snowSystem.setVisible(type === 'snow');
         }
         
         _updateWeather(camPos) {
-            if (!this.weatherSystem || !this.weatherSystem.visible) return;
-            const positions = this.weatherSystem.geometry.attributes.position.array;
-            const count = positions.length / 3;
-            const fallSpeed = this.weatherType === 'snow' ? 0.06 : 0.55;
-            const drift = this.weatherType === 'snow' ? 0.03 : 0.01;
-            
-            for (let i = 0; i < count; i++) {
-                positions[i * 3 + 1] -= fallSpeed;
-                positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * drift;
-                
-                if (positions[i * 3 + 1] < 0) {
-                    positions[i * 3 + 1] = 60;
-                    positions[i * 3] = (camPos ? camPos.x : 0) + (Math.random() - 0.5) * 140;
-                    positions[i * 3 + 2] = (camPos ? camPos.z : 0) + (Math.random() - 0.5) * 140;
-                }
-            }
-            this.weatherSystem.geometry.attributes.position.needsUpdate = true;
+            if (!this._rainSystem || !this._snowSystem) return;
+            const t = Date.now() * 0.001;
+            if (this.weatherType === 'rain') this._rainSystem.update(t, camPos);
+            else if (this.weatherType === 'snow') this._snowSystem.update(t, camPos);
         }
         
         // ============================================================
@@ -1259,68 +1241,33 @@
         }
         
         // ============================================================
-        //  ✨ POLVO / POLEN AMBIENTAL (profundidad atmosférica)
+        //  ✨ POLVO / POLEN AMBIENTAL (v0.3: reemplazado por
+        //  ParticleSystem unificado — antes tenía su propio bucle de CPU
+        //  casi idéntico al del clima, ahora comparten la misma clase)
         // ============================================================
         _setupAmbientDust() {
-            const count = 500;
-            const positions = new Float32Array(count * 3);
-            this._dustVelocities = new Float32Array(count * 3);
-            
-            for (let i = 0; i < count; i++) {
-                positions[i * 3] = (Math.random() - 0.5) * 160;
-                positions[i * 3 + 1] = Math.random() * 40 + 1;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 160;
-                
-                this._dustVelocities[i * 3] = (Math.random() - 0.5) * 0.15;
-                this._dustVelocities[i * 3 + 1] = Math.random() * 0.08 + 0.02;
-                this._dustVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+            if (!window.ParticleSystem) {
+                console.warn('⚠️ ParticleSystem no disponible, polvo ambiental desactivado');
+                return;
             }
             
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            
-            const material = new THREE.PointsMaterial({
-                color: 0xffe9b0,
-                size: 0.18,
-                transparent: true,
-                opacity: 0.55,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending,
-                fog: true
+            this._dustSystemGPU = new window.ParticleSystem(500, {
+                spread: 160, height: 40, fallSpeed: -0.5, drift: 0.3, // fallSpeed negativo = sube en vez de caer (polen)
+                size: 0.18, color: 0xffe9b0, opacity: 0.55, blending: 'additive'
             });
+            this.scene.add(this._dustSystemGPU.mesh);
             
-            this.dustSystem = new THREE.Points(geometry, material);
-            this.scene.add(this.dustSystem);
+            // Compat: algunas partes del motor (setQuality, ChunkManager)
+            // consultan this.dustSystem para mostrar/ocultar por calidad
+            this.dustSystem = this._dustSystemGPU.mesh;
         }
         
         // ============================================================
         //  🔄 ACTUALIZAR POLVO AMBIENTAL (llamar cada frame)
         // ============================================================
         _updateAmbientDust(delta, camPos) {
-            if (!this.dustSystem) return;
-            const positions = this.dustSystem.geometry.attributes.position.array;
-            const count = positions.length / 3;
-            
-            for (let i = 0; i < count; i++) {
-                positions[i * 3] += this._dustVelocities[i * 3];
-                positions[i * 3 + 1] += this._dustVelocities[i * 3 + 1];
-                positions[i * 3 + 2] += this._dustVelocities[i * 3 + 2];
-                
-                // Reciclar partículas que suben demasiado o se alejan del jugador
-                if (positions[i * 3 + 1] > 40) {
-                    positions[i * 3 + 1] = 1;
-                }
-                const cx = camPos ? camPos.x : 0;
-                const cz = camPos ? camPos.z : 0;
-                if (Math.abs(positions[i * 3] - cx) > 80) {
-                    positions[i * 3] = cx + (Math.random() - 0.5) * 160;
-                }
-                if (Math.abs(positions[i * 3 + 2] - cz) > 80) {
-                    positions[i * 3 + 2] = cz + (Math.random() - 0.5) * 160;
-                }
-            }
-            
-            this.dustSystem.geometry.attributes.position.needsUpdate = true;
+            if (!this._dustSystemGPU) return;
+            this._dustSystemGPU.update(Date.now() * 0.001, camPos);
         }
         
         // ============================================================
