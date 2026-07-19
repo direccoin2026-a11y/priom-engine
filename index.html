@@ -266,7 +266,7 @@
     (function() {
         'use strict';
         
-        const totalModules = 33;
+        const totalModules = 34;
         let loaded = 0;
         let hasError = false;
         
@@ -361,6 +361,7 @@
                     { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260705u' },
                     { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260705u' },
                     { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260705u' },
+                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260706b' },
                     { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260705u' },
                     { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260705u' },
                     { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260705u' },
