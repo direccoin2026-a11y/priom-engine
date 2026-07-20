@@ -197,6 +197,8 @@
         <button id="btn-editor-type">🌲 Árbol</button>
         <button id="btn-editor-mode">📍 Colocar</button>
         <button id="btn-editor-delete">🗑️ Borrar</button>
+        <button id="btn-editor-undo">↩️ Deshacer</button>
+        <button id="btn-editor-redo">↪️ Rehacer</button>
         <button id="btn-save-world">💾 Guardar</button>
         <button id="btn-load-world">📂 Cargar</button>
         <div style="display:flex; align-items:center; gap:6px; width:100%; padding:4px 8px;">
@@ -666,6 +668,22 @@
                 editorDeleteBtn.addEventListener('click', () => {
                     const editor = engine.getModule('editor');
                     if (editor) editor.deleteSelected();
+                });
+            }
+            
+            // ----- Deshacer / Rehacer (v0.3) -----
+            const editorUndoBtn = document.getElementById('btn-editor-undo');
+            const editorRedoBtn = document.getElementById('btn-editor-redo');
+            if (editorUndoBtn) {
+                editorUndoBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (editor) editor.undo();
+                });
+            }
+            if (editorRedoBtn) {
+                editorRedoBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (editor) editor.redo();
                 });
             }
             
