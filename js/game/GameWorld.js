@@ -634,13 +634,11 @@
             const dist = Math.sqrt(dx*dx + dz*dz);
             
             if (dist < 1 || behavior.timer > 3) {
-                // Nuevo objetivo
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 10 + Math.random() * this.config.animalWanderRadius;
-                behavior.target = {
-                    x: this.soa.posX[id] + Math.cos(angle) * radius,
-                    z: this.soa.posZ[id] + Math.sin(angle) * radius
-                };
+                // Nuevo objetivo — evitando agua y pendientes pronunciadas
+                // (v0.3: antes se elegía un punto al azar sin revisar el
+                // terreno, así que los animales podían meterse de frente
+                // a un lago o intentar subir una pared casi vertical)
+                behavior.target = this._pickWalkableTarget(id);
                 behavior.timer = 0;
             } else {
                 // Moverse
@@ -649,6 +647,48 @@
                 this.soa.posZ[id] += (dz / dist) * speed;
                 this.soa.rotY[id] = Math.atan2(dz, dx);
             }
+        }
+        
+        // ============================================================
+        //  🧭 EVASIÓN DE OBSTÁCULOS (pathfinding ligero, v0.3)
+        //  No es A* completo sobre malla de navegación — eso es un
+        //  proyecto aparte. Esto es más barato y resuelve el problema
+        //  que de verdad se ve: intenta varios puntos candidatos y
+        //  descarta los que caen en agua o en pendiente empinada, en
+        //  vez de caminar en línea recta sin mirar el terreno.
+        // ============================================================
+        _pickWalkableTarget(id) {
+            const terrain = this.generators.terrain;
+            const maxAttempts = 6;
+            
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 10 + Math.random() * this.config.animalWanderRadius;
+                const x = this.soa.posX[id] + Math.cos(angle) * radius;
+                const z = this.soa.posZ[id] + Math.sin(angle) * radius;
+                
+                if (!terrain || !terrain.getHeight) return { x, z };
+                
+                const y = terrain.getHeight(x, z);
+                const isWater = terrain.isWater ? terrain.isWater(x, z) : false;
+                
+                // Pendiente local (mismo cálculo barato que ya usamos en
+                // la colocación de vegetación)
+                const e = 2;
+                const slope = terrain.getHeight
+                    ? (Math.abs(terrain.getHeight(x + e, z) - terrain.getHeight(x - e, z)) +
+                       Math.abs(terrain.getHeight(x, z + e) - terrain.getHeight(x, z - e))) / (e * 2)
+                    : 0;
+                
+                if (!isWater && slope < 0.55) {
+                    return { x, z };
+                }
+                // si no sirve, probar otro ángulo en el siguiente intento
+            }
+            
+            // Si tras varios intentos no se encontró nada mejor, quedarse
+            // cerca (mejor que forzar un mal punto)
+            return { x: this.soa.posX[id], z: this.soa.posZ[id] };
         }
         
         _animalChase(id, behavior, delta) {
