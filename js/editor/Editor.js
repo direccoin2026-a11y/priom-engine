@@ -38,6 +38,15 @@
             this.onPlace = null; // callback opcional: (type, x, y, z) => {}
             this.onSelect = null; // callback opcional: (entityId) => {}
             
+            // ============================================================
+            //  ↩️ DESHACER / REHACER (v0.3)
+            //  Pila de acciones: cada colocación o borrado queda registrado
+            //  con lo necesario para revertirlo. Límite de 50 para no
+            //  crecer sin fin en una sesión larga de edición.
+            // ============================================================
+            this._undoStack = [];
+            this._redoStack = [];
+            this._maxHistory = 50;
             this._boundDown = this._onPointerDown.bind(this);
             this._boundUp = this._onPointerUp.bind(this);
         }
@@ -60,7 +69,18 @@
             try {
                 const ecs = this.engine.getModule('ecs');
                 const gameWorld = this.engine.getModule('gameWorld');
-                if (ecs) ecs.destroyEntity(this.selectedId);
+                if (!ecs) return false;
+                
+                // Capturar los datos ANTES de borrar, para poder recrearlo si se deshace
+                const snapshot = {
+                    entityType: this._entityTypeOf(this.selectedId, ecs),
+                    x: ecs.posX[this.selectedId],
+                    y: ecs.posY[this.selectedId],
+                    z: ecs.posZ[this.selectedId],
+                    scale: ecs.scaleX[this.selectedId]
+                };
+                
+                ecs.destroyEntity(this.selectedId);
                 
                 // Quitarlo también de los sets de ecosistema si aplica
                 if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
@@ -70,6 +90,8 @@
                 }
                 
                 console.log(`🗑️ Editor: entidad ${this.selectedId} borrada`);
+                this._pushUndo({ kind: 'delete', snapshot });
+                
                 this.selectedId = -1;
                 this.selectedMesh = null;
                 this.selectedInstanceIdx = -1;
@@ -78,6 +100,85 @@
                 console.warn('⚠️ Editor: no se pudo borrar', e);
                 return false;
             }
+        }
+        
+        _entityTypeOf(id, ecs) {
+            if (ecs.isTree[id]) return 'tree';
+            if (ecs.isRock[id]) return 'rock';
+            if (ecs.isAnimal[id]) return 'animal';
+            return 'tree';
+        }
+        
+        // ============================================================
+        //  ↩️ DESHACER / REHACER (v0.3)
+        // ============================================================
+        _pushUndo(action) {
+            this._undoStack.push(action);
+            if (this._undoStack.length > this._maxHistory) this._undoStack.shift();
+            this._redoStack = []; // cualquier acción nueva invalida el historial de "rehacer"
+        }
+        
+        _spawn(entityType, x, y, z, scale = 1) {
+            const factory = this.engine.getModule('entityFactory');
+            const ecs = this.engine.getModule('ecs');
+            const gameWorld = this.engine.getModule('gameWorld');
+            if (!factory) return -1;
+            
+            let id = -1;
+            if (entityType === 'tree') id = factory.createTree(x, y, z);
+            else if (entityType === 'rock') id = factory.createRock(x, y, z);
+            else if (entityType === 'animal') id = factory.createAnimal(x, y, z, false);
+            
+            if (id !== -1 && scale !== 1 && ecs) {
+                ecs.scaleX[id] = scale; ecs.scaleY[id] = scale; ecs.scaleZ[id] = scale;
+            }
+            if (id !== -1 && entityType === 'animal' && gameWorld && gameWorld.ecosystems) {
+                gameWorld.ecosystems.entities.animals.add(id);
+            }
+            return id;
+        }
+        
+        undo() {
+            const action = this._undoStack.pop();
+            if (!action) {
+                console.log('↩️ Editor: nada que deshacer');
+                return false;
+            }
+            
+            if (action.kind === 'place') {
+                // Deshacer una colocación = borrarla
+                const ecs = this.engine.getModule('ecs');
+                if (ecs) ecs.destroyEntity(action.id);
+                this._redoStack.push(action);
+                console.log('↩️ Editor: colocación deshecha');
+            } else if (action.kind === 'delete') {
+                // Deshacer un borrado = recrearlo donde estaba
+                const s = action.snapshot;
+                const newId = this._spawn(s.entityType, s.x, s.y, s.z, s.scale);
+                this._redoStack.push({ kind: 'delete', snapshot: s, restoredId: newId });
+                console.log('↩️ Editor: borrado deshecho (entidad restaurada)');
+            }
+            return true;
+        }
+        
+        redo() {
+            const action = this._redoStack.pop();
+            if (!action) {
+                console.log('↪️ Editor: nada que rehacer');
+                return false;
+            }
+            
+            if (action.kind === 'place') {
+                const newId = this._spawn(action.entityType, action.x, action.y, action.z, action.scale);
+                this._undoStack.push({ ...action, id: newId });
+                console.log('↪️ Editor: colocación rehecha');
+            } else if (action.kind === 'delete') {
+                const ecs = this.engine.getModule('ecs');
+                if (ecs && action.restoredId !== -1) ecs.destroyEntity(action.restoredId);
+                this._undoStack.push(action);
+                console.log('↪️ Editor: borrado rehecho');
+            }
+            return true;
         }
 
         toggle(forceState) {
@@ -209,6 +310,7 @@
                 
                 if (id !== -1) {
                     this.placedCount++;
+                    this._pushUndo({ kind: 'place', entityType: this.placementType, id, x: hit.x, y, z: hit.z, scale: 1 });
                     if (typeof this.onPlace === 'function') {
                         this.onPlace(this.placementType, hit.x, y, hit.z);
                     }
