@@ -136,6 +136,11 @@
             this.renderer.shadowMap.bias = 0.0001;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
             this.renderer.toneMappingExposure = 1.5;
+            // Fijado explícito (v0.3, por la subida a r147): antes se
+            // dependía del valor por defecto de la librería, que es
+            // justo lo que pudo cambiar entre versiones — así el color
+            // queda igual sin importar la versión de Three.js.
+            this.renderer.outputEncoding = THREE.sRGBEncoding;
             
             // Dynamic Resolution Scaling: arranca a resolución completa,
             // la IA lo ajusta en tiempo real según el rendimiento
