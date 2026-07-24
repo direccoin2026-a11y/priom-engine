@@ -1611,6 +1611,19 @@
             const sunZ = Math.sin(angle * 0.7) * 200;
             
             this.sunLight.position.set(sunX, sunY, sunZ);
+            
+            // Sombras: el sol se mueve lento (ciclo día/noche) y la mayoría
+            // de quien proyecta sombra son props estáticos "dormidos" —
+            // recalcular el mapa completo cada frame es trabajo de sobra.
+            // Se actualiza 1 de cada 4 frames, imperceptible para una luz
+            // que apenas se mueve.
+            if (this.renderer.shadowMap.enabled) {
+                this.renderer.shadowMap.autoUpdate = false;
+                this._shadowFrameCounter = (this._shadowFrameCounter || 0) + 1;
+                if (this._shadowFrameCounter % 4 === 0) {
+                    this.renderer.shadowMap.needsUpdate = true;
+                }
+            }
             this.dayNight.sunPosition.set(sunX, sunY, sunZ);
             
             const intensity = Math.max(0.1, Math.sin(angle) * 0.8 + 0.6);
@@ -2082,11 +2095,11 @@
         setQuality(level) {
             this.quality = level;
             const qualityMap = {
-                'low': { pixelRatio: 0.5, shadow: false, lod: 60, water: false, particles: false, ssao: false, godrays: false, sky: false, mist: false },
-                'medium': { pixelRatio: 1.0, shadow: false, lod: 100, water: true, particles: false, ssao: false, godrays: false, sky: true, mist: false },
-                'high': { pixelRatio: 1.5, shadow: true, lod: 150, water: true, particles: true, ssao: true, godrays: false, sky: true, mist: true },
-                'ultra': { pixelRatio: 2.0, shadow: true, lod: 200, water: true, particles: true, ssao: true, godrays: true, sky: true, mist: true },
-                'quantum': { pixelRatio: 2.0, shadow: true, lod: 260, water: true, particles: true, ssao: true, godrays: true, sky: true, mist: true }
+                'low': { pixelRatio: 0.5, shadow: false, shadowSize: 512, lod: 60, water: false, particles: false, ssao: false, godrays: false, sky: false, mist: false },
+                'medium': { pixelRatio: 1.0, shadow: false, shadowSize: 512, lod: 100, water: true, particles: false, ssao: false, godrays: false, sky: true, mist: false },
+                'high': { pixelRatio: 1.5, shadow: true, shadowSize: 1024, lod: 150, water: true, particles: true, ssao: true, godrays: false, sky: true, mist: true },
+                'ultra': { pixelRatio: 2.0, shadow: true, shadowSize: 2048, lod: 200, water: true, particles: true, ssao: true, godrays: true, sky: true, mist: true },
+                'quantum': { pixelRatio: 2.0, shadow: true, shadowSize: 2048, lod: 260, water: true, particles: true, ssao: true, godrays: true, sky: true, mist: true }
             };
             
             const q = qualityMap[level] || qualityMap.ultra;
@@ -2094,6 +2107,16 @@
             this.renderer.setPixelRatio(Math.min(q.pixelRatio, 2));
             this.renderer.shadowMap.enabled = q.shadow;
             this.lodDistance = q.lod;
+            
+            // Mapa de sombras adaptable por calidad (antes: 2048 fijo
+            // siempre, incluso donde apenas se notaba la diferencia)
+            if (this.sunLight && this.sunLight.shadow.mapSize.width !== q.shadowSize) {
+                this.sunLight.shadow.mapSize.set(q.shadowSize, q.shadowSize);
+                if (this.sunLight.shadow.map) {
+                    this.sunLight.shadow.map.dispose();
+                    this.sunLight.shadow.map = null; // se regenera solo en el próximo frame
+                }
+            }
             
             // Nota: la escala de renderizado (DRS) ya NO se toca aquí — la
             // gestiona por completo el DynamicResolutionController dedicado
