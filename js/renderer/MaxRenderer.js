@@ -265,6 +265,11 @@
             
             // ===== ROCAS (cúmulo de rocas en vez de un solo dodecaedro) =====
             this.geometryCache.set('rock', this._buildRockGeometry());
+            const rockBillboardMat = this._buildBillboardMaterial(window.TextureFactory ? window.TextureFactory.rockBillboard(128) : null);
+            this.geometryCache.set('rock_lod3', billboardGeo);
+            this.geometryCache.set('rock_lod4', billboardGeo);
+            this.materialCache.set('rock_lod3', rockBillboardMat);
+            this.materialCache.set('rock_lod4', rockBillboardMat);
             
             // ===== ANIMAL (cuadrúpedo real: cuerpo+cabeza+patas+cola) =====
             this.geometryCache.set('animal', this._buildAnimalGeometry());
