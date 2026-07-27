@@ -223,6 +223,44 @@
             return texture;
         }
 
+        static rockBillboard(size = 128) {
+            const key = 'rock_billboard_' + size;
+            if (this._cache.has(key)) return this._cache.get(key);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, size, size);
+
+            const cx = size / 2;
+            const baseY = size * 0.85;
+            
+            ctx.fillStyle = '#5a544a';
+            ctx.beginPath();
+            ctx.moveTo(cx - size * 0.34, baseY);
+            ctx.lineTo(cx - size * 0.3, size * 0.5);
+            ctx.lineTo(cx - size * 0.1, size * 0.28);
+            ctx.lineTo(cx + size * 0.15, size * 0.35);
+            ctx.lineTo(cx + size * 0.32, size * 0.55);
+            ctx.lineTo(cx + size * 0.3, baseY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#726b5e';
+            ctx.beginPath();
+            ctx.moveTo(cx - size * 0.1, size * 0.28);
+            ctx.lineTo(cx + size * 0.15, size * 0.35);
+            ctx.lineTo(cx + size * 0.05, size * 0.5);
+            ctx.closePath();
+            ctx.fill();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            this._cache.set(key, texture);
+            return texture;
+        }
+
         static fakeNormalFromNoise(size = 256, strength = 1.0) {
             const key = 'normal_' + size + '_' + strength;
             if (this._cache.has(key)) return this._cache.get(key);
