@@ -1467,7 +1467,17 @@
             }
             
             // ===== 10. ACTUALIZAR ESTADÍSTICAS =====
-            this.vramUsage = this.renderer.info.memory.textures * 1024 * 1024;
+            // Memoria real (v0.3): antes era "número de texturas × 1MB",
+            // una fórmula sin relación con la realidad. Ahora se estima
+            // sumando bytes reales de buffers de geometría (posición,
+            // normal, uv, color, matrices de instancia) y de texturas
+            // (ancho×alto×4, sin contar duplicados). Se recalcula cada
+            // ~2s, no cada frame, porque recorrer toda la escena también
+            // tiene costo.
+            this._memCheckCounter = (this._memCheckCounter || 0) + 1;
+            if (this._memCheckCounter % 120 === 0) {
+                this.vramUsage = this._estimateMemoryUsage();
+            }
             
             // ===== 11. DYNAMIC RESOLUTION SCALING (controlador dedicado) =====
             // Medimos el tiempo real de ESTE frame (incluye todo el trabajo
@@ -2097,6 +2107,45 @@
         // ============================================================
         //  🔧 MÉTODOS PÚBLICOS
         //  ============================================================
+        _estimateMemoryUsage() {
+            let bytes = 0;
+            const seenTextures = new Set();
+            
+            this.scene.traverse((obj) => {
+                // Geometría: sumar bytes reales de cada atributo del buffer
+                if (obj.geometry) {
+                    const geo = obj.geometry;
+                    for (const key in geo.attributes) {
+                        const attr = geo.attributes[key];
+                        if (attr && attr.array) bytes += attr.array.byteLength;
+                    }
+                    if (geo.index && geo.index.array) bytes += geo.index.array.byteLength;
+                    
+                    // InstancedMesh: la matriz por instancia (16 floats = 64 bytes) y color si aplica
+                    if (obj.isInstancedMesh) {
+                        bytes += obj.count * 16 * 4;
+                        if (obj.instanceColor) bytes += obj.count * 3 * 4;
+                    }
+                }
+                
+                // Texturas: ancho × alto × 4 (RGBA8), sin contar duplicados
+                const mat = obj.material;
+                const materials = Array.isArray(mat) ? mat : (mat ? [mat] : []);
+                for (const m of materials) {
+                    const maps = [m.map, m.normalMap, m.roughnessMap, m.aoMap, m.displacementMap, m.emissiveMap];
+                    for (const tex of maps) {
+                        if (!tex || !tex.image || seenTextures.has(tex.uuid)) continue;
+                        seenTextures.add(tex.uuid);
+                        const w = tex.image.width || 0;
+                        const h = tex.image.height || 0;
+                        bytes += w * h * 4 * 1.33; // ×1.33 aprox. por mipmaps
+                    }
+                }
+            });
+            
+            return bytes;
+        }
+        
         setQuality(level) {
             this.quality = level;
             const qualityMap = {
