@@ -2159,6 +2159,7 @@
             const q = qualityMap[level] || qualityMap.ultra;
             
             this.renderer.setPixelRatio(Math.min(q.pixelRatio, 2));
+            if (this.composer) this.composer.setPixelRatio(Math.min(q.pixelRatio, 2));
             this.renderer.shadowMap.enabled = q.shadow;
             this.lodDistance = q.lod;
             
