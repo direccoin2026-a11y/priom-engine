@@ -19,6 +19,7 @@
  * - Sistema de versionado con branching (como git)
  * - Memoria emocional (valencia + arousal)
  * - Sistema de "flashbulb memory" para eventos importantes
+ * - COMPATIBILIDAD: mantiene métodos antiguos para no romper código existente
  * ============================================================ */
 
 (function() {
@@ -47,7 +48,7 @@
                 
                 // Compresión
                 compressionEnabled: true,
-                compressionLevel: 9, // 1-9
+                compressionLevel: 9,
                 diffCompression: true,
                 
                 // Cifrado
@@ -61,11 +62,11 @@
                 // Aprendizaje
                 learningRate: 0.15,
                 explorationRate: 0.05,
-                consolidationInterval: 60000, // 1 minuto
+                consolidationInterval: 60000,
                 sleepConsolidation: true,
                 
                 // Olvido
-                forgetThreshold: 60, // días
+                forgetThreshold: 60,
                 importanceThreshold: 0.3,
                 forgetRate: 0.001,
                 
@@ -89,7 +90,7 @@
                 
                 // Backup
                 backupEnabled: true,
-                backupInterval: 3600000, // 1 hora
+                backupInterval: 3600000,
                 maxBackups: 5,
                 
                 // Debug
@@ -111,16 +112,14 @@
                 
                 // Sistema dual de memoria
                 episodic: {
-                    // Memoria de eventos específicos
-                    events: [], // {timestamp, type, data, importance, emotion}
-                    sequence: [], // Secuencia de eventos
+                    events: [],
+                    sequence: [],
                     context: null
                 },
                 semantic: {
-                    // Memoria de conocimientos generales
-                    knowledge: {}, // {key: {value, confidence, lastUpdated}}
-                    patterns: [], // Patrones aprendidos
-                    rules: [] // Reglas inferidas
+                    knowledge: {},
+                    patterns: [],
+                    rules: []
                 },
                 
                 // Perfil del usuario (extendido)
@@ -137,7 +136,6 @@
                         vibrationEnabled: true,
                         notificationsEnabled: true,
                         autoSave: true,
-                        // Nuevas preferencias
                         colorScheme: 'dark',
                         uiScale: 1.0,
                         subtitles: true,
@@ -156,7 +154,6 @@
                         averageFPS: 60,
                         bestFPS: 0,
                         worstFPS: 0,
-                        // Nuevas estadísticas
                         totalKills: 0,
                         totalDeaths: 0,
                         totalDistance: 0,
@@ -173,7 +170,6 @@
                         exploration: 0.5,
                         puzzle: 0.5,
                         social: 0.5,
-                        // Nuevas habilidades
                         building: 0.3,
                         crafting: 0.3,
                         trading: 0.3,
@@ -181,14 +177,12 @@
                         magic: 0.3
                     },
                     personality: {
-                        // Perfil psicológico del usuario
                         openness: 0.5,
                         conscientiousness: 0.5,
                         extraversion: 0.5,
                         agreeableness: 0.5,
                         neuroticism: 0.5,
-                        // Estilos de juego
-                        playStyle: 'balanced', // aggressive | cautious | explorer | builder | social
+                        playStyle: 'balanced',
                         riskTolerance: 0.5,
                         patience: 0.5,
                         curiosity: 0.5
@@ -204,7 +198,6 @@
                     performance: [],
                     adaptations: [],
                     confidenceHistory: [],
-                    // Nuevos
                     predictions: [],
                     mistakes: [],
                     successes: [],
@@ -217,9 +210,8 @@
                     lastContext: null,
                     contextHistory: [],
                     associations: {},
-                    // Nuevo
-                    triggers: {}, // {context: [triggers]}
-                    transitions: [] // Transiciones entre contextos
+                    triggers: {},
+                    transitions: []
                 },
                 
                 // Datos del hardware (extendido)
@@ -233,8 +225,7 @@
                     achievements: [],
                     progress: {},
                     settings: {},
-                    // Nuevo
-                    saveStates: [], // Puntos de guardado
+                    saveStates: [],
                     checkpoints: [],
                     worldStates: [],
                     playerHistory: []
@@ -245,10 +236,9 @@
                     total: 0,
                     history: [],
                     current: 0,
-                    // Nuevo
-                    streaks: {}, // {type: count}
-                    achievements: [], // Logros de usuario
-                    milestones: [] // Hitos alcanzados
+                    streaks: {},
+                    achievements: [],
+                    milestones: []
                 },
                 
                 // Estadísticas globales (extendido)
@@ -259,7 +249,6 @@
                     averageReward: 0,
                     bestDecision: null,
                     worstDecision: null,
-                    // Nuevo
                     totalPredictions: 0,
                     correctPredictions: 0,
                     adaptationCount: 0,
@@ -269,11 +258,11 @@
                 
                 // Sistema emocional
                 emotionalState: {
-                    valence: 0.5, // 0-1 (negativo-positivo)
-                    arousal: 0.3, // 0-1 (calma-excitación)
-                    dominance: 0.5, // 0-1 (sumiso-dominante)
-                    history: [], // Historial emocional
-                    flashbulbs: [] // Memoria de eventos emocionales fuertes
+                    valence: 0.5,
+                    arousal: 0.3,
+                    dominance: 0.5,
+                    history: [],
+                    flashbulbs: []
                 },
                 
                 // Recomendaciones
@@ -290,7 +279,7 @@
                     lastSync: 0,
                     pendingChanges: [],
                     conflicts: [],
-                    devices: [] // Dispositivos conectados
+                    devices: []
                 }
             };
             
@@ -315,7 +304,7 @@
             
             // Sistema de cache
             this._cache = new Map();
-            this._cacheTimeout = 60000; // 1 minuto
+            this._cacheTimeout = 60000;
             
             // Sistema de cola de operaciones
             this._operationQueue = [];
@@ -333,44 +322,50 @@
         async _init() {
             console.log('🧠 Inicializando memoria persistente cuántica...');
             
-            // 1. Cargar datos
-            await this._loadFromStorage();
-            
-            // 2. Configurar sistema de eventos
-            this._setupEvents();
-            
-            // 3. Iniciar sesión
-            this._startSession();
-            
-            // 4. Iniciar auto-save
-            this._startAutoSave();
-            
-            // 5. Iniciar consolidación
-            this._startConsolidation();
-            
-            // 6. Iniciar backups
-            this._startBackupSystem();
-            
-            // 7. Iniciar sincronización
-            this._startSyncSystem();
-            
-            // 8. Detectar inactividad
-            this._setupIdleDetection();
-            
-            // 9. Recuperar estado de sesión anterior si existe
-            this._recoverSessionState();
-            
-            // 10. Cargar recomendaciones
-            this._loadRecommendations();
-            
-            this._initialized = true;
-            
-            console.log('✅ Memoria persistente cuántica inicializada');
-            console.log(`📊 Sesión: ${this._sessionId}`);
-            console.log(`📊 Eventos almacenados: ${this._memory.episodic.events.length}`);
-            console.log(`📊 Decisiones: ${this._memory.aiMemory.decisions.length}`);
-            console.log(`📊 Tiempo de juego: ${this._formatTime(this._memory.userProfile.stats.totalPlayTime)}`);
-            console.log(`🧠 Estado emocional: valence=${this._memory.emotionalState.valence.toFixed(2)}, arousal=${this._memory.emotionalState.arousal.toFixed(2)}`);
+            try {
+                // 1. Cargar datos
+                await this._loadFromStorage();
+                
+                // 2. Configurar sistema de eventos
+                this._setupEvents();
+                
+                // 3. Iniciar sesión
+                this._startSession();
+                
+                // 4. Iniciar auto-save
+                this._startAutoSave();
+                
+                // 5. Iniciar consolidación
+                this._startConsolidation();
+                
+                // 6. Iniciar backups
+                this._startBackupSystem();
+                
+                // 7. Iniciar sincronización
+                this._startSyncSystem();
+                
+                // 8. Detectar inactividad
+                this._setupIdleDetection();
+                
+                // 9. Recuperar estado de sesión anterior si existe
+                this._recoverSessionState();
+                
+                // 10. Cargar recomendaciones
+                this._loadRecommendations();
+                
+                this._initialized = true;
+                
+                console.log('✅ Memoria persistente cuántica inicializada');
+                console.log(`📊 Sesión: ${this._sessionId}`);
+                console.log(`📊 Eventos almacenados: ${this._memory.episodic.events.length}`);
+                console.log(`📊 Decisiones: ${this._memory.aiMemory.decisions.length}`);
+                console.log(`📊 Tiempo de juego: ${this._formatTime(this._memory.userProfile.stats.totalPlayTime)}`);
+                
+            } catch (e) {
+                console.error('❌ Error inicializando memoria:', e);
+                // Intentar recuperar de backup
+                await this._loadFromBackup();
+            }
             
             return this;
         }
@@ -443,7 +438,7 @@
                     this._isIdle = true;
                     this._lastIdle = Date.now();
                     this._onIdle();
-                }, 60000); // 1 minuto de inactividad
+                }, 60000);
             };
             
             for (const event of events) {
@@ -500,7 +495,7 @@
                 
                 // 2. Limpiar eventos antiguos de baja importancia
                 this._memory.episodic.events = events.filter(e => 
-                    e.importance > 0.3 || (Date.now() - e.timestamp) < 86400000 // 1 día
+                    e.importance > 0.3 || (Date.now() - e.timestamp) < 86400000
                 );
                 
                 // 3. Actualizar estadísticas de aprendizaje
@@ -517,15 +512,12 @@
                     knowledge: Object.keys(this._memory.semantic.knowledge).length
                 });
                 
-                console.log(`🧠 Consolidación: ${consolidated} items consolidados`);
-                
             } catch (e) {
                 console.warn('⚠️ Error en consolidación:', e);
             }
         }
         
         _calculateLearningRate() {
-            // Calcular tasa de aprendizaje basada en éxito/fracaso
             const total = this._memory.globalStats.totalDecisions || 1;
             const success = this._memory.globalStats.successfulDecisions || 0;
             const rate = success / total;
@@ -593,11 +585,10 @@
         }
         
         _handleSyncMessage(data) {
-            if (data.sessionId === this._sessionId) return; // Mensaje propio
+            if (data.sessionId === this._sessionId) return;
             
             console.log(`🔄 Mensaje de sincronización recibido de ${data.sessionId}`);
             
-            // Resolver conflictos
             if (this._config.conflictResolution === 'last-write-wins') {
                 if (data.timestamp > this._memory.updatedAt) {
                     this._mergeMemory(data.memory);
@@ -632,7 +623,6 @@
         }
         
         _mergeMemory(sourceMemory) {
-            // Merge de memorias con resolución de conflictos
             const fields = ['userProfile', 'globalStats', 'rewards'];
             for (const field of fields) {
                 if (sourceMemory[field]) {
@@ -640,7 +630,6 @@
                 }
             }
             
-            // Merge de IA memory
             if (sourceMemory.aiMemory) {
                 for (const key of ['decisions', 'performance', 'adaptations']) {
                     if (sourceMemory.aiMemory[key]) {
@@ -667,35 +656,14 @@
         }
         
         // ============================================================
-        //  🔍 RECUPERACIÓN DE ESTADO DE SESIÓN
-        //  ============================================================
-        _recoverSessionState() {
-            try {
-                const savedState = localStorage.getItem('priom_session_state');
-                if (savedState) {
-                    const state = JSON.parse(savedState);
-                    if (state.sessionId !== this._sessionId) {
-                        // Recuperar progreso de sesión anterior
-                        this._mergeMemory(state.memory);
-                        console.log('📂 Estado de sesión anterior recuperado');
-                    }
-                }
-            } catch (e) {
-                // Ignorar errores
-            }
-        }
-        
-        // ============================================================
         //  💾 CARGA / GUARDADO EXTENDIDO
         //  ============================================================
         async _loadFromStorage() {
             try {
-                // Intentar cargar desde localStorage
                 const raw = localStorage.getItem(this._config.storageKey);
                 if (raw) {
                     let jsonStr = raw;
                     
-                    // Verificar compresión
                     if (raw.startsWith('LZ4:')) {
                         try {
                             jsonStr = this._lz4Decompress(raw.slice(4));
@@ -717,7 +685,6 @@
                     }
                     
                     if (jsonStr) {
-                        // Verificar cifrado
                         if (jsonStr.startsWith('ENC:')) {
                             if (this._config.encryptionEnabled && this._config.encryptionKey) {
                                 jsonStr = this._decrypt(jsonStr.slice(4));
@@ -729,7 +696,6 @@
                         
                         const data = JSON.parse(jsonStr);
                         
-                        // Verificar versión
                         if (data.version === this._config.version || 
                             this._isCompatibleVersion(data.version)) {
                             this._memory = this._deepMerge(this._memory, data);
@@ -743,7 +709,6 @@
                     }
                 }
                 
-                // Si no hay datos, intentar IndexedDB
                 const indexedData = await this._loadFromIndexedDB();
                 if (indexedData) {
                     this._memory = this._deepMerge(this._memory, indexedData);
@@ -761,7 +726,6 @@
         }
         
         _isCompatibleVersion(version) {
-            // Verificar si la versión es compatible
             const major = parseInt(version.split('.')[0]);
             const currentMajor = parseInt(this._config.version.split('.')[0]);
             return major === currentMajor;
@@ -786,11 +750,194 @@
             return false;
         }
         
+        async _loadFromIndexedDB() {
+            try {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open('PriomMemory', 1);
+                    
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('memory')) {
+                            db.createObjectStore('memory', { keyPath: 'id' });
+                        }
+                    };
+                    
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const transaction = db.transaction(['memory'], 'readonly');
+                        const store = transaction.objectStore('memory');
+                        const getRequest = store.get('main');
+                        
+                        getRequest.onsuccess = () => {
+                            resolve(getRequest.result?.data || null);
+                        };
+                        
+                        getRequest.onerror = () => {
+                            resolve(null);
+                        };
+                    };
+                    
+                    request.onerror = () => {
+                        resolve(null);
+                    };
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        async _saveToIndexedDB(data) {
+            try {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open('PriomMemory', 1);
+                    
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('memory')) {
+                            db.createObjectStore('memory', { keyPath: 'id' });
+                        }
+                    };
+                    
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const transaction = db.transaction(['memory'], 'readwrite');
+                        const store = transaction.objectStore('memory');
+                        store.put({ id: 'main', data: data });
+                        
+                        transaction.oncomplete = () => {
+                            resolve(true);
+                        };
+                        
+                        transaction.onerror = () => {
+                            resolve(false);
+                        };
+                    };
+                    
+                    request.onerror = () => {
+                        resolve(false);
+                    };
+                });
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        _saveToStorage() {
+            try {
+                const json = JSON.stringify(this._memory);
+                let payload = json;
+                
+                if (this._config.compressionEnabled) {
+                    try {
+                        const compressed = this._lz4Compress(json);
+                        if (compressed.length < json.length) {
+                            payload = 'LZ4:' + compressed;
+                        }
+                    } catch (compErr) {
+                        try {
+                            const compressed = this._lzwCompress(json);
+                            if (compressed.length < json.length) {
+                                payload = 'LZW1:' + compressed;
+                            }
+                        } catch (e) {
+                            console.warn('⚠️ No se pudo comprimir, guardando sin comprimir');
+                        }
+                    }
+                }
+                
+                if (this._config.encryptionEnabled && this._config.encryptionKey) {
+                    payload = 'ENC:' + this._encrypt(payload);
+                }
+                
+                localStorage.setItem(this._config.storageKey, payload);
+                
+                this._saveToIndexedDB(this._memory);
+                
+                this._dirty = false;
+                return true;
+            } catch (e) {
+                console.warn('⚠️ Error guardando memoria:', e);
+                return false;
+            }
+        }
+        
+        _startAutoSave() {
+            if (this._saveTimer) {
+                clearInterval(this._saveTimer);
+            }
+            
+            this._saveTimer = setInterval(() => {
+                this._autoSave();
+            }, this._config.autoSaveInterval);
+        }
+        
+        _autoSave() {
+            if (this._dirty) {
+                this._saveToStorage();
+                
+                if (Math.random() < 0.01) {
+                    this._forgetOldEntries();
+                }
+            }
+        }
+        
         // ============================================================
-        //  🗜️ COMPRESIÓN AVANZADA (LZ4)
+        //  🗜️ COMPRESIÓN LZW (mantenida para compatibilidad)
+        //  ============================================================
+        _lzwCompress(str) {
+            const dict = {};
+            const data = (str + '').split('');
+            const out = [];
+            let phrase = data[0];
+            let code = 256;
+            
+            for (let i = 1; i < data.length; i++) {
+                const next = data[i];
+                if (dict[phrase + next] !== undefined) {
+                    phrase += next;
+                } else {
+                    out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+                    dict[phrase + next] = code++;
+                    phrase = next;
+                }
+            }
+            out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+            
+            return out.map(c => String.fromCharCode(c)).join('');
+        }
+        
+        _lzwDecompress(compressed) {
+            const data = compressed.split('').map(c => c.charCodeAt(0));
+            const dict = {};
+            let code = 256;
+            let phrase = String.fromCharCode(data[0]);
+            let out = phrase;
+            let entry = '';
+            
+            for (let i = 1; i < data.length; i++) {
+                const k = data[i];
+                if (k < 256) {
+                    entry = String.fromCharCode(k);
+                } else if (dict[k] !== undefined) {
+                    entry = dict[k];
+                } else if (k === code) {
+                    entry = phrase + phrase.charAt(0);
+                } else {
+                    throw new Error('LZW: secuencia comprimida inválida');
+                }
+                
+                out += entry;
+                dict[code++] = phrase + entry.charAt(0);
+                phrase = entry;
+            }
+            
+            return out;
+        }
+        
+        // ============================================================
+        //  🗜️ COMPRESIÓN LZ4 SIMPLIFICADA
         //  ============================================================
         _lz4Compress(str) {
-            // LZ4 simplificado - compresión rápida
             const data = str.split('').map(c => c.charCodeAt(0));
             const compressed = [];
             let i = 0;
@@ -799,7 +946,6 @@
                 let matchLength = 0;
                 let matchPos = 0;
                 
-                // Buscar coincidencia (ventana de 256 bytes)
                 const windowSize = Math.min(256, i);
                 const searchStart = Math.max(0, i - windowSize);
                 
@@ -815,7 +961,7 @@
                 }
                 
                 if (matchLength > 3) {
-                    compressed.push(0xFF); // Token de compresión
+                    compressed.push(0xFF);
                     compressed.push(matchPos & 0xFF);
                     compressed.push((matchPos >> 8) & 0xFF);
                     compressed.push(matchLength);
@@ -837,7 +983,6 @@
             while (i < data.length) {
                 const token = data[i];
                 if (token === 0xFF) {
-                    // Token de compresión
                     const pos = data[i + 1] | (data[i + 2] << 8);
                     const len = data[i + 3];
                     for (let j = 0; j < len; j++) {
@@ -854,7 +999,7 @@
         }
         
         // ============================================================
-        //  🧠 MIGRACIÓN DE VERSIONES EXTENDIDA
+        //  🧠 MIGRACIÓN DE VERSIONES
         //  ============================================================
         _migrateMemory(oldData) {
             const newData = this._deepMerge(this._memory, oldData);
@@ -862,19 +1007,14 @@
             newData.migratedAt = Date.now();
             newData.migrationFrom = oldData.version || 'unknown';
             
-            // ============================================================
-            //  🧹 LIMPIEZA DE APRENDIZAJE ENVENENADO (extendida)
-            //  ============================================================
             if (newData.hardwareProfiles) {
                 const cleaned = {};
                 for (const [fingerprint, profile] of Object.entries(newData.hardwareProfiles)) {
-                    // Verificar si el perfil es sospechoso
                     if (this._isProfileSuspicious(profile)) {
-                        // Conservar solo la identidad, resetear aprendizaje
                         cleaned[fingerprint] = {
                             fingerprint,
                             resetAt: Date.now(),
-                            resetReason: `migración v${oldData.version || '0.0.0'} → v${this._config.version}: perfil sospechoso`
+                            resetReason: `migración v${oldData.version || '0.0.0'} → v${this._config.version}`
                         };
                     } else {
                         cleaned[fingerprint] = profile;
@@ -883,36 +1023,32 @@
                 newData.hardwareProfiles = cleaned;
             }
             
-            // ============================================================
-            //  🧹 LIMPIEZA DE MEMORIA EPISÓDICA CORRUPTA
-            //  ============================================================
             if (newData.episodic && newData.episodic.events) {
                 newData.episodic.events = newData.episodic.events.filter(e => 
                     e.timestamp && e.type && typeof e.type === 'string'
                 );
             }
             
-            // ============================================================
-            //  🧹 NORMALIZACIÓN DE PERFIL DE USUARIO
-            //  ============================================================
             if (newData.userProfile) {
-                // Asegurar que el perfil tenga todos los campos nuevos
                 const defaultProfile = this._getDefaultUserProfile();
                 newData.userProfile = this._deepMerge(defaultProfile, newData.userProfile);
             }
             
-            // ============================================================
-            //  📊 ACTUALIZAR ESTADÍSTICAS
-            //  ============================================================
             if (newData.globalStats) {
                 newData.globalStats.learningRate = this._calculateLearningRate();
             }
             
             console.log(`🧹 Migración completada: v${oldData.version || '0.0.0'} → v${this._config.version}`);
-            console.log(`   Perfiles de hardware: ${Object.keys(newData.hardwareProfiles).length}`);
-            console.log(`   Eventos episódicos: ${newData.episodic?.events?.length || 0}`);
             
             return newData;
+        }
+        
+        _isProfileSuspicious(profile) {
+            if (!profile || !profile.tierStats) return false;
+            const withSamples = profile.tierStats.filter(t => t.samples > 5);
+            if (withSamples.length < 2) return false;
+            const highestTier = withSamples[withSamples.length - 1];
+            return highestTier.avgFps > 0 && highestTier.avgFps < 10;
         }
         
         _getDefaultUserProfile() {
@@ -999,14 +1135,11 @@
             
             this._memory.episodic.events.push(event);
             
-            // Limitar tamaño
             if (this._memory.episodic.events.length > this._config.episodicMemorySize) {
-                // Ordenar por importancia y mantener los más importantes
                 this._memory.episodic.events.sort((a, b) => b.importance - a.importance);
                 this._memory.episodic.events = this._memory.episodic.events.slice(0, this._config.episodicMemorySize);
             }
             
-            // Si es muy importante, crear flashbulb
             if (importance > 0.9) {
                 this._createFlashbulb(event);
             }
@@ -1034,7 +1167,6 @@
             
             this._memory.emotionalState.flashbulbs.push(flashbulb);
             
-            // Limitar flashbulbs
             if (this._memory.emotionalState.flashbulbs.length > 100) {
                 this._memory.emotionalState.flashbulbs = this._memory.emotionalState.flashbulbs.slice(-50);
             }
@@ -1054,13 +1186,11 @@
             const knowledge = this._memory.semantic.knowledge;
             
             if (knowledge[key]) {
-                // Actualizar conocimiento existente
                 knowledge[key].value = this._deepMerge(knowledge[key].value, value);
                 knowledge[key].confidence = knowledge[key].confidence * 0.7 + confidence * 0.3;
                 knowledge[key].occurrences = (knowledge[key].occurrences || 0) + 1;
                 knowledge[key].lastUpdated = Date.now();
             } else {
-                // Nuevo conocimiento
                 knowledge[key] = {
                     value: value,
                     confidence: confidence,
@@ -1086,7 +1216,6 @@
             
             for (const [key, data] of Object.entries(knowledge)) {
                 if (data.confidence >= threshold) {
-                    // Búsqueda por similitud de texto
                     const similarity = this._calculateSimilarity(query, key);
                     if (similarity > 0.3) {
                         results.push({
@@ -1104,7 +1233,6 @@
         }
         
         _calculateSimilarity(str1, str2) {
-            // Similitud de coseno simple
             const words1 = str1.toLowerCase().split(' ');
             const words2 = str2.toLowerCase().split(' ');
             const common = words1.filter(w => words2.includes(w));
@@ -1115,7 +1243,6 @@
         //  🎯 SISTEMA DE RECOMENDACIONES
         //  ============================================================
         _loadRecommendations() {
-            // Generar recomendaciones basadas en el perfil del usuario
             const profile = this._memory.userProfile;
             const stats = profile.stats;
             const skills = profile.skillLevel;
@@ -1123,8 +1250,7 @@
             
             const recommendations = [];
             
-            // Recomendaciones basadas en estadísticas
-            if (stats.totalPlayTime < 3600000) { // < 1 hora
+            if (stats.totalPlayTime < 3600000) {
                 recommendations.push({
                     type: 'tutorial',
                     content: 'Completa el tutorial para aprender los básicos',
@@ -1142,7 +1268,6 @@
                 });
             }
             
-            // Recomendaciones basadas en habilidades
             const weakestSkill = Object.entries(skills)
                 .filter(([k]) => k !== 'overall')
                 .sort((a, b) => a[1] - b[1])[0];
@@ -1157,7 +1282,6 @@
                 });
             }
             
-            // Recomendaciones basadas en personalidad
             if (personality.playStyle === 'aggressive') {
                 recommendations.push({
                     type: 'combat',
@@ -1174,7 +1298,6 @@
                 });
             }
             
-            // Recomendaciones basadas en logros
             if (stats.achievements.length < 5) {
                 recommendations.push({
                     type: 'achievement',
@@ -1184,7 +1307,6 @@
                 });
             }
             
-            // Guardar recomendaciones
             this._memory.recommendations.generated = recommendations;
             this._memory.recommendations.lastGenerated = Date.now();
             
@@ -1197,7 +1319,6 @@
             const recommendations = this._memory.recommendations.generated
                 .sort((a, b) => b.priority - a.priority);
             
-            // Filtrar recomendaciones ya vistas
             const viewed = new Set(this._memory.recommendations.viewed);
             const filtered = recommendations.filter(r => !viewed.has(r.type + r.content));
             
@@ -1229,7 +1350,6 @@
         //  🧠 SISTEMA DE PREDICCIÓN DE COMPORTAMIENTO
         //  ============================================================
         predictBehavior(context, action) {
-            // Analizar patrones de comportamiento pasados
             const events = this._memory.episodic.events;
             const similarContexts = events.filter(e => 
                 e.context && this._calculateSimilarity(e.context, context) > 0.5
@@ -1237,11 +1357,8 @@
             
             if (similarContexts.length === 0) return { probability: 0.5, confidence: 0.2 };
             
-            // Calcular probabilidad de acción
             const occurrences = similarContexts.filter(e => e.action === action).length;
             const probability = occurrences / similarContexts.length;
-            
-            // Calcular confianza basada en número de muestras
             const confidence = Math.min(0.9, similarContexts.length / 20);
             
             return { probability, confidence };
@@ -1262,17 +1379,14 @@
             
             this._memory.rewards.history.push(reward);
             
-            // Actualizar reward actual
             this._memory.rewards.current = this._memory.rewards.current * 
                 this._config.rewardDecay + value * (1 - this._config.rewardDecay);
             
-            // Mantener dentro de límites
             this._memory.rewards.current = Math.max(
                 this._config.minReward,
                 Math.min(this._config.maxReward, this._memory.rewards.current)
             );
             
-            // Actualizar streaks
             if (!this._memory.rewards.streaks[type]) {
                 this._memory.rewards.streaks[type] = 0;
             }
@@ -1286,7 +1400,6 @@
             this._memory.rewards.total += value;
             this._dirty = true;
             
-            // Si es una recompensa alta, registrar en memoria episódica
             if (value > 0.8) {
                 this.recordEvent('high_reward', {
                     type: type,
@@ -1341,15 +1454,12 @@
         _forgetOldEntries() {
             const cutoff = Date.now() - (this._config.forgetThreshold * 24 * 60 * 60 * 1000);
             
-            // Olvidar decisiones antiguas de baja importancia
             this._memory.aiMemory.decisions = this._memory.aiMemory.decisions
                 .filter(d => d.timestamp > cutoff || (d.reward || 0) > 0.7);
             
-            // Olvidar sesiones antiguas
             this._memory.sessions = this._memory.sessions
-                .filter(s => s.startTime > cutoff || s.duration > 3600000); // > 1 hora
+                .filter(s => s.startTime > cutoff || s.duration > 3600000);
             
-            // Olvidar conocimiento de baja confianza
             const knowledge = this._memory.semantic.knowledge;
             for (const [key, data] of Object.entries(knowledge)) {
                 if (data.confidence < this._config.importanceThreshold && 
@@ -1358,11 +1468,8 @@
                 }
             }
             
-            // Olvidar eventos episódicos de baja importancia
             this._memory.episodic.events = this._memory.episodic.events
                 .filter(e => e.importance > 0.3 || (Date.now() - e.timestamp) < 86400000);
-            
-            console.log(`🧹 Olvido: ${this._memory.aiMemory.decisions.length} decisiones, ${Object.keys(knowledge).length} conocimientos`);
         }
         
         // ============================================================
@@ -1406,7 +1513,6 @@
         }
         
         saveHardwareProfile(fingerprint, profile) {
-            // Añadir estadísticas históricas
             if (this._memory.hardwareProfiles[fingerprint]) {
                 const history = this._memory.hardwareProfiles[fingerprint].history || [];
                 history.push({
@@ -1497,7 +1603,6 @@
                 
                 this._memory.gameData.achievements.push(achievement);
                 
-                // Registrar como evento importante
                 this.recordEvent('achievement_unlocked', {
                     id: id,
                     name: name,
@@ -1566,7 +1671,7 @@
         }
         
         // ============================================================
-        //  📊 ESTADÍSTICAS EXTENDIDAS
+        //  📊 ESTADÍSTICAS
         //  ============================================================
         getSummary() {
             const stats = this._memory.globalStats;
@@ -1581,8 +1686,6 @@
                 sessionId: this._sessionId,
                 sessionCount: profile.stats.sessions,
                 totalPlayTime: this._formatTime(profile.stats.totalPlayTime),
-                
-                // IA
                 totalDecisions: stats.totalDecisions,
                 successRate: stats.totalDecisions > 0 
                     ? Math.round(stats.successfulDecisions / stats.totalDecisions * 100) 
@@ -1590,44 +1693,26 @@
                 averageReward: Math.round(stats.averageReward * 100),
                 currentReward: Math.round(rewards.current * 100),
                 learningRate: (stats.learningRate || 0.1).toFixed(2),
-                
-                // Memoria
                 episodicEvents: episodic.events.length,
                 knowledgeItems: Object.keys(semantic.knowledge).length,
                 flashbulbs: emotion.flashbulbs.length,
-                
-                // Rendimiento
                 averageFPS: Math.round(profile.stats.averageFPS),
                 bestFPS: profile.stats.bestFPS,
-                
-                // Logros
                 achievements: profile.stats.achievements.length,
                 achievementPoints: this.getAchievementPoints(),
-                
-                // Estado emocional
                 emotionalValence: emotion.valence.toFixed(2),
                 emotionalArousal: emotion.arousal.toFixed(2),
-                
-                // Estadísticas de juego
                 totalKills: profile.stats.totalKills,
                 totalDeaths: profile.stats.totalDeaths,
                 questsCompleted: profile.stats.questsCompleted,
                 itemsCollected: profile.stats.itemsCollected,
-                
-                // Sistema
                 dirty: this._dirty,
                 memorySize: JSON.stringify(this._memory).length,
                 lastSync: this._memory.sync.lastSync,
                 lastBackup: this._memory.lastBackup,
                 lastConsolidation: this._memory.lastConsolidation,
-                
-                // Cambios pendientes
                 pendingChanges: this._changeLog.length,
-                
-                // Recomendaciones
-                recommendations: this._memory.recommendations.generated.length,
-                recommendationsViewed: this._memory.recommendations.viewed.length,
-                recommendationsAccepted: this._memory.recommendations.accepted.length
+                recommendations: this._memory.recommendations.generated.length
             };
         }
         
@@ -1637,10 +1722,8 @@
         reset() {
             console.log('🔄 Resetando memoria persistente...');
             
-            // Guardar backup antes de resetear
             this._saveToStorage();
             
-            // Crear nueva memoria
             this._memory = this._createDefaultMemory();
             this._sessionId = this._generateSessionId();
             this._changeLog = [];
@@ -1655,7 +1738,6 @@
         }
         
         _createDefaultMemory() {
-            // Crear una nueva estructura de memoria por defecto
             const memory = new PersistentMemory();
             return memory._memory;
         }
@@ -1666,7 +1748,6 @@
         shutdown() {
             console.log('💾 Cerrando memoria persistente...');
             
-            // Detener timers
             if (this._saveTimer) {
                 clearInterval(this._saveTimer);
                 this._saveTimer = null;
@@ -1687,17 +1768,295 @@
                 this._syncTimer = null;
             }
             
-            // Finalizar sesión
             this._endSession();
-            
-            // Consolidar memoria final
             this._consolidateMemory();
-            
-            // Guardar datos
             this._saveToStorage();
             
             this.emit('shutdown', { timestamp: Date.now() });
             console.log('✅ Memoria persistente cerrada');
+        }
+        
+        // ============================================================
+        //  📝 GESTIÓN DE SESIONES
+        //  ============================================================
+        _startSession() {
+            const session = {
+                id: this._sessionId,
+                startTime: Date.now(),
+                endTime: null,
+                duration: 0,
+                decisions: 0,
+                averageFPS: 0,
+                maxEntities: 0,
+                quality: 'ultra',
+                hardware: null,
+                notes: null
+            };
+            
+            this._memory.sessions.push(session);
+            
+            if (this._memory.sessions.length > this._config.maxSessions) {
+                this._memory.sessions.shift();
+            }
+            
+            this._dirty = true;
+        }
+        
+        _endSession() {
+            const session = this._memory.sessions[this._memory.sessions.length - 1];
+            if (session) {
+                session.endTime = Date.now();
+                session.duration = session.endTime - session.startTime;
+                
+                this._memory.userProfile.stats.totalPlayTime += session.duration;
+                this._memory.userProfile.stats.sessions++;
+            }
+            
+            this._dirty = true;
+            this._saveToStorage();
+        }
+        
+        _recoverSessionState() {
+            try {
+                const savedState = localStorage.getItem('priom_session_state');
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    if (state.sessionId !== this._sessionId) {
+                        this._mergeMemory(state.memory);
+                        console.log('📂 Estado de sesión anterior recuperado');
+                    }
+                }
+            } catch (e) {
+                // Ignorar
+            }
+        }
+        
+        // ============================================================
+        //  🧠 MEMORIA DE IA (MÉTODOS PRINCIPALES)
+        //  ============================================================
+        
+        /**
+         * Registra una decisión de IA (NOMBRE CORRECTO)
+         * @param {string} action - 'up' | 'down' | 'stable' | 'emergency_down'
+         * @param {string} quality - Nivel de calidad
+         * @param {number} reward - Recompensa obtenida (-1 a 1)
+         * @param {object} context - Contexto adicional
+         * @returns {object} Entrada registrada
+         */
+        recordDecision(action, quality, reward, context = null) {
+            const entry = {
+                timestamp: Date.now(),
+                action: action,
+                quality: quality,
+                reward: reward,
+                context: context,
+                sessionId: this._sessionId,
+                emotionalState: this._getCurrentEmotion()
+            };
+            
+            this._memory.aiMemory.decisions.push(entry);
+            
+            // Limitar historial
+            if (this._memory.aiMemory.decisions.length > this._config.maxHistoryEntries) {
+                this._memory.aiMemory.decisions.shift();
+            }
+            
+            // Actualizar estadísticas globales
+            this._memory.globalStats.totalDecisions++;
+            if (reward > 0.7) {
+                this._memory.globalStats.successfulDecisions++;
+            } else if (reward < 0.3) {
+                this._memory.globalStats.failedDecisions++;
+            }
+            
+            // Actualizar mejor/peor decisión
+            if (!this._memory.globalStats.bestDecision || reward > this._memory.globalStats.bestDecision.reward) {
+                this._memory.globalStats.bestDecision = { ...entry };
+            }
+            if (!this._memory.globalStats.worstDecision || reward < this._memory.globalStats.worstDecision.reward) {
+                this._memory.globalStats.worstDecision = { ...entry };
+            }
+            
+            // Actualizar recompensa promedio
+            const total = this._memory.globalStats.totalDecisions;
+            const prevAvg = this._memory.globalStats.averageReward;
+            this._memory.globalStats.averageReward = prevAvg + (reward - prevAvg) / total;
+            
+            // Actualizar sistema de recompensas
+            this._updateRewards(reward);
+            
+            this._dirty = true;
+            this._autoSave();
+            
+            return entry;
+        }
+        
+        /**
+         * MÉTODO DE COMPATIBILIDAD: RecordDecision (con mayúscula)
+         * Mantiene compatibilidad con código antiguo que usa la versión con mayúscula
+         * NO ROMPE NADA EXISTENTE
+         */
+        RecordDecision(action, quality, reward, context = null) {
+            // Redirigir al método correcto con advertencia
+            if (this._config.debug) {
+                console.warn('⚠️ RecordDecision (mayúscula) está obsoleto. Usar recordDecision (minúscula)');
+            }
+            return this.recordDecision(action, quality, reward, context);
+        }
+        
+        recordPerformance(fps, entities, quality) {
+            const entry = {
+                timestamp: Date.now(),
+                fps: fps,
+                entities: entities,
+                quality: quality,
+                sessionId: this._sessionId
+            };
+            
+            this._memory.aiMemory.performance.push(entry);
+            
+            if (this._memory.aiMemory.performance.length > this._config.maxHistoryEntries) {
+                this._memory.aiMemory.performance.shift();
+            }
+            
+            const stats = this._memory.userProfile.stats;
+            stats.averageFPS = stats.averageFPS * 0.9 + fps * 0.1;
+            if (fps > stats.bestFPS) stats.bestFPS = fps;
+            if (stats.worstFPS === 0 || fps < stats.worstFPS) stats.worstFPS = fps;
+            
+            this._dirty = true;
+        }
+        
+        recordAdaptation(from, to, reason) {
+            const entry = {
+                timestamp: Date.now(),
+                from: from,
+                to: to,
+                reason: reason,
+                sessionId: this._sessionId
+            };
+            
+            this._memory.aiMemory.adaptations.push(entry);
+            
+            if (this._memory.aiMemory.adaptations.length > this._config.maxHistoryEntries) {
+                this._memory.aiMemory.adaptations.shift();
+            }
+            
+            this._dirty = true;
+        }
+        
+        // ============================================================
+        //  🎯 SISTEMA DE RECOMPENSAS
+        //  ============================================================
+        _updateRewards(reward) {
+            this._memory.rewards.current = this._memory.rewards.current * this._config.rewardDecay + reward;
+            
+            this._memory.rewards.current = Math.max(
+                this._config.minReward,
+                Math.min(this._config.maxReward, this._memory.rewards.current)
+            );
+            
+            this._memory.rewards.history.push({
+                timestamp: Date.now(),
+                reward: reward,
+                current: this._memory.rewards.current
+            });
+            
+            if (this._memory.rewards.history.length > 100) {
+                this._memory.rewards.history.shift();
+            }
+            
+            this._memory.rewards.total += reward;
+        }
+        
+        getCurrentReward() {
+            return this._memory.rewards.current;
+        }
+        
+        getAverageReward() {
+            return this._memory.globalStats.averageReward;
+        }
+        
+        // ============================================================
+        //  🔍 CONSULTAS DE MEMORIA
+        //  ============================================================
+        getLastDecision(count = 10) {
+            const decisions = this._memory.aiMemory.decisions;
+            return decisions.slice(Math.max(0, decisions.length - count));
+        }
+        
+        getPerformanceHistory() {
+            return this._memory.aiMemory.performance;
+        }
+        
+        getAveragePerformance() {
+            const perf = this._memory.aiMemory.performance;
+            if (perf.length === 0) return { fps: 60, entities: 0 };
+            
+            const total = perf.reduce((acc, p) => ({
+                fps: acc.fps + p.fps,
+                entities: acc.entities + p.entities
+            }), { fps: 0, entities: 0 });
+            
+            return {
+                fps: Math.round(total.fps / perf.length),
+                entities: Math.round(total.entities / perf.length)
+            };
+        }
+        
+        getQualityHistory() {
+            const decisions = this._memory.aiMemory.decisions;
+            const qualityMap = {};
+            let total = 0;
+            
+            for (const d of decisions) {
+                const q = d.quality;
+                if (!qualityMap[q]) qualityMap[q] = 0;
+                qualityMap[q]++;
+                total++;
+            }
+            
+            const result = {};
+            for (const [q, count] of Object.entries(qualityMap)) {
+                result[q] = count / total;
+            }
+            
+            return result;
+        }
+        
+        getConfidenceHistory() {
+            return this._memory.aiMemory.confidenceHistory;
+        }
+        
+        getContextualMemory() {
+            return this._memory.contextualMemory;
+        }
+        
+        // ============================================================
+        //  🧠 MEMORIA ASOCIATIVA
+        //  ============================================================
+        associateContext(context, data) {
+            const key = context.toLowerCase();
+            if (!this._memory.contextualMemory.associations[key]) {
+                this._memory.contextualMemory.associations[key] = [];
+            }
+            
+            this._memory.contextualMemory.associations[key].push({
+                timestamp: Date.now(),
+                data: data,
+                context: context
+            });
+            
+            if (this._memory.contextualMemory.associations[key].length > 100) {
+                this._memory.contextualMemory.associations[key].shift();
+            }
+            
+            this._dirty = true;
+        }
+        
+        getAssociation(context) {
+            const key = context.toLowerCase();
+            return this._memory.contextualMemory.associations[key] || [];
         }
     }
     
