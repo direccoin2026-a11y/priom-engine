@@ -1,4 +1,4 @@
-/**
+ñ/**
  * 📊 PRIOM V0.4 - SOA MANAGER CUÁNTICO (ECS EXTREMO)
  * "Structure of Arrays para rendimiento cuántico"
  * 
@@ -33,7 +33,7 @@
      */
     class SoaManager {
         // ============================================================
-        //  🏷️ CONSTANTES
+        //  🏷️ CONSTANTES (TODAS COMO NÚMEROS, NO BigInt)
         //  ============================================================
         static FLAG_SLEEPING = 1 << 0;
         static FLAG_DIRTY = 1 << 1;
@@ -97,8 +97,8 @@
             this.tier = new Uint8Array(this.maxEntities);
             this.generationId = new Uint32Array(this.maxEntities);
             
-            // Flags (bitset 64-bit)
-            this.flags = new BigUint64Array(this.maxEntities);
+            // Flags (Uint32Array para compatibilidad - SIN BigInt)
+            this.flags = new Uint32Array(this.maxEntities);
             
             // Datos de vida
             this.birthTime = new Float64Array(this.maxEntities);
@@ -140,7 +140,7 @@
             //  ============================================================
             this.chunkSize = SoaManager.CHUNK_SIZE;
             this.spatialGrid = new Map();
-            this.octree = null; // Octree para culling avanzado
+            this.octree = null;
             this.gridSize = 32;
             
             // ============================================================
@@ -219,14 +219,13 @@
             this.lifeTime.fill(Infinity);
             this.opacity.fill(1);
             this.rotW.fill(1);
-            this.flags.fill(0n);
+            this.flags.fill(0); // NÚMERO, no BigInt
         }
         
         // ============================================================
         //  🌳 INICIALIZAR OCTREE
         //  ============================================================
         _initOctree() {
-            // Octree simplificado para culling
             this.octree = {
                 root: {
                     bounds: { x: 0, y: 0, z: 0, size: 1000 },
@@ -280,7 +279,7 @@
             this.scaleZ[id] = 1;
             this.lodLevel[id] = 0;
             this.tier[id] = 0;
-            this.flags[id] = 0n;
+            this.flags[id] = 0; // NÚMERO
             this.mass[id] = 1;
             this.friction[id] = 0.5;
             this.restitution[id] = 0.3;
@@ -318,7 +317,7 @@
             
             this.active[id] = 0;
             this.visible[id] = 0;
-            this.flags[id] |= BigInt(SoaManager.FLAG_DEAD);
+            this.flags[id] |= SoaManager.FLAG_DEAD;
             
             // Remover del grid espacial
             this._removeFromSpatialGrid(id);
@@ -376,8 +375,6 @@
         //  🌳 OCTREE PARA CULLING
         //  ============================================================
         _updateOctree(id) {
-            // Simplificado: solo agregar al root por ahora
-            // Para octree completo se necesita implementar inserción recursiva
             this.octree.root.entities.add(id);
         }
         
@@ -401,7 +398,6 @@
                     const chunk = this.spatialGrid.get(key);
                     if (!chunk) continue;
                     
-                    // SIMD: procesar en lotes de 4
                     const ids = Array.from(chunk);
                     for (let i = 0; i < ids.length; i += SoaManager.SIMD_LANES) {
                         const batch = ids.slice(i, i + SoaManager.SIMD_LANES);
@@ -423,16 +419,16 @@
         //  ============================================================
         sleep(id) {
             if (id < 0 || id >= this.count) return;
-            this.flags[id] |= BigInt(SoaManager.FLAG_SLEEPING);
+            this.flags[id] |= SoaManager.FLAG_SLEEPING;
         }
         
         wake(id) {
             if (id < 0 || id >= this.count) return;
-            this.flags[id] &= ~BigInt(SoaManager.FLAG_SLEEPING);
+            this.flags[id] &= ~SoaManager.FLAG_SLEEPING;
         }
         
         isSleeping(id) {
-            return (this.flags[id] & BigInt(SoaManager.FLAG_SLEEPING)) !== 0n;
+            return (this.flags[id] & SoaManager.FLAG_SLEEPING) !== 0;
         }
         
         // ============================================================
@@ -441,12 +437,12 @@
         _markDirty(id) {
             if (this.dirtyCount < this.maxEntities) {
                 this.dirtyIndices[this.dirtyCount++] = id;
-                this.flags[id] |= BigInt(SoaManager.FLAG_DIRTY);
+                this.flags[id] |= SoaManager.FLAG_DIRTY;
             }
         }
         
         _clearDirty(id) {
-            this.flags[id] &= ~BigInt(SoaManager.FLAG_DIRTY);
+            this.flags[id] &= ~SoaManager.FLAG_DIRTY;
         }
         
         getDirtyEntities() {
@@ -470,7 +466,6 @@
             }
             this.queryIndex.byType.get(type).add(id);
             
-            // Por categoría
             if (this.isTree[id]) this._addToCategory('tree', id);
             if (this.isRock[id]) this._addToCategory('rock', id);
             if (this.isAnimal[id]) this._addToCategory('animal', id);
@@ -493,7 +488,6 @@
                 this.queryIndex.byType.get(type).delete(id);
             }
             
-            // Remover de categorías
             for (const [category, set] of this.queryIndex.byCategory) {
                 set.delete(id);
             }
@@ -509,14 +503,12 @@
             const half = this.chunkSize / 2;
             const chunkRadius = this.chunkSize * 0.87 + 4;
             
-            // Reutilizar arrays para evitar GC
             const visibleIds = [];
             let chunksTotal = 0;
             let chunksVisible = 0;
             let cacheHits = 0;
             let cacheMisses = 0;
             
-            // Cache de chunks visibles
             const visibleChunks = new Set();
             
             for (const [key, set] of this.spatialGrid) {
@@ -543,11 +535,9 @@
                 chunksVisible++;
                 visibleChunks.add(key);
                 
-                // Determinar tier de simulación
                 const tier = dist < maxDist * 0.35 ? 0 : 
                            (dist < maxDist * 0.7 ? 1 : 2);
                 
-                // SIMD: procesar en lotes
                 const ids = Array.from(set);
                 for (let i = 0; i < ids.length; i += SoaManager.SIMD_LANES) {
                     const batch = ids.slice(i, i + SoaManager.SIMD_LANES);
@@ -555,11 +545,9 @@
                         if (!this.active[id]) continue;
                         if (!this.visible[id]) continue;
                         
-                        // Cache check
-                        if (this.flags[id] & BigInt(SoaManager.FLAG_RENDER_DIRTY)) {
+                        if (this.flags[id] & SoaManager.FLAG_RENDER_DIRTY) {
                             cacheMisses++;
-                            // Marcar como no dirty para futuros frames
-                            this.flags[id] &= ~BigInt(SoaManager.FLAG_RENDER_DIRTY);
+                            this.flags[id] &= ~SoaManager.FLAG_RENDER_DIRTY;
                         } else {
                             cacheHits++;
                         }
@@ -577,7 +565,6 @@
             this.stats.queries++;
             this.stats.queryTime += (performance.now() - startTime);
             
-            // Guardar para reutilización
             this.renderedCount = visibleIds.length;
             for (let i = 0; i < visibleIds.length && i < this.renderedIndices.length; i++) {
                 this.renderedIndices[i] = visibleIds[i];
@@ -592,7 +579,6 @@
         query(filter) {
             const cacheKey = JSON.stringify(filter);
             
-            // Verificar cache
             if (this.queryCache.has(cacheKey)) {
                 this.stats.cacheHits++;
                 return this.queryCache.get(cacheKey);
@@ -600,7 +586,6 @@
             
             const results = [];
             
-            // Optimización: usar índices si es posible
             if (filter.type !== undefined && this.queryIndex.byType.has(filter.type)) {
                 const candidates = this.queryIndex.byType.get(filter.type);
                 for (const id of candidates) {
@@ -616,7 +601,6 @@
                     }
                 }
             } else {
-                // Fallback: recorrer todas las entidades activas
                 const active = this.getActive();
                 for (const id of active) {
                     if (this._matchesFilter(id, filter)) {
@@ -625,7 +609,6 @@
                 }
             }
             
-            // Cachear resultado
             if (this.queryCache.size > 200) {
                 const firstKey = this.queryCache.keys().next().value;
                 this.queryCache.delete(firstKey);
@@ -636,24 +619,20 @@
         }
         
         _matchesFilter(id, filter) {
-            // Filtrar por tipo
             if (filter.type !== undefined && this.type[id] !== filter.type) {
                 return false;
             }
             
-            // Filtrar por subtipo
             if (filter.subType !== undefined && this.subType[id] !== filter.subType) {
                 return false;
             }
             
-            // Filtrar por flags
             if (filter.flags !== undefined) {
-                if ((this.flags[id] & BigInt(filter.flags)) !== BigInt(filter.flags)) {
+                if ((this.flags[id] & filter.flags) !== filter.flags) {
                     return false;
                 }
             }
             
-            // Filtrar por categoría
             if (filter.category !== undefined) {
                 const cat = filter.category;
                 if (cat === 'tree' && !this.isTree[id]) return false;
@@ -665,7 +644,6 @@
                 if (cat === 'player' && !this.isPlayer[id]) return false;
             }
             
-            // Filtrar por rango de posición
             if (filter.position) {
                 const p = filter.position;
                 if (p.x !== undefined && Math.abs(this.posX[id] - p.x) > p.radius) return false;
@@ -673,7 +651,6 @@
                 if (p.z !== undefined && Math.abs(this.posZ[id] - p.z) > p.radius) return false;
             }
             
-            // Filtrar por distancia
             if (filter.distance) {
                 const d = filter.distance;
                 const dx = this.posX[id] - d.x;
@@ -706,7 +683,6 @@
             this.stats.activeEntities = c;
             this.stats.totalEntities = this.count;
             
-            // Contar entidades dormidas
             let sleeping = 0;
             for (let i = 0; i < c; i++) {
                 if (this.isSleeping(this.activeIndices[i])) sleeping++;
@@ -717,23 +693,23 @@
         }
         
         // ============================================================
-        //  🎮 SISTEMA DE TAGS (FLAGS 64-bit)
+        //  🎮 SISTEMA DE TAGS (FLAGS)
         //  ============================================================
         setFlag(id, flag) {
             if (id < 0 || id >= this.count) return;
-            this.flags[id] |= BigInt(flag);
+            this.flags[id] |= flag;
             this._markDirty(id);
         }
         
         clearFlag(id, flag) {
             if (id < 0 || id >= this.count) return;
-            this.flags[id] &= ~BigInt(flag);
+            this.flags[id] &= ~flag;
             this._markDirty(id);
         }
         
         hasFlag(id, flag) {
             if (id < 0 || id >= this.count) return false;
-            return (this.flags[id] & BigInt(flag)) === BigInt(flag);
+            return (this.flags[id] & flag) === flag;
         }
         
         // ============================================================
@@ -744,7 +720,6 @@
                 this._events.set(event, []);
             }
             this._events.get(event).push({ callback, priority });
-            // Ordenar por prioridad
             this._events.get(event).sort((a, b) => b.priority - a.priority);
         }
         
@@ -755,8 +730,6 @@
         
         emit(event, data) {
             if (!this._events.has(event)) return;
-            
-            // Encolar para procesamiento asíncrono
             this._eventQueue.push({ event, data });
             
             if (!this._processingEvents) {
@@ -793,43 +766,35 @@
             const ids = visible ? visible.visibleIds : this.getActive();
             const len = ids.length;
             
-            // SIMD: procesar en lotes
             let simdOps = 0;
             
             for (let i = 0; i < len; i++) {
                 const id = ids[i];
                 
-                // Entidades dormidas se saltan
-                if (this.flags[id] & BigInt(SoaManager.FLAG_SLEEPING)) continue;
+                if (this.flags[id] & SoaManager.FLAG_SLEEPING) continue;
                 
                 const tier = visible ? this.tier[id] : 0;
                 
-                // Saltar frames según tier
                 if (tier === 1 && (frameCount % 4) !== 0) continue;
                 if (tier === 2 && (frameCount % 15) !== 0) continue;
                 
                 const effDelta = tier === 1 ? delta * 4 : 
                                (tier === 2 ? delta * 15 : delta);
                 
-                // SIMD: aplicar gravedad y viento
                 this.velY[id] += gravity * effDelta;
                 this.velX[id] += wind * effDelta * 0.1;
                 
-                // Viento variable con SIMD
                 const windFactor = Math.sin(performance.now() * 0.001 + this.posX[id] * 0.01);
                 this.velZ[id] += windFactor * effDelta * 0.05;
                 
-                // Actualizar posición
                 this.posX[id] += this.velX[id] * effDelta;
                 this.posY[id] += this.velY[id] * effDelta;
                 this.posZ[id] += this.velZ[id] * effDelta;
                 
-                // Aplicar amortiguamiento
                 this.velX[id] *= (1 - this.linearDamping[id] * effDelta);
                 this.velY[id] *= (1 - this.linearDamping[id] * effDelta);
                 this.velZ[id] *= (1 - this.linearDamping[id] * effDelta);
                 
-                // Colisión con el suelo
                 const groundY = getGroundHeight ? getGroundHeight(this.posX[id], this.posZ[id]) : 0;
                 if (this.posY[id] < groundY) {
                     this.posY[id] = groundY;
@@ -842,18 +807,17 @@
                     }
                 }
                 
-                // Actualizar grid espacial si se movió
                 const speed = Math.abs(this.velX[id]) + Math.abs(this.velZ[id]);
                 if (speed > 0.1) {
                     this._removeFromSpatialGrid(id);
                     this._updateSpatialGrid(id);
-                    this.flags[id] |= BigInt(SoaManager.FLAG_MOVING);
+                    this.flags[id] |= SoaManager.FLAG_MOVING;
                     this._markDirty(id);
                 } else {
-                    this.flags[id] &= ~BigInt(SoaManager.FLAG_MOVING);
+                    this.flags[id] &= ~SoaManager.FLAG_MOVING;
                 }
                 
-                simdOps += 4; // 4 operaciones SIMD
+                simdOps += 4;
             }
             
             this.stats.simdOperations += simdOps;
@@ -872,7 +836,6 @@
                 const dz = this.posZ[id] - camZ;
                 const dist = Math.sqrt(dx*dx + dz*dz);
                 
-                // Determinar LOD basado en distancia
                 let lod = 0;
                 if (dist > 30) lod = 1;
                 if (dist > 60) lod = 2;
@@ -880,25 +843,21 @@
                 if (dist > 150) lod = 4;
                 if (dist > 200) lod = 5;
                 
-                // Transición suave (no cambiar bruscamente)
                 const oldLod = this.lodLevel[id];
                 if (Math.abs(oldLod - lod) > 1) {
-                    // Cambio grande - aplicar gradualmente
                     this.lodLevel[id] = oldLod + Math.sign(lod - oldLod);
                 } else {
                     this.lodLevel[id] = lod;
                 }
                 
-                // Ocultar entidades muy lejanas
                 if (dist > maxDist) {
                     this.visible[id] = 0;
                 } else {
                     this.visible[id] = 1;
                 }
                 
-                // Marcar para render si LOD cambió
                 if (this.lodLevel[id] !== oldLod) {
-                    this.flags[id] |= BigInt(SoaManager.FLAG_RENDER_DIRTY);
+                    this.flags[id] |= SoaManager.FLAG_RENDER_DIRTY;
                 }
             }
         }
@@ -910,8 +869,8 @@
             const active = this.getActive();
             const header = new ArrayBuffer(20);
             const view = new DataView(header);
-            view.setUint32(0, 0x504F4D49, true); // 'POMI' magic
-            view.setUint32(4, 1, true); // version
+            view.setUint32(0, 0x504F4D49, true);
+            view.setUint32(4, 1, true);
             view.setUint32(8, active.length, true);
             view.setFloat64(12, Date.now(), true);
             
@@ -928,7 +887,7 @@
                     color: [this.colR[id], this.colG[id], this.colB[id], this.colA[id]],
                     type: this.type[id],
                     subType: this.subType[id],
-                    flags: Number(this.flags[id]),
+                    flags: this.flags[id],
                     mass: this.mass[id],
                     friction: this.friction[id],
                     restitution: this.restitution[id]
@@ -943,11 +902,9 @@
             const result = new Uint8Array(totalSize);
             let offset = 0;
             
-            // Header
             result.set(new Uint8Array(header), offset);
             offset += header.byteLength;
             
-            // Chunks
             for (const chunk of chunks) {
                 const lenView = new DataView(result.buffer, offset, 4);
                 lenView.setUint32(0, chunk.length, true);
@@ -1007,7 +964,7 @@
                     this.colG[id] = entity.color[1];
                     this.colB[id] = entity.color[2];
                     this.colA[id] = entity.color[3];
-                    this.flags[id] = BigInt(entity.flags || 0);
+                    this.flags[id] = entity.flags || 0;
                     this.mass[id] = entity.mass || 1;
                     this.friction[id] = entity.friction || 0.5;
                     this.restitution[id] = entity.restitution || 0.3;
@@ -1056,7 +1013,6 @@
                 }
             }
             
-            // Grid espacial
             for (const [key, set] of this.spatialGrid) {
                 total += key.length * 2;
                 total += set.size * 8;
@@ -1086,7 +1042,7 @@
             this._eventQueue = [];
             this._processingEvents = false;
             this.generation.fill(0);
-            this.flags.fill(0n);
+            this.flags.fill(0);
             
             this._initDefaults();
             this._initOctree();
@@ -1134,7 +1090,7 @@
             
             this.active[id] = 0;
             this.visible[id] = 0;
-            this.flags[id] = BigInt(SoaManager.FLAG_DEAD);
+            this.flags[id] = SoaManager.FLAG_DEAD;
             this._pool.push(id);
             this.dirty = true;
         }
@@ -1182,13 +1138,13 @@
             this.colG[id] = g;
             this.colB[id] = b;
             this.colA[id] = a;
-            this.flags[id] |= BigInt(SoaManager.FLAG_RENDER_DIRTY);
+            this.flags[id] |= SoaManager.FLAG_RENDER_DIRTY;
             return true;
         }
     }
     
     // ============================================================
-    //  🚀 INSTANCIA GLOBAL
+    //  🚀 CONSTANTES GLOBALES
     //  ============================================================
     const ENTITY_FLAGS = {
         NONE: 0,
@@ -1226,7 +1182,6 @@
         RENDER_DIRTY: 1 << 31
     };
     
-    // Tipos predefinidos
     const ENTITY_TYPES = {
         NONE: 0,
         GEOMETRY: 1,
@@ -1251,7 +1206,9 @@
         NPC: 20
     };
     
-    // Exponer globalmente
+    // ============================================================
+    //  🚀 INSTANCIA GLOBAL
+    //  ============================================================
     window.SoaManager = SoaManager;
     window.ENTITY_FLAGS = ENTITY_FLAGS;
     window.ENTITY_TYPES = ENTITY_TYPES;
