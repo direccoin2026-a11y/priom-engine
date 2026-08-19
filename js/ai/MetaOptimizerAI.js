@@ -52,41 +52,30 @@
             //  🧠 PARÁMETROS META-OPTIMIZABLES (extendidos)
             //  ============================================================
             this.metaParams = {
-                // Umbrales de decisión
                 qualityThreshold: 0.75,
                 qualityUpThreshold: 0.92,
                 emergencyThreshold: 0.35,
                 qualityDownThreshold: 0.55,
-                
-                // Cooldowns adaptativos
                 cooldownDown: 90,
                 cooldownUp: 180,
                 emergencyCooldown: 60,
                 minCooldown: 30,
                 maxCooldown: 300,
-                
-                // Multiplicadores dinámicos
                 lodMultiplier: 1.0,
                 entityMultiplier: 1.0,
                 particleMultiplier: 1.0,
                 shadowMultiplier: 1.0,
                 textureMultiplier: 1.0,
-                
-                // Aprendizaje
                 explorationRate: 0.05,
                 learningRate: 0.05,
                 discountFactor: 0.95,
                 batchSize: 32,
                 memorySize: 1000,
-                
-                // Rendimiento
                 targetFPS: 60,
                 minFPS: 20,
                 maxQualityIndex: 4,
                 minQualityIndex: 0,
                 fpsTolerance: 0.1,
-                
-                // Optimizaciones gráficas
                 shadowQuality: 1.0,
                 textureQuality: 1.0,
                 antialiasing: true,
@@ -97,45 +86,34 @@
                 volumetricFog: false,
                 screenSpaceReflections: false,
                 globalIllumination: false,
-                
-                // Sistema de alertas
                 alertThreshold: 0.7,
                 warningThreshold: 0.5,
                 criticalThreshold: 0.3,
                 alertCooldown: 60,
-                
-                // Contexto
                 contextAwareness: true,
                 userAdaptation: true,
                 hardwareAdaptation: true,
                 thermalAwareness: true,
                 batteryAwareness: true,
-                
-                // IA avanzada
                 useEnsemble: true,
                 useAttention: true,
                 useMetaLearning: true,
                 useTransferLearning: true,
-                explanationLevel: 'medium' // none | low | medium | high
+                explanationLevel: 'medium'
             };
             
             // ============================================================
             //  🧠 RED NEURONAL PROFUNDA (3 capas ocultas)
             //  ============================================================
             this.model = {
-                // Capa 1: 20 -> 32
                 w1: new Float32Array(20 * 32),
                 b1: new Float32Array(32),
-                // Capa 2: 32 -> 32
                 w2: new Float32Array(32 * 32),
                 b2: new Float32Array(32),
-                // Capa 3: 32 -> 16
                 w3: new Float32Array(32 * 16),
                 b3: new Float32Array(16),
-                // Capa de salida: 16 -> 1
                 w4: new Float32Array(16 * 1),
                 b4: new Float32Array(1),
-                
                 accuracy: 0.5,
                 trainingEpochs: 0,
                 loss: 1.0,
@@ -143,7 +121,6 @@
                 learningRate: 0.01
             };
             
-            // Inicializar pesos con Xavier Glorot
             this._initWeights();
             
             // ============================================================
@@ -189,7 +166,6 @@
                 ensemblePredictions: []
             };
             
-            // Memoria de experiencias (para replay)
             this.memoryBuffer = [];
             this.maxMemorySize = 1000;
             
@@ -244,7 +220,7 @@
             console.log(`🧬 MetaOptimizerAI Cuántica inicializada`);
             console.log(`📊 Confianza: ${Math.round(this.confidence * 100)}%`);
             console.log(`📊 Parámetros meta: ${Object.keys(this.metaParams).length}`);
-            console.log(`🧠 Red neuronal: 4 capas (${20}->${32}->${32}->${16}->1)`);
+            console.log(`🧠 Red neuronal: 4 capas (20->32->32->16->1)`);
             console.log(`🎯 Ensamble: ${this.ensemble.models.length} modelos`);
             console.log(`🔮 Attention: ${this.attention.weights.length} parámetros`);
         }
@@ -255,7 +231,6 @@
         _init() {
             this._initWeights();
             
-            // Cargar estado guardado
             const saved = this.memory.getGameData('metaOptimizerAI');
             if (saved) {
                 this.metaParams = { ...this.metaParams, ...saved.metaParams };
@@ -271,7 +246,6 @@
                 console.log(`📊 Memoria buffer: ${this.memoryBuffer.length} experiencias`);
             }
             
-            // Detectar contexto inicial
             this._detectContext();
         }
         
@@ -298,26 +272,16 @@
         }
         
         // ============================================================
-        //  🔄 ACTUALIZACIÓN PRINCIPAL (mejorada)
+        //  🔄 ACTUALIZACIÓN PRINCIPAL
         //  ============================================================
         update(performance, renderStats, mainAI) {
             const fps = performance.fps || 60;
             const targetFPS = this.metaParams.targetFPS || 60;
             const fpsRatio = fps / targetFPS;
             
-            // ============================================================
-            //  📊 REGISTRAR DATOS
-            //  ============================================================
             this._recordHistory(fps, mainAI.currentQuality, mainAI.decisionHistory);
-            
-            // ============================================================
-            //  🔍 DETECTAR CONTEXTO (mejorado)
-            //  ============================================================
             this._detectContext();
             
-            // ============================================================
-            //  🧠 PREDICCIÓN CON ENSAMBLE
-            //  ============================================================
             const rawPrediction = this._predictEnsemble();
             const predictionMap = { 
                 falling: 'caída_inminente', 
@@ -327,64 +291,26 @@
             };
             const prediction = predictionMap[rawPrediction] || 'estable';
             
-            // ============================================================
-            //  🔮 FORECASTING DE RENDIMIENTO
-            //  ============================================================
             const forecast = this._forecastPerformance();
-            
-            // ============================================================
-            //  🚨 DETECCIÓN DE ANOMALÍAS (mejorada)
-            //  ============================================================
             const anomaly = this._detectAnomaly(fps);
             const anomalyType = this._classifyAnomaly(fps);
-            
-            // ============================================================
-            //  📊 ANÁLISIS DE PATRONES (clustering)
-            //  ============================================================
             const patterns = this._detectPatterns();
             
-            // ============================================================
-            //  🧠 AJUSTE DE PARÁMETROS META (Bayesian Optimization)
-            //  ============================================================
             const adjustments = this._adjustMetaParamsBayesian(fpsRatio, prediction, mainAI);
-            
-            // ============================================================
-            //  🎯 OPTIMIZACIONES GRÁFICAS (con contexto)
-            //  ============================================================
             const graphicsOpt = this._optimizeGraphicsContextual(renderStats, fpsRatio, patterns);
-            
-            // ============================================================
-            //  📊 ANÁLISIS DE RENDIMIENTO (mejorado)
-            //  ============================================================
             const analysis = this._analyzePerformanceAdvanced(mainAI);
-            
-            // ============================================================
-            //  🚨 SISTEMA DE ALERTAS (predictivo)
-            //  ============================================================
             const alerts = this._checkAlertsPredictive(fpsRatio, prediction, forecast, mainAI);
             
-            // ============================================================
-            //  🧠 APRENDIZAJE META (con replay)
-            //  ============================================================
             this._learnWithReplay(fpsRatio, rawPrediction, mainAI);
             
-            // ============================================================
-            //  📝 EXPLICABILIDAD (XAI)
-            //  ============================================================
             if (this.metaParams.explanationLevel !== 'none') {
                 this._generateExplanation(fpsRatio, prediction, adjustments);
             }
             
-            // ============================================================
-            //  💾 GUARDAR ESTADO
-            //  ============================================================
             if (this.history.fps.length % 100 === 0) {
                 this._saveState();
             }
             
-            // ============================================================
-            //  📊 GENERAR RESULTADO (enriquecido)
-            //  ============================================================
             const result = {
                 prediction: prediction,
                 rawPrediction: rawPrediction,
@@ -414,33 +340,22 @@
         _predictEnsemble() {
             const features = this._extractFeatures(this.history.fps);
             
-            // Predicciones de cada modelo
             const predictions = [];
-            
-            // 1. Red neuronal profunda
             const nnPred = this._neuralNetworkPredict(features);
             predictions.push(nnPred);
-            
-            // 2. Regresión lineal
             const lrPred = this._linearRegressionPredict(features);
             predictions.push(lrPred);
-            
-            // 3. Árbol de decisión (simplificado)
             const treePred = this._decisionTreePredict(features);
             predictions.push(treePred);
-            
-            // 4. Bayesian (simplificado)
             const bayesPred = this._bayesianPredict(features);
             predictions.push(bayesPred);
             
-            // Guardar para análisis
             this.history.ensemblePredictions.push({
                 timestamp: Date.now(),
                 predictions: predictions,
                 weights: this.ensemble.models.map(m => m.weight)
             });
             
-            // Votación ponderada
             let weightedSum = 0;
             let totalWeight = 0;
             for (let i = 0; i < predictions.length; i++) {
@@ -449,11 +364,9 @@
             }
             const ensemblePred = weightedSum / totalWeight;
             
-            // Actualizar confianza del ensamble
             const variance = this._calculateVariance(predictions);
             this.ensemble.confidence = Math.max(0, Math.min(1, 1 - variance));
             
-            // Clasificar
             if (ensemblePred < 0.3) return 'falling';
             if (ensemblePred > 0.7) return 'rising';
             if (ensemblePred < 0.45 || ensemblePred > 0.55) return 'volatile';
@@ -461,7 +374,6 @@
         }
         
         _linearRegressionPredict(features) {
-            // Regresión lineal simple
             let sum = 0;
             for (let i = 0; i < Math.min(features.length, 10); i++) {
                 sum += features[i] * (0.5 + i * 0.05);
@@ -470,7 +382,6 @@
         }
         
         _decisionTreePredict(features) {
-            // Árbol de decisión simplificado
             const mean = features[0] || 0.5;
             const variance = features[1] || 0.3;
             const slope = features[2] || 0;
@@ -484,7 +395,6 @@
         }
         
         _bayesianPredict(features) {
-            // Predicción Bayesiana simplificada
             const prior = 0.5;
             const likelihood = features.reduce((sum, f, i) => sum + f * (0.1 + i * 0.02), 0);
             return Math.max(0, Math.min(1, (prior + likelihood) / 2));
@@ -497,20 +407,18 @@
         }
         
         // ============================================================
-        //  🧠 RED NEURONAL PROFUNDA (mejorada)
+        //  🧠 RED NEURONAL PROFUNDA
         //  ============================================================
         _neuralNetworkPredict(features) {
-            // Capa 1: 20 -> 32 (ReLU)
             const h1 = new Float32Array(32);
             for (let i = 0; i < 32; i++) {
                 let sum = this.model.b1[i];
                 for (let j = 0; j < Math.min(features.length, 20); j++) {
                     sum += features[j] * this.model.w1[j * 32 + i];
                 }
-                h1[i] = Math.max(0, sum); // ReLU
+                h1[i] = Math.max(0, sum);
             }
             
-            // Capa 2: 32 -> 32 (ReLU)
             const h2 = new Float32Array(32);
             for (let i = 0; i < 32; i++) {
                 let sum = this.model.b2[i];
@@ -520,7 +428,6 @@
                 h2[i] = Math.max(0, sum);
             }
             
-            // Capa 3: 32 -> 16 (ReLU)
             const h3 = new Float32Array(16);
             for (let i = 0; i < 16; i++) {
                 let sum = this.model.b3[i];
@@ -530,7 +437,6 @@
                 h3[i] = Math.max(0, sum);
             }
             
-            // Capa de salida: 16 -> 1 (Sigmoid)
             let output = this.model.b4[0];
             for (let i = 0; i < 16; i++) {
                 output += h3[i] * this.model.w4[i];
@@ -539,7 +445,7 @@
         }
         
         // ============================================================
-        //  📈 EXTRACCIÓN DE CARACTERÍSTICAS (mejorada)
+        //  📈 EXTRACCIÓN DE CARACTERÍSTICAS
         //  ============================================================
         _extractFeatures(history) {
             const n = history.length;
@@ -549,12 +455,10 @@
                 return new Float32Array(20).fill(0.5);
             }
             
-            // Estadísticas básicas
             const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
             const variance = recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length;
             const std = Math.sqrt(variance);
             
-            // Tendencias
             const slope = this._calculateSlope(recent);
             const half = Math.floor(recent.length / 2);
             const firstHalf = recent.slice(0, half);
@@ -563,24 +467,20 @@
             const slope2 = this._calculateSlope(secondHalf);
             const acceleration = slope2 - slope1;
             
-            // Características espectrales
             const fft = this._fft(recent);
             const dominantFreq = this._findDominantFrequency(fft);
             const spectralCentroid = this._calculateSpectralCentroid(fft);
             
-            // Características de forma
             const skewness = this._calculateSkewness(recent, mean, std);
             const kurtosis = this._calculateKurtosis(recent, mean, std);
             const autocorrelation = this._calculateAutocorrelation(recent, 1);
             
-            // Características de contexto
             const isGaming = this.context.userActivity === 'gaming' ? 1 : 0;
             const batteryLevel = this.context.batteryStatus === 'low' ? 0.2 : 
                                (this.context.batteryStatus === 'saving' ? 0.5 : 1);
             const networkQuality = this.context.networkQuality === 'poor' ? 0.2 :
                                   (this.context.networkQuality === 'medium' ? 0.5 : 1);
             
-            // Características del hardware
             const hardwareScore = this.hardware._hardware?.score || 50;
             
             return new Float32Array([
@@ -607,13 +507,9 @@
             ]);
         }
         
-        // ============================================================
-        //  📊 ANÁLISIS DE FOURIER (FFT simplificada)
-        //  ============================================================
         _fft(signal) {
             const n = signal.length;
             const result = new Float32Array(n);
-            
             for (let k = 0; k < n; k++) {
                 let real = 0, imag = 0;
                 for (let t = 0; t < n; t++) {
@@ -672,13 +568,9 @@
             return denominator > 0 ? numerator / denominator : 0;
         }
         
-        // ============================================================
-        //  📈 SLOPE CALCULATION
-        //  ============================================================
         _calculateSlope(values) {
             const n = values.length;
             if (n < 2) return 0;
-            
             let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
             for (let i = 0; i < n; i++) {
                 sumX += i;
@@ -705,7 +597,6 @@
             const slope = this._calculateSlope(recent);
             const std = Math.sqrt(recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length);
             
-            // Predicciones para el horizonte
             const predictions = [];
             const horizon = this.forecast.horizon;
             for (let i = 1; i <= horizon; i++) {
@@ -713,7 +604,6 @@
                 predictions.push(Math.max(10, Math.min(120, pred)));
             }
             
-            // Determinar tendencia
             let trend = 'stable';
             const avgSlope = slope * 2;
             if (avgSlope > 0.3) trend = 'rising';
@@ -734,7 +624,7 @@
         }
         
         // ============================================================
-        //  🚨 DETECCIÓN DE ANOMALÍAS (mejorada)
+        //  🚨 DETECCIÓN DE ANOMALÍAS
         //  ============================================================
         _detectAnomaly(fps) {
             const history = this.history.fps;
@@ -746,7 +636,6 @@
             const std = Math.sqrt(variance);
             
             if (std < 1) return false;
-            
             const zScore = (fps - mean) / std;
             return zScore < -2.5;
         }
@@ -765,16 +654,13 @@
             if (zScore < -2) return 'significant_drop';
             if (zScore < -1.5) return 'moderate_drop';
             if (zScore < -1) return 'minor_drop';
-            
-            // Detectar picos
             if (zScore > 2.5) return 'spike_up';
             if (zScore > 2) return 'significant_rise';
-            
             return 'normal';
         }
         
         // ============================================================
-        //  📊 DETECCIÓN DE PATRONES (clustering)
+        //  📊 DETECCIÓN DE PATRONES
         //  ============================================================
         _detectPatterns() {
             const history = this.history.fps;
@@ -785,18 +671,15 @@
             const variance = recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length;
             const std = Math.sqrt(variance);
             
-            // Patrón 1: Estable
             if (std / mean < 0.05) {
                 return { type: 'stable', confidence: 0.8 };
             }
             
-            // Patrón 2: Oscilación
             const autocorr = this._calculateAutocorrelation(recent, 1);
             if (autocorr < -0.3) {
                 return { type: 'oscillating', confidence: 0.7 };
             }
             
-            // Patrón 3: Tendencia
             const slope = this._calculateSlope(recent);
             if (Math.abs(slope) > 0.3) {
                 return { 
@@ -805,7 +688,6 @@
                 };
             }
             
-            // Patrón 4: Volátil
             if (std / mean > 0.15) {
                 return { type: 'volatile', confidence: 0.7 };
             }
@@ -814,22 +696,19 @@
         }
         
         // ============================================================
-        //  🔍 DETECCIÓN DE CONTEXTO (mejorada)
+        //  🔍 DETECCIÓN DE CONTEXTO
         //  ============================================================
         _detectContext() {
             const now = Date.now();
             
-            // Actividad del usuario
             let activity = 'active';
             if (document.hidden) activity = 'idle';
             else if (document.pointerLockElement) activity = 'gaming';
             
-            // Estado de batería
             let batteryStatus = 'normal';
             if (this.hardware._hardware?.lowPowerMode) batteryStatus = 'low';
             else if (this.hardware._hardware?.batterySaver) batteryStatus = 'saving';
             
-            // Calidad de red
             let networkQuality = 'good';
             const connection = this.hardware._hardware?.connection;
             if (connection) {
@@ -838,21 +717,16 @@
                 else if (type === '3g') networkQuality = 'medium';
             }
             
-            // Estado térmico (estimado)
             let thermalState = 'normal';
             if (this.hardware._hardware?.thermalThrottling) thermalState = 'hot';
             else if (this.hardware._hardware?.gpuTemperature > 70) thermalState = 'warm';
             
-            // Carga de CPU/GPU (estimada)
             const cpuLoad = this.hardware._hardware?.cpuUsage || 0.2;
             const gpuLoad = this.hardware._hardware?.gpuUsage || 0.2;
             const memoryPressure = this.hardware._hardware?.memoryPressure || 0.3;
             
-            // Estado de ánimo del usuario (simulado)
             const mood = this._estimateUserMood();
-            
-            // Duración de la sesión
-            const sessionDuration = this.context.sessionDuration + 0.016; // ~1 frame
+            const sessionDuration = this.context.sessionDuration + 0.016;
             
             const newContext = {
                 current: activity,
@@ -873,7 +747,6 @@
                 stressLevel: this._estimateStressLevel()
             };
             
-            // Registrar cambio de contexto
             if (this.context.current !== activity) {
                 this.history.contexts.push({
                     from: this.context.current,
@@ -891,14 +764,11 @@
         }
         
         _estimateUserMood() {
-            // Basado en rendimiento reciente y contexto
             const fps = this.history.fps.slice(-30);
             if (fps.length < 10) return 'neutral';
-            
             const avg = fps.reduce((a, b) => a + b, 0) / fps.length;
             const target = this.metaParams.targetFPS || 60;
             const ratio = avg / target;
-            
             if (ratio > 0.95) return 'happy';
             if (ratio > 0.8) return 'content';
             if (ratio > 0.6) return 'neutral';
@@ -907,14 +777,11 @@
         }
         
         _estimateStressLevel() {
-            // Basado en volatilidad del FPS
             const fps = this.history.fps.slice(-30);
             if (fps.length < 10) return 0.3;
-            
             const mean = fps.reduce((a, b) => a + b, 0) / fps.length;
             const variance = fps.reduce((a, b) => a + (b - mean) ** 2, 0) / fps.length;
             const std = Math.sqrt(variance);
-            
             return Math.min(1, std / 15);
         }
         
@@ -924,30 +791,24 @@
         _adjustMetaParamsBayesian(fpsRatio, prediction, mainAI) {
             const adjustments = {};
             
-            // === Función objetivo: balance entre FPS y calidad ===
             const objective = (params) => {
                 const fpsScore = Math.min(1, fpsRatio / (params.qualityThreshold || 0.75));
                 const qualityScore = mainAI.currentQuality / 4;
                 return fpsScore * 0.6 + qualityScore * 0.4;
             };
             
-            // === Muestrear hiperparámetros ===
             const samples = 5;
             let bestScore = objective(this.metaParams);
             let bestParams = { ...this.metaParams };
             
             for (let i = 0; i < samples; i++) {
                 const candidate = { ...this.metaParams };
-                
-                // Perturbar parámetros
                 const noise = (Math.random() - 0.5) * 0.1;
                 candidate.qualityThreshold = Math.max(0.3, Math.min(0.95, 
                     this.metaParams.qualityThreshold + noise));
-                
                 const noise2 = (Math.random() - 0.5) * 0.15;
                 candidate.cooldownDown = Math.max(30, Math.min(150, 
                     this.metaParams.cooldownDown + noise2 * 100));
-                
                 const score = objective(candidate);
                 if (score > bestScore) {
                     bestScore = score;
@@ -955,7 +816,6 @@
                 }
             }
             
-            // === Aplicar ajustes ===
             const diff = (key) => {
                 const diffVal = bestParams[key] - this.metaParams[key];
                 if (Math.abs(diffVal) > 0.01) {
@@ -968,7 +828,6 @@
             diff('cooldownDown');
             diff('cooldownUp');
             
-            // === Ajuste por contexto ===
             if (this.context.batteryStatus === 'low') {
                 if (this.metaParams.maxQualityIndex > 2) {
                     this.metaParams.maxQualityIndex = 2;
@@ -983,12 +842,10 @@
                 }
             }
             
-            // === Aprendizaje por transferencia ===
             if (this.metaParams.useTransferLearning) {
                 this._transferLearning(adjustments);
             }
             
-            // Registrar adaptación
             if (Object.keys(adjustments).length > 0) {
                 this.history.adaptations.push({
                     timestamp: Date.now(),
@@ -1007,7 +864,6 @@
         //  🧠 TRANSFER LEARNING
         //  ============================================================
         _transferLearning(adjustments) {
-            // Buscar experiencias similares en memoria
             const similar = this.memoryBuffer
                 .filter(exp => {
                     const contextSim = this._contextSimilarity(exp.context, this.context);
@@ -1017,7 +873,6 @@
             
             if (similar.length < 3) return;
             
-            // Aplicar aprendizaje de experiencias similares
             const avgAdjustments = {};
             for (const exp of similar) {
                 if (exp.adjustments) {
@@ -1047,7 +902,6 @@
                 count++;
             }
             
-            // Similaridad numérica
             const numFields = ['cpuLoad', 'gpuLoad', 'memoryPressure', 'stressLevel'];
             for (const field of numFields) {
                 const diff = Math.abs((ctx1[field] || 0) - (ctx2[field] || 0));
@@ -1081,7 +935,6 @@
                 reflectionQuality: 1.0
             };
             
-            // === Ajuste por rendimiento ===
             if (fpsRatio < 0.35) {
                 optimizations.ssaoEnabled = false;
                 optimizations.bloomIntensity = 0.2;
@@ -1144,12 +997,10 @@
                 optimizations.reflectionQuality = 1.0;
             }
             
-            // === Aplicar multiplicadores meta ===
             optimizations.particleDensity *= this.metaParams.particleMultiplier;
             optimizations.shadowQuality *= this.metaParams.shadowMultiplier;
             optimizations.textureFiltering *= this.metaParams.textureMultiplier;
             
-            // === Ajuste por contexto ===
             if (this.context.batteryStatus === 'low') {
                 optimizations.bloomIntensity *= 0.3;
                 optimizations.ssaoEnabled = false;
@@ -1180,7 +1031,6 @@
                 optimizations.screenSpaceReflections = false;
             }
             
-            // === Ajuste por patrones detectados ===
             if (patterns.type === 'volatile') {
                 optimizations.motionBlur = false;
                 optimizations.depthOfField = false;
@@ -1192,7 +1042,6 @@
                 optimizations.particleDensity *= 0.8;
             }
             
-            // === Ajuste por predicción ===
             if (this.forecast.trend === 'falling') {
                 optimizations.particleDensity *= 0.8;
                 optimizations.shadowQuality *= 0.8;
@@ -1227,31 +1076,24 @@
                 };
             }
             
-            // Estadísticas
             const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
             const max = Math.max(...recent);
             const min = Math.min(...recent);
             const variance = recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length;
             const stdDev = Math.sqrt(variance);
             
-            // Percentiles
             const sorted = [...recent].sort((a, b) => a - b);
             const p95 = sorted[Math.floor(sorted.length * 0.95)];
             const p50 = sorted[Math.floor(sorted.length * 0.5)];
             
-            // Estabilidad
             const stability = Math.max(0, Math.min(1, 1 - (stdDev / avg)));
-            
-            // Tendencias
             const trend = this._getTrend();
             
-            // Calidad
             const quality = mainAI.qualityLevels[mainAI.currentQuality];
             const qualityIndex = mainAI.currentQuality;
             const maxQuality = mainAI.qualityLevels.length - 1;
             const qualityRatio = qualityIndex / maxQuality;
             
-            // Tasas de cambio
             const firstHalf = recent.slice(0, Math.floor(recent.length / 2));
             const secondHalf = recent.slice(Math.floor(recent.length / 2));
             const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
@@ -1259,33 +1101,26 @@
             const improvementRate = (secondAvg - firstAvg) / firstAvg;
             const degradationRate = Math.max(0, -improvementRate);
             
-            // Recomendaciones
             const recommendations = [];
             
             if (trend === 'falling') {
                 recommendations.push('🔻 Rendimiento en declive - bajar calidad ahora');
             }
-            
             if (stability < 0.7) {
                 recommendations.push('📊 Rendimiento inestable - revisar configuración');
             }
-            
             if (qualityRatio > 0.8 && avg < 40) {
                 recommendations.push('🎯 Calidad alta con FPS bajo - reducir calidad');
             }
-            
             if (qualityRatio < 0.3 && avg > 80) {
                 recommendations.push('🚀 FPS alto con calidad baja - aumentar calidad');
             }
-            
             if (this.context.batteryStatus === 'low') {
                 recommendations.push('🔋 Batería baja - optimizar energía');
             }
-            
             if (this.context.thermalState === 'hot') {
                 recommendations.push('🌡️ Temperatura alta - reducir carga térmica');
             }
-            
             if (degradationRate > 0.05) {
                 recommendations.push('📉 Degradación detectada - aplicar corrección');
             }
@@ -1311,23 +1146,20 @@
         _getTrend() {
             const history = this.history.fps;
             if (history.length < 20) return 'stable';
-            
             const recent = history.slice(-20);
             const slope = this._calculateSlope(recent);
-            
             if (slope > 0.3) return 'rising';
             if (slope < -0.3) return 'falling';
             return 'stable';
         }
         
         // ============================================================
-        //  🚨 SISTEMA DE ALERTAS PREDICTIVO
+        //  🚨 SISTEMA DE ALERTAS PREDICTIVO (CORREGIDO)
         //  ============================================================
         _checkAlertsPredictive(fpsRatio, prediction, forecast, mainAI) {
             const alerts = [];
             const now = Date.now();
             
-            // === Alertas críticas ===
             if (fpsRatio < this.metaParams.criticalThreshold) {
                 alerts.push({
                     type: 'critical',
@@ -1338,7 +1170,6 @@
                 });
             }
             
-            // === Alertas de predicción ===
             if (prediction === 'falling') {
                 alerts.push({
                     type: 'prediction',
@@ -1349,7 +1180,6 @@
                 });
             }
             
-            // === Alertas de forecasting ===
             if (forecast.trend === 'falling' && forecast.confidence > 0.6) {
                 alerts.push({
                     type: 'forecast',
@@ -1360,7 +1190,6 @@
                 });
             }
             
-            // === Alertas de contexto ===
             if (this.context.batteryStatus === 'low') {
                 alerts.push({
                     type: 'battery',
@@ -1381,7 +1210,6 @@
                 });
             }
             
-            // === Alertas de degradación ===
             if (this.history.fps.length > 30) {
                 const recent = this.history.fps.slice(-30);
                 const older = this.history.fps.slice(-60, -30);
@@ -1400,11 +1228,13 @@
                 }
             }
             
-            // === Alertas de inestabilidad ===
+            // === ALERTA DE INESTABILIDAD (CORREGIDO) ===
             if (this.history.fps.length > 20) {
                 const recent = this.history.fps.slice(-20);
-                const std = Math.sqrt(recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length);
+                // PRIMERO declarar avg
                 const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                // LUEGO usar avg para calcular std
+                const std = Math.sqrt(recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length);
                 if (std / avg > 0.2) {
                     alerts.push({
                         type: 'instability',
@@ -1416,12 +1246,10 @@
                 }
             }
             
-            // Limitar historial de alertas
             if (this.history.alerts.length > 100) {
                 this.history.alerts = this.history.alerts.slice(-50);
             }
             
-            // Registrar alertas
             for (const alert of alerts) {
                 this.history.alerts.push(alert);
             }
@@ -1433,7 +1261,6 @@
         //  🧠 APRENDIZAJE META CON REPLAY
         //  ============================================================
         _learnWithReplay(fpsRatio, prediction, mainAI) {
-            // === Almacenar experiencia ===
             const experience = {
                 timestamp: Date.now(),
                 features: this._extractFeatures(this.history.fps),
@@ -1450,13 +1277,11 @@
                 this.memoryBuffer.shift();
             }
             
-            // === Entrenamiento con mini-batch ===
             if (this.memoryBuffer.length >= this.metaParams.batchSize) {
                 const batch = this._sampleBatch(this.metaParams.batchSize);
                 this._trainBatch(batch);
             }
             
-            // === Actualizar red neuronal ===
             const features = this._extractFeatures(this.history.fps);
             const target = fpsRatio;
             const predicted = this._neuralNetworkPredict(features);
@@ -1465,14 +1290,11 @@
             this.model.accuracy = this.model.accuracy * 0.95 + (1 - Math.abs(error)) * 0.05;
             this.model.loss = this.model.loss * 0.9 + error * error * 0.1;
             
-            // === Backpropagation ===
             this._backpropagate(features, target, predicted);
             
-            // === Actualizar exploración ===
             this.metaParams.explorationRate *= this.explorationDecay;
             this.metaParams.explorationRate = Math.max(0.01, this.metaParams.explorationRate);
             
-            // === Actualizar confianza ===
             const actualTrend = this._getTrend();
             if (prediction === actualTrend) {
                 this.confidence = Math.min(1, this.confidence + 0.005);
@@ -1480,29 +1302,24 @@
                 this.confidence = Math.max(0.1, this.confidence - 0.01);
             }
             
-            // === Registrar pérdida ===
             this.history.losses.push(this.model.loss);
             this.history.gradients.push(this.model.gradientNorm);
         }
         
         _calculateReward(fpsRatio, prediction) {
             let reward = 0;
-            
-            // Recompensa por FPS
             if (fpsRatio > 0.9) reward += 0.5;
             else if (fpsRatio > 0.7) reward += 0.2;
             else if (fpsRatio < 0.5) reward -= 0.3;
             
-            // Recompensa por predicción correcta
             const actual = this._getTrend();
             if (prediction === actual) reward += 0.3;
             else reward -= 0.2;
             
-            // Recompensa por estabilidad
             if (this.history.fps.length > 20) {
                 const recent = this.history.fps.slice(-20);
-                const std = Math.sqrt(recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length);
                 const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                const std = Math.sqrt(recent.reduce((a, b) => a + (b - avg) ** 2, 0) / recent.length);
                 if (std / avg < 0.05) reward += 0.2;
             }
             
@@ -1525,46 +1342,37 @@
         
         _trainBatch(batch) {
             let totalLoss = 0;
-            
             for (const exp of batch) {
                 const features = exp.features;
                 const target = exp.fpsRatio;
                 const predicted = this._neuralNetworkPredict(features);
-                
                 const error = target - predicted;
                 totalLoss += error * error;
-                
-                // Actualizar con SGD
                 this._backpropagate(features, target, predicted);
             }
-            
             this.model.loss = this.model.loss * 0.5 + (totalLoss / batch.length) * 0.5;
         }
         
         // ============================================================
-        //  🧠 BACKPROPAGATION (con gradientes)
+        //  🧠 BACKPROPAGATION
         //  ============================================================
         _backpropagate(features, target, predicted) {
             const lr = this.model.learningRate || 0.01;
             
-            // Error en capa de salida
             const delta4 = (predicted - target) * predicted * (1 - predicted);
             
-            // Gradiente para w4 y b4
             const h3 = this._getHiddenLayer3(features);
             for (let i = 0; i < 16; i++) {
                 this.model.w4[i] -= lr * delta4 * h3[i];
             }
             this.model.b4[0] -= lr * delta4;
             
-            // Error en capa 3 (16 -> 32)
             const delta3 = new Float32Array(16);
             for (let i = 0; i < 16; i++) {
                 const grad = delta4 * this.model.w4[i] * h3[i] * (1 - h3[i]);
                 delta3[i] = grad;
             }
             
-            // Gradiente para w3 y b3
             const h2 = this._getHiddenLayer2(features);
             for (let i = 0; i < 16; i++) {
                 for (let j = 0; j < 32; j++) {
@@ -1573,7 +1381,6 @@
                 this.model.b3[i] -= lr * delta3[i];
             }
             
-            // Error en capa 2 (32 -> 32)
             const delta2 = new Float32Array(32);
             for (let i = 0; i < 32; i++) {
                 let sum = 0;
@@ -1583,7 +1390,6 @@
                 delta2[i] = sum * h2[i] * (1 - h2[i]);
             }
             
-            // Gradiente para w2 y b2
             const h1 = this._getHiddenLayer1(features);
             for (let i = 0; i < 32; i++) {
                 for (let j = 0; j < 32; j++) {
@@ -1592,7 +1398,6 @@
                 this.model.b2[i] -= lr * delta2[i];
             }
             
-            // Error en capa 1 (20 -> 32)
             const delta1 = new Float32Array(32);
             for (let i = 0; i < 32; i++) {
                 let sum = 0;
@@ -1602,7 +1407,6 @@
                 delta1[i] = sum * h1[i] * (1 - h1[i]);
             }
             
-            // Gradiente para w1 y b1
             for (let i = 0; i < 32; i++) {
                 for (let j = 0; j < Math.min(features.length, 20); j++) {
                     this.model.w1[j * 32 + i] -= lr * delta1[i] * features[j];
@@ -1610,7 +1414,6 @@
                 this.model.b1[i] -= lr * delta1[i];
             }
             
-            // Calcular norma del gradiente
             let gradNorm = 0;
             for (let i = 0; i < this.model.w1.length; i++) {
                 gradNorm += Math.abs(this.model.w1[i]);
@@ -1663,7 +1466,6 @@
             const features = this._extractFeatures(this.history.fps);
             const importance = new Float32Array(features.length);
             
-            // Calcular importancia de características (SHAP-like)
             const basePred = this._neuralNetworkPredict(features);
             
             for (let i = 0; i < features.length; i++) {
@@ -1675,7 +1477,6 @@
             
             this.explainer.featureImportance = importance;
             
-            // Generar explicación textual
             let explanation = '';
             const topFeatures = Array.from(importance.entries())
                 .sort((a, b) => b[1] - a[1])
@@ -1695,7 +1496,6 @@
                 explanation += `  • ${name}: ${val.toFixed(1)}% de influencia\n`;
             }
             
-            // Añadir contexto
             explanation += `\nContexto: ${this.context.current}`;
             explanation += `\nPredicción: ${prediction}`;
             explanation += `\nConfianza: ${(this.confidence * 100).toFixed(0)}%`;
@@ -1731,7 +1531,6 @@
                 });
             }
             
-            // Actualizar recompensa
             const reward = this._calculateReward(fps / (this.metaParams.targetFPS || 60), 'stable');
             this.history.rewards.push(reward);
             if (this.history.rewards.length > 200) {
@@ -1787,7 +1586,7 @@
         }
         
         // ============================================================
-        //  📊 ESTADÍSTICAS (extendidas)
+        //  📊 ESTADÍSTICAS
         //  ============================================================
         getStatus() {
             return {
