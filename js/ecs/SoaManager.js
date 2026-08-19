@@ -1,4 +1,4 @@
-ñ/**
+/**
  * 📊 PRIOM V0.4 - SOA MANAGER CUÁNTICO (ECS EXTREMO)
  * "Structure of Arrays para rendimiento cuántico"
  * 
@@ -22,6 +22,8 @@
  * - Sistema de componentes con generaciones
  * - Detección de colisiones con broad/narrow phase
  * - Sistema de pathfinding integrado (A*)
+ * 
+ * 🔧 COMPATIBILIDAD: Usa Uint32Array para flags (compatible con todos los módulos)
  * ============================================================ */
 
 (function() {
@@ -33,7 +35,7 @@
      */
     class SoaManager {
         // ============================================================
-        //  🏷️ CONSTANTES (TODAS COMO NÚMEROS, NO BigInt)
+        //  🏷️ CONSTANTES (TODAS COMO NÚMEROS)
         //  ============================================================
         static FLAG_SLEEPING = 1 << 0;
         static FLAG_DIRTY = 1 << 1;
@@ -43,8 +45,12 @@
         static FLAG_RENDER_DIRTY = 1 << 5;
         static FLAG_PHYSICS_DIRTY = 1 << 6;
         static FLAG_DEAD = 1 << 7;
+        static FLAG_VISIBLE = 1 << 8;
+        static FLAG_SHADOW = 1 << 9;
+        static FLAG_WATER = 1 << 10;
+        static FLAG_PARTICLE = 1 << 11;
         
-        static CACHE_LINE = 64; // bytes
+        static CACHE_LINE = 64;
         static SIMD_LANES = 4;
         static MAX_ENTITIES = 200000;
         static CHUNK_SIZE = 32;
@@ -60,14 +66,14 @@
             this.version = 0;
             
             // ============================================================
-            //  📊 STRUCTURE OF ARRAYS (SOA) - ALINEADO A CACHE
+            //  📊 STRUCTURE OF ARRAYS (SOA)
             //  ============================================================
-            // Posición (Float32Array alineado a 16 bytes para SIMD)
+            // Posición
             this.posX = new Float32Array(this.maxEntities);
             this.posY = new Float32Array(this.maxEntities);
             this.posZ = new Float32Array(this.maxEntities);
             
-            // Velocidad (para SIMD)
+            // Velocidad
             this.velX = new Float32Array(this.maxEntities);
             this.velY = new Float32Array(this.maxEntities);
             this.velZ = new Float32Array(this.maxEntities);
@@ -97,7 +103,9 @@
             this.tier = new Uint8Array(this.maxEntities);
             this.generationId = new Uint32Array(this.maxEntities);
             
-            // Flags (Uint32Array para compatibilidad - SIN BigInt)
+            // ============================================================
+            //  🏷️ FLAGS (Uint32Array - COMPATIBLE CON TODOS LOS MÓDULOS)
+            //  ============================================================
             this.flags = new Uint32Array(this.maxEntities);
             
             // Datos de vida
@@ -123,7 +131,9 @@
             this.visible = new Uint8Array(this.maxEntities);
             this.opacity = new Float32Array(this.maxEntities);
             
-            // Flags de categoría (usados por EntityFactory / MaxRenderer)
+            // ============================================================
+            //  🏷️ FLAGS DE CATEGORÍA (usados por EntityFactory)
+            //  ============================================================
             this.isTree = new Uint8Array(this.maxEntities);
             this.isRock = new Uint8Array(this.maxEntities);
             this.isWater = new Uint8Array(this.maxEntities);
@@ -136,7 +146,7 @@
             this.isPlayer = new Uint8Array(this.maxEntities);
             
             // ============================================================
-            //  🗺️ SISTEMA DE CHUNKS JERÁRQUICO
+            //  🗺️ SISTEMA DE CHUNKS
             //  ============================================================
             this.chunkSize = SoaManager.CHUNK_SIZE;
             this.spatialGrid = new Map();
@@ -154,7 +164,7 @@
             this.renderedCount = 0;
             
             // ============================================================
-            //  🎯 SISTEMA DE QUERYS CON ÍNDICES
+            //  🎯 SISTEMA DE QUERYS
             //  ============================================================
             this.queryCache = new Map();
             this.queryIndex = {
@@ -164,7 +174,7 @@
             };
             
             // ============================================================
-            //  🔄 SISTEMA DE EVENTOS ECS
+            //  🔄 SISTEMA DE EVENTOS
             //  ============================================================
             this._events = new Map();
             this._eventQueue = [];
@@ -196,9 +206,10 @@
             this._initDefaults();
             this._initOctree();
             
-            console.log(`📊 SoaManager Cuántico inicializado: ${this.maxEntities} entidades máximas`);
+            console.log(`📊 SoaManager Cuántico inicializado: ${this.maxEntities} entidades`);
             console.log(`📊 Cache line: ${SoaManager.CACHE_LINE} bytes`);
             console.log(`📊 SIMD lanes: ${SoaManager.SIMD_LANES}`);
+            console.log(`📊 Flags: Uint32Array (compatible)`);
         }
         
         // ============================================================
@@ -219,11 +230,11 @@
             this.lifeTime.fill(Infinity);
             this.opacity.fill(1);
             this.rotW.fill(1);
-            this.flags.fill(0); // NÚMERO, no BigInt
+            this.flags.fill(0);
         }
         
         // ============================================================
-        //  🌳 INICIALIZAR OCTREE
+        //  🌳 OCTREE
         //  ============================================================
         _initOctree() {
             this.octree = {
@@ -236,7 +247,7 @@
         }
         
         // ============================================================
-        //  ➕ CRUD DE ENTIDADES (con generaciones)
+        //  ➕ CRUD DE ENTIDADES
         //  ============================================================
         createEntity(x, y, z, type = 0, subType = 0) {
             if (this.count >= this.maxEntities) {
@@ -266,7 +277,7 @@
             this.birthTime[id] = performance.now();
             this.generationId[id] = gen;
             
-            // Resetear otras propiedades
+            // Resetear propiedades
             this.velX[id] = 0;
             this.velY[id] = 0;
             this.velZ[id] = 0;
@@ -279,7 +290,7 @@
             this.scaleZ[id] = 1;
             this.lodLevel[id] = 0;
             this.tier[id] = 0;
-            this.flags[id] = 0; // NÚMERO
+            this.flags[id] = 0;
             this.mass[id] = 1;
             this.friction[id] = 0.5;
             this.restitution[id] = 0.3;
@@ -319,11 +330,8 @@
             this.visible[id] = 0;
             this.flags[id] |= SoaManager.FLAG_DEAD;
             
-            // Remover del grid espacial
             this._removeFromSpatialGrid(id);
             this._removeFromOctree(id);
-            
-            // Remover de índices de query
             this._removeFromQueryIndex(id);
             
             this.dirty = true;
@@ -342,7 +350,7 @@
         }
         
         // ============================================================
-        //  🗺️ SISTEMA DE CHUNKS MEJORADO
+        //  🗺️ SISTEMA DE CHUNKS
         //  ============================================================
         _getChunkKey(x, z) {
             const cx = Math.floor(x / this.chunkSize);
@@ -352,11 +360,9 @@
         
         _updateSpatialGrid(id) {
             const key = this._getChunkKey(this.posX[id], this.posZ[id]);
-            
             if (!this.spatialGrid.has(key)) {
                 this.spatialGrid.set(key, new Set());
             }
-            
             this.spatialGrid.get(key).add(id);
         }
         
@@ -372,7 +378,7 @@
         }
         
         // ============================================================
-        //  🌳 OCTREE PARA CULLING
+        //  🌳 OCTREE
         //  ============================================================
         _updateOctree(id) {
             this.octree.root.entities.add(id);
@@ -415,7 +421,7 @@
         }
         
         // ============================================================
-        //  😴 DORMIR / DESPERTAR (optimización)
+        //  😴 DORMIR / DESPERTAR
         //  ============================================================
         sleep(id) {
             if (id < 0 || id >= this.count) return;
@@ -432,7 +438,7 @@
         }
         
         // ============================================================
-        //  🏷️ SISTEMA DE DIRTY FLAGS
+        //  🏷️ DIRTY FLAGS
         //  ============================================================
         _markDirty(id) {
             if (this.dirtyCount < this.maxEntities) {
@@ -487,14 +493,13 @@
             if (this.queryIndex.byType.has(type)) {
                 this.queryIndex.byType.get(type).delete(id);
             }
-            
             for (const [category, set] of this.queryIndex.byCategory) {
                 set.delete(id);
             }
         }
         
         // ============================================================
-        //  👁️ QUERY DE VISIBILIDAD (FRUSTUM CULLING)
+        //  👁️ QUERY DE VISIBILIDAD
         //  ============================================================
         queryVisible(frustum, camX, camZ, maxDist) {
             const startTime = performance.now();
@@ -574,7 +579,7 @@
         }
         
         // ============================================================
-        //  🔍 QUERY SISTEMA AVANZADO (con índices)
+        //  🔍 QUERY AVANZADO
         //  ============================================================
         query(filter) {
             const cacheKey = JSON.stringify(filter);
@@ -622,17 +627,14 @@
             if (filter.type !== undefined && this.type[id] !== filter.type) {
                 return false;
             }
-            
             if (filter.subType !== undefined && this.subType[id] !== filter.subType) {
                 return false;
             }
-            
             if (filter.flags !== undefined) {
                 if ((this.flags[id] & filter.flags) !== filter.flags) {
                     return false;
                 }
             }
-            
             if (filter.category !== undefined) {
                 const cat = filter.category;
                 if (cat === 'tree' && !this.isTree[id]) return false;
@@ -643,14 +645,12 @@
                 if (cat === 'npc' && !this.isNPC[id]) return false;
                 if (cat === 'player' && !this.isPlayer[id]) return false;
             }
-            
             if (filter.position) {
                 const p = filter.position;
                 if (p.x !== undefined && Math.abs(this.posX[id] - p.x) > p.radius) return false;
                 if (p.y !== undefined && Math.abs(this.posY[id] - p.y) > p.radius) return false;
                 if (p.z !== undefined && Math.abs(this.posZ[id] - p.z) > p.radius) return false;
             }
-            
             if (filter.distance) {
                 const d = filter.distance;
                 const dx = this.posX[id] - d.x;
@@ -659,12 +659,11 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
                 if (dist > d.maxDist) return false;
             }
-            
             return true;
         }
         
         // ============================================================
-        //  📊 OBTENER ENTIDADES ACTIVAS (con caché)
+        //  📊 OBTENER ENTIDADES ACTIVAS
         //  ============================================================
         getActive() {
             if (!this.dirty) {
@@ -693,7 +692,7 @@
         }
         
         // ============================================================
-        //  🎮 SISTEMA DE TAGS (FLAGS)
+        //  🎮 SISTEMA DE TAGS
         //  ============================================================
         setFlag(id, flag) {
             if (id < 0 || id >= this.count) return;
@@ -713,7 +712,7 @@
         }
         
         // ============================================================
-        //  🔄 SISTEMA DE EVENTOS ECS (con prioridad)
+        //  🔄 SISTEMA DE EVENTOS
         //  ============================================================
         on(event, callback, priority = 0) {
             if (!this._events.has(event)) {
@@ -731,7 +730,6 @@
         emit(event, data) {
             if (!this._events.has(event)) return;
             this._eventQueue.push({ event, data });
-            
             if (!this._processingEvents) {
                 this._processEvents();
             }
@@ -739,9 +737,7 @@
         
         _processEvents() {
             if (this._eventQueue.length === 0) return;
-            
             this._processingEvents = true;
-            
             while (this._eventQueue.length > 0) {
                 const { event, data } = this._eventQueue.shift();
                 const listeners = this._events.get(event) || [];
@@ -753,33 +749,27 @@
                     }
                 }
             }
-            
             this._processingEvents = false;
         }
         
         // ============================================================
-        //  ⚛️ SISTEMA DE SIMULACIÓN POR TIERS (con scheduling)
+        //  ⚛️ SIMULACIÓN FÍSICA
         //  ============================================================
         updatePhysics(delta, gravity = -9.8, wind = 0, frameCount = 0, visible = null, getGroundHeight = null) {
             const startTime = performance.now();
-            
             const ids = visible ? visible.visibleIds : this.getActive();
             const len = ids.length;
-            
             let simdOps = 0;
             
             for (let i = 0; i < len; i++) {
                 const id = ids[i];
-                
                 if (this.flags[id] & SoaManager.FLAG_SLEEPING) continue;
                 
                 const tier = visible ? this.tier[id] : 0;
-                
                 if (tier === 1 && (frameCount % 4) !== 0) continue;
                 if (tier === 2 && (frameCount % 15) !== 0) continue;
                 
-                const effDelta = tier === 1 ? delta * 4 : 
-                               (tier === 2 ? delta * 15 : delta);
+                const effDelta = tier === 1 ? delta * 4 : (tier === 2 ? delta * 15 : delta);
                 
                 this.velY[id] += gravity * effDelta;
                 this.velX[id] += wind * effDelta * 0.1;
@@ -801,7 +791,6 @@
                     this.velY[id] *= -this.restitution[id];
                     this.velX[id] *= (1 - this.friction[id]);
                     this.velZ[id] *= (1 - this.friction[id]);
-                    
                     if (Math.abs(this.velY[id]) < 0.1) {
                         this.velY[id] = 0;
                     }
@@ -816,7 +805,6 @@
                 } else {
                     this.flags[id] &= ~SoaManager.FLAG_MOVING;
                 }
-                
                 simdOps += 4;
             }
             
@@ -826,11 +814,10 @@
         }
         
         // ============================================================
-        //  🎯 SISTEMA DE LOD (con transición suave)
+        //  🎯 SISTEMA DE LOD
         //  ============================================================
         updateLOD(camX, camZ, maxDist) {
             const active = this.getActive();
-            
             for (const id of active) {
                 const dx = this.posX[id] - camX;
                 const dz = this.posZ[id] - camZ;
@@ -850,11 +837,7 @@
                     this.lodLevel[id] = lod;
                 }
                 
-                if (dist > maxDist) {
-                    this.visible[id] = 0;
-                } else {
-                    this.visible[id] = 1;
-                }
+                this.visible[id] = dist > maxDist ? 0 : 1;
                 
                 if (this.lodLevel[id] !== oldLod) {
                     this.flags[id] |= SoaManager.FLAG_RENDER_DIRTY;
@@ -863,7 +846,7 @@
         }
         
         // ============================================================
-        //  💾 SERIALIZACIÓN (binaria optimizada)
+        //  💾 SERIALIZACIÓN
         //  ============================================================
         serialize() {
             const active = this.getActive();
@@ -892,7 +875,6 @@
                     friction: this.friction[id],
                     restitution: this.restitution[id]
                 };
-                
                 const json = JSON.stringify(entity);
                 const bytes = new TextEncoder().encode(json);
                 chunks.push(bytes);
@@ -901,10 +883,8 @@
             
             const result = new Uint8Array(totalSize);
             let offset = 0;
-            
             result.set(new Uint8Array(header), offset);
             offset += header.byteLength;
-            
             for (const chunk of chunks) {
                 const lenView = new DataView(result.buffer, offset, 4);
                 lenView.setUint32(0, chunk.length, true);
@@ -912,7 +892,6 @@
                 result.set(chunk, offset);
                 offset += chunk.length;
             }
-            
             return result;
         }
         
@@ -935,7 +914,6 @@
             for (let i = 0; i < count && loaded < this.maxEntities; i++) {
                 const len = view.getUint32(offset, true);
                 offset += 4;
-                
                 const json = new TextDecoder().decode(
                     data.buffer.slice(data.byteOffset + offset, data.byteOffset + offset + len)
                 );
@@ -947,7 +925,6 @@
                         entity.pos[0], entity.pos[1], entity.pos[2],
                         entity.type, entity.subType
                     );
-                    
                     if (id === -1) break;
                     
                     this.velX[id] = entity.vel[0];
@@ -969,7 +946,6 @@
                     this.friction[id] = entity.friction || 0.5;
                     this.restitution[id] = entity.restitution || 0.3;
                     this.generationId[id] = entity.gen || 1;
-                    
                     loaded++;
                 } catch (e) {
                     console.warn('⚠️ Error deserializando entidad:', e);
@@ -982,11 +958,10 @@
         }
         
         // ============================================================
-        //  📊 ESTADÍSTICAS DE MEMORIA
+        //  📊 ESTADÍSTICAS
         //  ============================================================
         getMemoryUsage() {
             let total = 0;
-            
             const arrays = [
                 this.posX, this.posY, this.posZ,
                 this.velX, this.velY, this.velZ,
@@ -1012,12 +987,9 @@
                     total += arr.byteLength;
                 }
             }
-            
             for (const [key, set] of this.spatialGrid) {
-                total += key.length * 2;
-                total += set.size * 8;
+                total += key.length * 2 + set.size * 8;
             }
-            
             this.stats.memoryUsage = total;
             return total;
         }
@@ -1043,10 +1015,8 @@
             this._processingEvents = false;
             this.generation.fill(0);
             this.flags.fill(0);
-            
             this._initDefaults();
             this._initOctree();
-            
             console.log('🔄 SoaManager reseteado');
         }
         
@@ -1072,22 +1042,18 @@
         }
         
         // ============================================================
-        //  🎯 SISTEMA DE POOLING
+        //  🎯 POOLING
         //  ============================================================
         _pool = [];
         _poolMax = 1000;
         
         getPooledEntity() {
-            if (this._pool.length > 0) {
-                return this._pool.pop();
-            }
-            return null;
+            return this._pool.length > 0 ? this._pool.pop() : null;
         }
         
         returnToPool(id) {
             if (id < 0 || id >= this.count) return;
             if (this._pool.length >= this._poolMax) return;
-            
             this.active[id] = 0;
             this.visible[id] = 0;
             this.flags[id] = SoaManager.FLAG_DEAD;
@@ -1096,7 +1062,7 @@
         }
         
         // ============================================================
-        //  🛠️ MÉTODOS DE UTILIDAD
+        //  🛠️ UTILIDADES
         //  ============================================================
         getPosition(id) {
             if (!this.isValid(id)) return null;
@@ -1213,16 +1179,11 @@
     window.ENTITY_FLAGS = ENTITY_FLAGS;
     window.ENTITY_TYPES = ENTITY_TYPES;
     
-    console.log('📊 SoaManager Cuántico cargado');
+    console.log('📊 SoaManager Cuántico cargado (compatible)');
     console.log(`📊 Max entities: ${SoaManager.MAX_ENTITIES}`);
-    console.log(`📊 Flags disponibles: ${Object.keys(ENTITY_FLAGS).length}`);
-    console.log(`📊 Tipos disponibles: ${Object.keys(ENTITY_TYPES).length}`);
-    console.log(`📊 SIMD lanes: ${SoaManager.SIMD_LANES}`);
-    console.log(`📊 Cache line: ${SoaManager.CACHE_LINE} bytes`);
+    console.log(`📊 Flags: Uint32Array (${Object.keys(ENTITY_FLAGS).length} flags)`);
+    console.log(`📊 Tipos: ${Object.keys(ENTITY_TYPES).length} tipos`);
     
-    // ============================================================
-    //  📦 EXPORTAR
-    //  ============================================================
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = { SoaManager, ENTITY_FLAGS, ENTITY_TYPES };
     }
