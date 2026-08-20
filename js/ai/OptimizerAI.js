@@ -61,24 +61,27 @@
                 b3: new Float32Array(3),
                 
                 // Target Network (para estabilidad)
-                target_w1: new Float32Array(12 * 64),
-                target_b1: new Float32Array(64),
-                target_w2: new Float32Array(64 * 64),
-                target_b2: new Float32Array(64),
-                target_w3: new Float32Array(64 * 3),
-                target_b3: new Float32Array(3),
+                target: {
+                    w1: new Float32Array(12 * 64),
+                    b1: new Float32Array(64),
+                    w2: new Float32Array(64 * 64),
+                    b2: new Float32Array(64),
+                    w3: new Float32Array(64 * 3),
+                    b3: new Float32Array(3)
+                },
                 
                 // Parámetros de entrenamiento
                 learningRate: 0.001,
                 discountFactor: 0.95,
-                targetUpdateRate: 0.01, // Soft update
+                targetUpdateRate: 0.01,
                 batchSize: 32,
                 memorySize: 5000,
                 
                 // Estado
                 trainingSteps: 0,
                 loss: 0,
-                avgQ: 0
+                avgQ: 0,
+                accuracy: 0.5
             };
             
             // Inicializar pesos
@@ -90,21 +93,19 @@
             this.replayBuffer = [];
             this.maxReplaySize = 5000;
             this.priorityEpsilon = 0.01;
-            this.alpha = 0.6; // Priorización
+            this.alpha = 0.6;
             
             // ============================================================
             //  📊 ESTADO INTERNO MEJORADO
             //  ============================================================
             this.fingerprint = hardware.getHardware().gpu || 'unknown';
             
-            // Cargar perfil guardado
             const savedProfile = memory.getHardwareProfile(this.fingerprint);
             const hwRecommendations = hardware.getRecommendations();
             const recTier = hwRecommendations?.quality || 'high';
             const tierIdx = this.qualityLevels.indexOf(recTier) !== -1 ? 
                 this.qualityLevels.indexOf(recTier) : 2;
             
-            // Estado actual
             this.currentQuality = savedProfile?.qualityIndex !== undefined ? 
                 savedProfile.qualityIndex : tierIdx;
             this.cooldown = 0;
@@ -128,7 +129,7 @@
             this.temperature = 1.0;
             
             // ============================================================
-            //  📊 MEMORIA DE ESTADOS (ventana temporal)
+            //  📊 MEMORIA DE ESTADOS
             //  ============================================================
             this.stateMemory = {
                 fps: [],
@@ -150,10 +151,9 @@
             this.targetTemperature = 70;
             
             // ============================================================
-            //  📈 PREDICCIÓN CON LSTM (secuencias)
+            //  📈 PREDICCIÓN CON LSTM
             //  ============================================================
             this.lstm = {
-                // Estado oculto simplificado para LSTM
                 hidden: new Float32Array(16),
                 cell: new Float32Array(16),
                 wx: new Float32Array(16 * 12),
@@ -183,7 +183,7 @@
             }
             
             // ============================================================
-            //  🎚️ DYNAMIC RESOLUTION SCALING (Control PID mejorado)
+            //  🎚️ DYNAMIC RESOLUTION SCALING
             //  ============================================================
             this.renderScale = 1.0;
             this.pid = {
@@ -199,7 +199,7 @@
             };
             
             // ============================================================
-            //  🔁 DETECCIÓN DE OSCILACIÓN (Thrashing)
+            //  🔁 DETECCIÓN DE OSCILACIÓN
             //  ============================================================
             this.recentDirections = [];
             this.thrashPenaltyUntil = 0;
@@ -208,7 +208,7 @@
             this._thrashHistory = [];
             
             // ============================================================
-            //  🌡️ THERMAL MANAGEMENT (con predicción)
+            //  🌡️ THERMAL MANAGEMENT
             //  ============================================================
             this.thermalThrottled = false;
             this.thermalReduction = 0;
@@ -258,7 +258,6 @@
             this._initLSTMWeights();
             this._copyWeights(this.dqn, this.dqn.target);
             
-            // Cargar historial de sesiones anteriores
             const sessionData = this.memory.getGameData('optimizerAI');
             if (sessionData) {
                 this.performanceHistory = sessionData.performanceHistory || [];
@@ -275,7 +274,6 @@
                 console.log(`📂 Replay buffer: ${this.replayBuffer.length} experiencias`);
             }
             
-            // Registrar evento de inicio
             this.memory.recordEvent('ai_initialized', {
                 quality: this.qualityLevels[this.currentQuality],
                 targetFPS: this.targetFPS,
@@ -301,6 +299,14 @@
             this.dqn.b1.fill(0);
             this.dqn.b2.fill(0);
             this.dqn.b3.fill(0);
+            
+            // Inicializar target network también
+            initLayer(this.dqn.target.w1, 12, 64);
+            initLayer(this.dqn.target.w2, 64, 64);
+            initLayer(this.dqn.target.w3, 64, 3);
+            this.dqn.target.b1.fill(0);
+            this.dqn.target.b2.fill(0);
+            this.dqn.target.b3.fill(0);
         }
         
         _initLSTMWeights() {
@@ -321,7 +327,9 @@
         
         _copyWeights(src, dst) {
             for (const key of ['w1', 'b1', 'w2', 'b2', 'w3', 'b3']) {
-                dst[key] = new Float32Array(src[key]);
+                if (dst[key] && src[key]) {
+                    dst[key].set(src[key]);
+                }
             }
         }
         
@@ -373,7 +381,7 @@
         }
         
         // ============================================================
-        //  📈 EXTRACCIÓN DE CARACTERÍSTICAS (12 dimensiones)
+        //  📈 EXTRACCIÓN DE CARACTERÍSTICAS
         //  ============================================================
         _extractFeatures(fps, quality, fpsRatio) {
             const history = this.performanceHistory;
@@ -417,7 +425,6 @@
         //  🧠 LSTM PREDICTION
         //  ============================================================
         _lstmPredict(features) {
-            // LSTM simplificado: una celda
             const h = this.lstm.hidden;
             const c = this.lstm.cell;
             const wx = this.lstm.wx;
@@ -425,7 +432,6 @@
             const wc = this.lstm.wc;
             const b = this.lstm.b;
             
-            // Puerta de entrada
             const i = new Float32Array(16);
             const f = new Float32Array(16);
             const o = new Float32Array(16);
@@ -440,20 +446,17 @@
                     sum += h[k] * wh[k * 16 + j];
                 }
                 
-                // Asignar a puertas (simplificado)
                 i[j] = 1 / (1 + Math.exp(-sum));
                 f[j] = 1 / (1 + Math.exp(-sum * 0.8));
                 o[j] = 1 / (1 + Math.exp(-sum * 0.6));
                 g[j] = Math.tanh(sum * 0.5);
             }
             
-            // Actualizar celda
             for (let j = 0; j < 16; j++) {
                 c[j] = f[j] * c[j] + i[j] * g[j];
                 h[j] = o[j] * Math.tanh(c[j]);
             }
             
-            // Predicción: salida lineal
             let output = 0;
             for (let j = 0; j < 16; j++) {
                 output += h[j] * 0.1;
@@ -468,53 +471,73 @@
         }
         
         // ============================================================
-        //  🔄 ACTUALIZACIÓN PRINCIPAL MEJORADA
+        //  📊 MÉTODOS AUXILIARES
+        //  ============================================================
+        _calculateSlope(values) {
+            const n = values.length;
+            if (n < 2) return 0;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += i;
+                sumY += values[i];
+                sumXY += i * values[i];
+                sumXX += i * i;
+            }
+            const denominator = (n * sumXX - sumX * sumX);
+            if (denominator === 0) return 0;
+            return (n * sumXY - sumX * sumY) / denominator;
+        }
+        
+        _calculateAutocorrelation(data, lag) {
+            if (lag >= data.length) return 0;
+            const mean = data.reduce((a, b) => a + b, 0) / data.length;
+            let numerator = 0, denominator = 0;
+            for (let i = 0; i < data.length - lag; i++) {
+                numerator += (data[i] - mean) * (data[i + lag] - mean);
+                denominator += Math.pow(data[i] - mean, 2);
+            }
+            return denominator > 0 ? numerator / denominator : 0;
+        }
+        
+        _weightedRandom(items, weights) {
+            const total = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * total;
+            for (let i = 0; i < items.length; i++) {
+                random -= weights[i];
+                if (random <= 0) return items[i];
+            }
+            return items[items.length - 1];
+        }
+        
+        // ============================================================
+        //  🔄 ACTUALIZACIÓN PRINCIPAL
         //  ============================================================
         update(performance, renderStats, soa) {
             const fps = performance.fps || 60;
             const targetFPS = this.targetFPS;
             this._tick++;
             
-            // ============================================================
-            //  📊 REGISTRAR DATOS
-            //  ============================================================
             this._recordState(fps, soa.count, this.currentQuality);
             
-            // Actualizar EMA de FPS
             this.emaFps = this.emaFps * 0.85 + fps * 0.15;
             const fpsRatio = this.emaFps / targetFPS;
             
-            // Actualizar mejor/peor FPS
             if (fps > this.bestFPS) this.bestFPS = fps;
             if (fps < this.worstFPS || this.worstFPS === 0) this.worstFPS = fps;
             
-            // ============================================================
-            //  📊 ACTUALIZAR TIER STATS (Bandit)
-            //  ============================================================
             this._updateTierStats(fps);
             
-            // ============================================================
-            //  📈 LSTM PREDICTION
-            //  ============================================================
             const features = this._extractFeatures(fps, this.currentQuality, fpsRatio);
             const lstmPred = this._lstmPredict(features);
             
-            // ============================================================
-            //  🌡️ THERMAL MANAGEMENT
-            //  ============================================================
             this._updateThermalStatus();
             
-            // ============================================================
-            //  🎯 DECISIÓN CON DQN + ENSAMBLE
-            //  ============================================================
             let changed = false;
             let decision = null;
             let reward = 0;
             
-            // Reducir cooldown
             if (this.cooldown > 0) this.cooldown--;
             
-            // Condiciones de emergencia
             const emergency = fpsRatio < 0.30 || this.thermalThrottled;
             
             if (emergency && this.currentQuality > 0) {
@@ -533,14 +556,11 @@
                 }, 0.9);
                 
             } else if (this.cooldown === 0) {
-                // Decisión con ensamble de políticas
                 const action = this._decideActionEnsemble(fpsRatio, features, lstmPred);
                 
-                // Filtro Bandit
                 if (action === 'up' && this.currentQuality < this.qualityLevels.length - 1) {
                     const nextStat = this.tierStats[this.currentQuality + 1];
                     if (nextStat.samples > 10 && nextStat.avgFps < targetFPS * 0.7) {
-                        // Forzar stable
                         this._applyAction('stable', fpsRatio);
                         decision = 'stable';
                         reward = this._calculateReward(fpsRatio, 'stable');
@@ -565,9 +585,6 @@
                 reward = 0.05;
             }
             
-            // ============================================================
-            //  📝 REGISTRAR DECISIÓN
-            //  ============================================================
             if (decision !== 'cooldown') {
                 this.memory.recordDecision(decision, this.qualityLevels[this.currentQuality], reward, {
                     fps: fps,
@@ -578,14 +595,9 @@
                 });
                 
                 this._recordDecision(decision, reward, fps, fpsRatio);
-                
-                // Almacenar experiencia para replay
                 this._storeExperience(features, this._getActionIndex(decision), reward, fpsRatio);
             }
             
-            // ============================================================
-            //  🧠 APRENDIZAJE (DQN + Replay)
-            //  ============================================================
             if (changed) {
                 this.stableFrames = 0;
                 this.confidence = Math.max(0.1, this.confidence - 0.1);
@@ -596,7 +608,6 @@
                     decision
                 );
                 
-                // Entrenar DQN
                 if (this.replayBuffer.length > this.dqn.batchSize) {
                     this._trainDQN();
                 }
@@ -606,29 +617,17 @@
                 this.confidence = Math.min(0.95, this.confidence + 0.003);
             }
             
-            // ============================================================
-            //  🎚️ DYNAMIC RESOLUTION SCALING (PID mejorado)
-            //  ============================================================
             this.renderScale = this._updatePID(fpsRatio);
             
-            // ============================================================
-            //  💾 GUARDAR ESTADO
-            //  ============================================================
             if (this.stableFrames % 300 === 0) {
                 this._saveState();
             }
             
-            // ============================================================
-            //  📊 GENERAR ACCIÓN DE SALIDA MEJORADA
-            //  ============================================================
             const quality = this.qualityLevels[this.currentQuality];
             const lodDistance = this.lodByLevel[this.currentQuality];
             const entityMultiplier = this.entityMultipliers[this.currentQuality];
             const entitiesToRender = Math.round(soa.count * entityMultiplier);
             
-            // ============================================================
-            //  📊 SALIDA MEJORADA
-            //  ============================================================
             const result = {
                 quality: quality,
                 qualityIndex: this.currentQuality,
@@ -670,24 +669,17 @@
         //  🎯 DECISIÓN CON ENSAMBLE
         //  ============================================================
         _decideActionEnsemble(fpsRatio, features, lstmPred) {
-            // Exploración
             if (Math.random() < this.explorationRate) {
                 const actions = ['up', 'down', 'stable'];
                 const weights = [0.3, 0.3, 0.4];
                 return this._weightedRandom(actions, weights);
             }
             
-            // 1. DQN
             const qValues = this._forwardDQN(features);
             const dqnAction = this._argmax(qValues);
-            
-            // 2. Bandit
             const banditAction = this._banditDecision(fpsRatio);
-            
-            // 3. Heurístico
             const heuristicAction = this._heuristicDecision(fpsRatio, lstmPred);
             
-            // Votación ponderada
             const votes = { up: 0, down: 0, stable: 0 };
             const actions = ['up', 'down', 'stable'];
             
@@ -695,12 +687,10 @@
             votes[banditAction] += this.policies.bandit.weight;
             votes[heuristicAction] += this.policies.heuristic.weight;
             
-            // Registrar uso de políticas
             this.policies.dqn.count++;
             this.policies.bandit.count++;
             this.policies.heuristic.count++;
             
-            // Seleccionar acción con más votos
             let bestAction = 'stable';
             let bestVotes = 0;
             for (const [action, count] of Object.entries(votes)) {
@@ -710,7 +700,6 @@
                 }
             }
             
-            // Ajuste adaptativo de pesos
             if (this._tick % 1000 === 0) {
                 this._adjustPolicyWeights();
             }
@@ -751,7 +740,6 @@
         //  🎰 BANDIT DECISION
         //  ============================================================
         _banditDecision(fpsRatio) {
-            // Calcular UCB (Upper Confidence Bound) para cada nivel
             let bestAction = 'stable';
             let bestScore = -Infinity;
             
@@ -798,12 +786,10 @@
             const total = this.policies.dqn.count + this.policies.bandit.count + this.policies.heuristic.count;
             if (total === 0) return;
             
-            // Ajustar basado en desempeño
             this.policies.dqn.weight = 0.4 + (this.dqn.accuracy || 0.5) * 0.4;
             this.policies.bandit.weight = 0.2 + (this.tierStats[this.currentQuality].confidence || 0.5) * 0.3;
             this.policies.heuristic.weight = 0.15 + (this.confidence || 0.5) * 0.15;
             
-            // Normalizar
             const sum = this.policies.dqn.weight + this.policies.bandit.weight + this.policies.heuristic.weight;
             this.policies.dqn.weight /= sum;
             this.policies.bandit.weight /= sum;
@@ -818,13 +804,12 @@
                 state: new Float32Array(state),
                 action: action,
                 reward: reward,
-                nextState: null, // Se actualizará en el próximo paso
+                nextState: null,
                 done: false,
                 priority: 1.0,
                 timestamp: Date.now()
             };
             
-            // Actualizar experiencia anterior con nextState
             if (this.replayBuffer.length > 0) {
                 const prev = this.replayBuffer[this.replayBuffer.length - 1];
                 prev.nextState = new Float32Array(state);
@@ -853,24 +838,19 @@
                 const reward = exp.reward;
                 const nextState = exp.nextState || state;
                 
-                // Q-values actuales
                 const qValues = this._forwardDQN(state);
                 const qValue = qValues[action];
                 
-                // Q-values del target (con max)
                 const nextQValues = this._forwardDQN(nextState, this.dqn.target);
                 const maxNextQ = Math.max(...nextQValues);
                 const targetQ = reward + this.dqn.discountFactor * maxNextQ;
                 
-                // TD Error
                 const tdError = targetQ - qValue;
                 totalLoss += tdError * tdError;
                 totalQ += qValue;
                 
-                // Actualizar prioridad
                 exp.priority = Math.abs(tdError) + this.priorityEpsilon;
                 
-                // Gradiente descendente (SGD simplificado)
                 const lr = this.dqn.learningRate * (1 / (1 + this.dqn.trainingSteps * 0.0001));
                 this._applyGradient(state, action, tdError, lr);
             }
@@ -879,14 +859,12 @@
             this.dqn.avgQ = totalQ / batch.length;
             this.dqn.trainingSteps++;
             
-            // Soft update target network
             if (this.dqn.trainingSteps % 5 === 0) {
                 this._softUpdateTarget(this.dqn.targetUpdateRate);
             }
         }
         
         _sampleReplayBuffer() {
-            // Priorización: muestrear según prioridad
             const priorities = this.replayBuffer.map(e => Math.pow(e.priority, this.alpha));
             const sum = priorities.reduce((a, b) => a + b, 0);
             
@@ -905,19 +883,14 @@
         }
         
         _applyGradient(state, action, tdError, lr) {
-            // Gradiente descendente simplificado para DQN
             const qValues = this._forwardDQN(state);
             const grad = tdError * 2;
             
-            // Actualizar capa de salida (w3, b3)
             const h2 = this._getHiddenLayer2(state);
             for (let i = 0; i < 64; i++) {
                 this.dqn.w3[i * 3 + action] -= lr * grad * h2[i];
             }
             this.dqn.b3[action] -= lr * grad;
-            
-            // Backpropagate a capas ocultas (simplificado)
-            // Nota: En producción se usaría backpropagation completo
         }
         
         _getHiddenLayer1(state) {
@@ -946,71 +919,25 @@
         }
         
         // ============================================================
-        //  📊 MÉTODOS AUXILIARES
-        //  ============================================================
-        _calculateSlope(values) {
-            const n = values.length;
-            if (n < 2) return 0;
-            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += i;
-                sumY += values[i];
-                sumXY += i * values[i];
-                sumXX += i * i;
-            }
-            const denominator = (n * sumXX - sumX * sumX);
-            if (denominator === 0) return 0;
-            return (n * sumXY - sumX * sumY) / denominator;
-        }
-        
-        _calculateAutocorrelation(data, lag) {
-            if (lag >= data.length) return 0;
-            const mean = data.reduce((a, b) => a + b, 0) / data.length;
-            let numerator = 0, denominator = 0;
-            for (let i = 0; i < data.length - lag; i++) {
-                numerator += (data[i] - mean) * (data[i + lag] - mean);
-                denominator += Math.pow(data[i] - mean, 2);
-            }
-            return denominator > 0 ? numerator / denominator : 0;
-        }
-        
-        _weightedRandom(items, weights) {
-            const total = weights.reduce((a, b) => a + b, 0);
-            let random = Math.random() * total;
-            for (let i = 0; i < items.length; i++) {
-                random -= weights[i];
-                if (random <= 0) return items[i];
-            }
-            return items[items.length - 1];
-        }
-        
-        // ============================================================
         //  🎯 SISTEMA DE RECOMPENSAS MULTI-OBJETIVO
         //  ============================================================
         _calculateReward(fpsRatio, action) {
             let reward = 0;
             
-            // Recompensa por FPS
             if (fpsRatio >= 0.9) reward += 0.4;
             else if (fpsRatio >= 0.7) reward += 0.15;
             else if (fpsRatio < 0.5) reward -= 0.25;
             else if (fpsRatio < 0.3) reward -= 0.5;
             
-            // Recompensa por calidad
             if (action === 'up' && fpsRatio > 0.85) reward += 0.2;
             if (action === 'down' && fpsRatio < 0.55) reward += 0.15;
             
-            // Penalización por oscilación
             if (this._thrashCount > 3) reward -= 0.3;
-            
-            // Recompensa por estabilidad
             if (this.stableFrames > 180) reward += 0.1;
             
-            // Recompensa por eficiencia térmica
             if (!this.thermalThrottled) reward += 0.05;
             else reward -= 0.15;
             
-            // Recompensa por eficiencia energética
             if (this.hardware._hardware?.lowPowerMode) {
                 if (this.currentQuality <= 2) reward += 0.1;
                 else reward -= 0.1;
@@ -1031,7 +958,6 @@
             this.thermalHistory.push(temp);
             if (this.thermalHistory.length > 120) this.thermalHistory.shift();
             
-            // Predicción de temperatura (trend)
             if (this.thermalHistory.length > 20) {
                 const recent = this.thermalHistory.slice(-20);
                 const slope = this._calculateSlope(recent);
@@ -1050,7 +976,7 @@
         }
         
         // ============================================================
-        //  📊 ACTUALIZAR TIER STATS (Bandit)
+        //  📊 ACTUALIZAR TIER STATS
         //  ============================================================
         _updateTierStats(fps) {
             const stat = this.tierStats[this.currentQuality];
@@ -1120,12 +1046,10 @@
             
             let adjustment = p + i + d;
             
-            // Suavizado
             const smooth = this.pid.outputSmooth;
             let newScale = this.renderScale * (1 - smooth) + (this.renderScale + adjustment) * smooth;
             newScale = Math.max(this.pid.minScale, Math.min(this.pid.maxScale, newScale));
             
-            // Factor térmico: reducir escala si hace calor
             if (this.thermalReduction > 0.3) {
                 newScale *= (1 - this.thermalReduction * 0.2);
             }
@@ -1240,7 +1164,6 @@
             
             this.memory.saveGameData('optimizerAI', data);
             
-            // Guardar perfil de hardware
             this.memory.saveHardwareProfile(this.fingerprint, {
                 qualityIndex: this.currentQuality,
                 confidence: this.confidence,
