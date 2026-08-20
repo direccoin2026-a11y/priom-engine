@@ -25,6 +25,39 @@
     'use strict';
 
     /**
+     * 📦 ChunkData - Datos de un chunk
+     * Estructura de datos para almacenar información de un chunk
+     */
+    class ChunkData {
+        constructor(key, x, z, chunkSize = 64) {
+            this.key = key;
+            this.x = x;
+            this.z = z;
+            this.center = new THREE.Vector2(x * chunkSize + chunkSize / 2, z * chunkSize + chunkSize / 2);
+            this.loaded = false;
+            this.visible = false;
+            this.loading = false;
+            this.fading = false;
+            this.fadeProgress = 0;
+            this.lodLevel = 0;
+            this.priority = 0;
+            this.lastAccess = 0;
+            this.entities = [];
+            this.meshes = [];
+            this.materials = [];
+            this.terrain = null;
+            this.decorations = [];
+            this.animals = [];
+            this.trees = [];
+            this.rocks = [];
+            this.loadPromise = null;
+            this.unloadTimer = null;
+            this.bbox = null;
+            this.dirty = false;
+        }
+    }
+
+    /**
      * 📦 ChunkManager - Sistema de Streaming de Mundo Cuántico
      * Gestiona la carga/descarga de chunks con LOD dinámico y carga predictiva
      */
@@ -51,7 +84,7 @@
             // ============================================================
             //  🗺️ SISTEMA DE CHUNKS
             //  ============================================================
-            this.chunks = new Map(); // key -> ChunkData
+            this.chunks = new Map();
             this.loadQueue = [];
             this.unloadQueue = [];
             this.loadingCount = 0;
@@ -84,6 +117,7 @@
             this._frameCount = 0;
             this._totalChunksLoaded = 0;
             this._totalChunksUnloaded = 0;
+            this._scene = null;
             
             // ============================================================
             //  📡 SISTEMA DE EVENTOS
@@ -121,12 +155,8 @@
         //  🚀 INICIALIZACIÓN
         //  ============================================================
         _init() {
-            // Configurar sistema de eventos
             this._setupEvents();
-            
-            // Inicializar caché
             this._initCache();
-            
             console.log('✅ ChunkManager inicializado correctamente');
         }
         
@@ -134,7 +164,7 @@
             this.on('chunkLoaded', (data) => {
                 this.stats.loadedChunks++;
                 this._totalChunksLoaded++;
-                console.log(`📦 Chunk cargado: ${data.key} (${data.elapsed}ms)`);
+                console.log(`📦 Chunk cargado: ${data.key} (${data.elapsed || 0}ms)`);
             });
             
             this.on('chunkUnloaded', (data) => {
@@ -157,7 +187,6 @@
         }
         
         _initCache() {
-            // Inicializar caché de geometrías comunes
             const commonGeos = ['box', 'sphere', 'cylinder', 'cone', 'plane'];
             for (const name of commonGeos) {
                 this.geometryCache.set(name, new THREE.BoxGeometry(1, 1, 1));
@@ -193,38 +222,6 @@
         }
         
         // ============================================================
-        //  📦 ESTRUCTURA DE CHUNK
-        //  ============================================================
-        class ChunkData {
-            constructor(key, x, z) {
-                this.key = key;
-                this.x = x;
-                this.z = z;
-                this.center = new THREE.Vector2(x * 64 + 32, z * 64 + 32);
-                this.loaded = false;
-                this.visible = false;
-                this.loading = false;
-                this.fading = false;
-                this.fadeProgress = 0;
-                this.lodLevel = 0;
-                this.priority = 0;
-                this.lastAccess = 0;
-                this.entities = [];
-                this.meshes = [];
-                this.materials = [];
-                this.terrain = null;
-                this.decorations = [];
-                this.animals = [];
-                this.trees = [];
-                this.rocks = [];
-                this.loadPromise = null;
-                this.unloadTimer = null;
-                this.bbox = null;
-                this.dirty = false;
-            }
-        }
-        
-        // ============================================================
         //  🔍 OBTENER CLAVE DE CHUNK
         //  ============================================================
         _getChunkKey(x, z) {
@@ -245,42 +242,27 @@
             this._frameCount++;
             this._timer += delta;
             
-            // Actualizar posición de cámara
             const currentPos = new THREE.Vector2(cameraPos.x, cameraPos.z);
             const velocity = currentPos.clone().sub(this._lastCamXZ);
             this._camVelocity.lerp(velocity, delta * 0.1);
             
-            // Actualizar predictor
             this._updatePredictor(delta, cameraPos, cameraDir);
             
-            // Actualizar cada cierto tiempo (no cada frame)
             if (this._timer < 0.1) return;
             this._timer = 0;
             
-            // 1. Actualizar visibilidad y LOD
             this._updateVisibility(currentPos);
             
-            // 2. Carga predictiva
             if (this.config.predictLoad) {
                 this._predictiveLoad(currentPos);
             }
             
-            // 3. Procesar cola de carga
             this._processLoadQueue();
-            
-            // 4. Procesar cola de descarga
             this._processUnloadQueue();
-            
-            // 5. Actualizar LOD de chunks cargados
             this._updateChunkLOD(currentPos);
-            
-            // 6. Actualizar transiciones de fade
             this._updateFades(delta);
-            
-            // 7. Actualizar estadísticas
             this._updateStats();
             
-            // Guardar posición para próximo frame
             this._lastCamXZ.copy(currentPos);
         }
         
@@ -288,7 +270,6 @@
         //  🔮 PREDICTOR DE MOVIMIENTO
         //  ============================================================
         _updatePredictor(delta, cameraPos, cameraDir) {
-            // Guardar historial de posiciones
             this.predictor.history.push({
                 x: cameraPos.x,
                 z: cameraPos.z,
@@ -299,7 +280,6 @@
                 this.predictor.history.shift();
             }
             
-            // Calcular velocidad
             if (this.predictor.history.length > 2) {
                 const recent = this.predictor.history.slice(-5);
                 if (recent.length > 1) {
@@ -309,7 +289,6 @@
                 }
             }
             
-            // Dirección (normalizada)
             if (this.predictor.velocity.length() > 0.1) {
                 this.predictor.direction.copy(this.predictor.velocity).normalize();
                 this.predictor.confidence = Math.min(1, 
@@ -319,7 +298,6 @@
                 this.predictor.confidence *= 0.99;
             }
             
-            // Posición futura (2 segundos)
             const futureTime = 2.0;
             const futureDist = this.predictor.velocity.length() * futureTime;
             this.predictor.futurePosition.copy(this._lastCamXZ)
@@ -333,7 +311,6 @@
             const viewDist = this.config.viewDistance * this.config.chunkSize;
             const loadDist = this.config.loadRadius * this.config.chunkSize;
             
-            // Calcular chunks visibles
             const cx = Math.floor(cameraPos.x / this.config.chunkSize);
             const cz = Math.floor(cameraPos.z / this.config.chunkSize);
             const range = this.config.viewDistance + this.config.loadRadius;
@@ -358,14 +335,11 @@
                     
                     if (shouldLoad) {
                         visibleChunks.add(key);
-                        
-                        // Cargar chunk si no existe
                         if (!this.chunks.has(key)) {
                             this._loadChunk(key, chunkX, chunkZ);
                         }
                     }
                     
-                    // Actualizar visibilidad
                     const chunk = this.chunks.get(key);
                     if (chunk && chunk.loaded) {
                         chunk.visible = isVisible;
@@ -376,7 +350,6 @@
                 }
             }
             
-            // Marcar chunks para descarga
             for (const [key, chunk] of this.chunks) {
                 if (!visibleChunks.has(key) && chunk.loaded) {
                     this._scheduleUnload(key);
@@ -399,10 +372,8 @@
         }
         
         _calculatePriority(dist, cameraPos) {
-            // Prioridad basada en distancia y dirección de movimiento
             let priority = 1 - (dist / (this.config.viewDistance * this.config.chunkSize));
             
-            // Bonus por dirección de movimiento
             if (this.predictor.confidence > 0.3) {
                 const toChunk = new THREE.Vector2(
                     dist / this.config.chunkSize,
@@ -427,7 +398,6 @@
             const futureCx = Math.floor(futurePos.x / this.config.chunkSize);
             const futureCz = Math.floor(futurePos.z / this.config.chunkSize);
             
-            // Cargar chunks en la dirección de movimiento
             const range = 2;
             for (let dx = -range; dx <= range; dx++) {
                 for (let dz = -range; dz <= range; dz++) {
@@ -443,7 +413,6 @@
                             (centerZ - cameraPos.z) ** 2
                         );
                         
-                        // Solo cargar si está dentro del rango de carga
                         if (dist < this.config.loadRadius * this.config.chunkSize) {
                             this._loadChunk(key, chunkX, chunkZ);
                             this.emit('prediction', { key, dist });
@@ -458,17 +427,15 @@
         //  ============================================================
         _loadChunk(key, chunkX, chunkZ) {
             if (this.loadingCount >= this.config.maxConcurrentLoads) {
-                // Encolar para carga posterior
                 this.loadQueue.push({ key, chunkX, chunkZ });
                 return;
             }
             
-            const chunk = new ChunkData(key, chunkX, chunkZ);
+            const chunk = new ChunkData(key, chunkX, chunkZ, this.config.chunkSize);
             chunk.loading = true;
             this.chunks.set(key, chunk);
             this.loadingCount++;
             
-            // Iniciar carga asíncrona
             chunk.loadPromise = this._generateChunkData(chunkX, chunkZ)
                 .then((data) => {
                     this._applyChunkData(chunk, data);
@@ -493,13 +460,6 @@
             return new Promise((resolve) => {
                 const startTime = performance.now();
                 
-                // Simular generación de datos del chunk
-                // En producción, aquí se generarían:
-                // - Terreno
-                // - Vegetación
-                // - Entidades
-                // - Decoraciones
-                
                 const data = {
                     key: `${chunkX},${chunkZ}`,
                     entities: [],
@@ -510,7 +470,6 @@
                     elapsed: performance.now() - startTime
                 };
                 
-                // Generar árboles
                 const treeCount = Math.floor(Math.random() * 8) + 4;
                 for (let i = 0; i < treeCount; i++) {
                     const localX = Math.random() * this.config.chunkSize;
@@ -518,7 +477,6 @@
                     const worldX = chunkX * this.config.chunkSize + localX;
                     const worldZ = chunkZ * this.config.chunkSize + localZ;
                     
-                    // Añadir a la lista de árboles
                     data.trees.push({
                         x: worldX,
                         z: worldZ,
@@ -527,7 +485,6 @@
                     });
                 }
                 
-                // Generar rocas
                 const rockCount = Math.floor(Math.random() * 5) + 2;
                 for (let i = 0; i < rockCount; i++) {
                     const localX = Math.random() * this.config.chunkSize;
@@ -542,7 +499,6 @@
                     });
                 }
                 
-                // Generar decoraciones (flores, arbustos)
                 const decorCount = Math.floor(Math.random() * 10) + 5;
                 for (let i = 0; i < decorCount; i++) {
                     const localX = Math.random() * this.config.chunkSize;
@@ -557,22 +513,18 @@
                     });
                 }
                 
-                // Simular tiempo de carga
                 setTimeout(() => resolve(data), 10 + Math.random() * 20);
             });
         }
         
         _applyChunkData(chunk, data) {
-            // Almacenar datos
             chunk.entities = data.entities || [];
             chunk.trees = data.trees || [];
             chunk.rocks = data.rocks || [];
             chunk.decorations = data.decorations || [];
             chunk.terrain = data.terrain;
             
-            // Crear mallas para los objetos
             this._createChunkMeshes(chunk);
-            
             chunk.dirty = false;
         }
         
@@ -580,9 +532,7 @@
             const scene = this._scene;
             if (!scene) return;
             
-            // Crear árboles
             for (const tree of chunk.trees) {
-                // Usar geometría del pool
                 const mesh = this._getMeshFromPool('tree');
                 if (mesh) {
                     mesh.position.set(tree.x, 0, tree.z);
@@ -592,7 +542,6 @@
                 }
             }
             
-            // Crear rocas
             for (const rock of chunk.rocks) {
                 const mesh = this._getMeshFromPool('rock');
                 if (mesh) {
@@ -605,7 +554,6 @@
         }
         
         _getMeshFromPool(type) {
-            // Buscar en el pool
             for (let i = 0; i < this.meshPool.length; i++) {
                 const item = this.meshPool[i];
                 if (!item.inUse) {
@@ -614,12 +562,10 @@
                 }
             }
             
-            // Crear nuevo mesh
             const geo = this.geometryCache.get(type) || new THREE.BoxGeometry(1, 1, 1);
             const mat = new THREE.MeshStandardMaterial();
             const mesh = new THREE.Mesh(geo, mat);
             
-            // Guardar en pool
             if (this.meshPool.length < this.maxPoolSize) {
                 this.meshPool.push({ mesh, inUse: true });
             }
@@ -645,7 +591,6 @@
             const chunk = this.chunks.get(key);
             if (!chunk || !chunk.loaded) return;
             
-            // Programar descarga con retraso
             if (chunk.unloadTimer) {
                 clearTimeout(chunk.unloadTimer);
             }
@@ -659,12 +604,10 @@
             const chunk = this.chunks.get(key);
             if (!chunk || !chunk.loaded) return;
             
-            // Remover mallas de la escena
             const scene = this._scene;
             if (scene) {
                 for (const mesh of chunk.meshes) {
                     scene.remove(mesh);
-                    // Devolver al pool
                     mesh.inUse = false;
                 }
             }
@@ -679,16 +622,10 @@
             }
             
             this.emit('chunkUnloaded', { key });
-            
-            // Opcional: eliminar chunk después de un tiempo
-            // setTimeout(() => {
-            //     this.chunks.delete(key);
-            // }, 10000);
         }
         
         _processUnloadQueue() {
-            // Procesar descargas programadas
-            // (las descargas se manejan con setTimeout)
+            // Las descargas se manejan con setTimeout
         }
         
         // ============================================================
@@ -709,13 +646,7 @@
         }
         
         _applyLOD(chunk, lodLevel) {
-            // Aplicar LOD a las mallas del chunk
             for (const mesh of chunk.meshes) {
-                if (mesh.isInstancedMesh) {
-                    // Para meshes instanciados, ajustar LOD
-                    // (en producción, se usarían diferentes geometrías)
-                }
-                // Reducir visibilidad según LOD
                 const visibility = 1 - (lodLevel / this.config.lodLevels);
                 mesh.visible = visibility > 0.1;
             }
@@ -767,10 +698,9 @@
                 if (chunk.loading) this.stats.loadingChunks++;
             }
             
-            // Memoria aproximada
             let mem = 0;
             for (const [key, chunk] of this.chunks) {
-                mem += chunk.meshes.length * 1024; // Aprox
+                mem += chunk.meshes.length * 1024;
             }
             this.stats.memoryUsage = mem;
         }
@@ -810,7 +740,6 @@
         //  🔄 RESET
         //  ============================================================
         reset() {
-            // Descargar todos los chunks
             for (const [key, chunk] of this.chunks) {
                 if (chunk.loaded) {
                     this._unloadChunk(key);
@@ -858,7 +787,7 @@
     }
     
     // ============================================================
-    //  🚀 INSTANCIA GLOBAL
+    //  🚀 INSTANNCIA GLOBAL
     //  ============================================================
     window.ChunkManager = ChunkManager;
     
