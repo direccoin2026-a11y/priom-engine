@@ -1,4 +1,4 @@
-ñ/**
+/**
  * ✨ PRIOM V0.4 - PARTICLE SYSTEM CUÁNTICO
  * "Sistema de partículas GPU con IA generativa y simulación avanzada"
  * 
@@ -27,22 +27,40 @@
 (function() {
     'use strict';
 
+    // Verificar que THREE esté disponible
+    if (typeof THREE === 'undefined') {
+        console.warn('⚠️ ParticleSystem: THREE no disponible, usando fallback');
+        // Definir un THREE básico si no existe
+        if (typeof window.THREE === 'undefined') {
+            window.THREE = {
+                BufferGeometry: function() {},
+                BufferAttribute: function() {},
+                Points: function() {},
+                PointsMaterial: function() {},
+                ShaderMaterial: function() {},
+                AdditiveBlending: 1,
+                NormalBlending: 0,
+                Color: function(c) { this.r = 1; this.g = 1; this.b = 1; this.set = function(c) {}; }
+            };
+        }
+    }
+
     // ============================================================
     //  📊 TIPOS DE MOVIMIENTO DE PARTÍCULAS
     //  ============================================================
     const PARTICLE_TYPES = {
-        FALL: 'fall',           // Caída con gravedad
-        RISE: 'rise',           // Ascenso (humo, burbujas)
-        SWIRL: 'swirl',         // Remolino
-        VORTEX: 'vortex',       // Vórtice (tornado, agujero negro)
-        GALAXY: 'galaxy',       // Espiral (galaxia)
-        SWARM: 'swarm',         // Enjambre (boids-like)
-        FLOW: 'flow',           // Flujo (río, corriente)
-        EXPLODE: 'explode',     // Explosión (radial)
-        SPARK: 'spark',         // Chispa (trayectoria)
-        WAVE: 'wave',           // Onda (ondas en agua)
-        TRAIL: 'trail',         // Estela (detrás de objeto)
-        CUSTOM: 'custom'        // Personalizado
+        FALL: 'fall',
+        RISE: 'rise',
+        SWIRL: 'swirl',
+        VORTEX: 'vortex',
+        GALAXY: 'galaxy',
+        SWARM: 'swarm',
+        FLOW: 'flow',
+        EXPLODE: 'explode',
+        SPARK: 'spark',
+        WAVE: 'wave',
+        TRAIL: 'trail',
+        CUSTOM: 'custom'
     };
 
     /**
@@ -58,16 +76,16 @@
             // ============================================================
             //  📦 CONFIGURACIÓN
             //  ============================================================
-            this.count = count;
-            this.options = options;
+            this.count = count || 100;
+            this.options = options || {};
             this.type = options.type || PARTICLE_TYPES.FALL;
             this.spread = options.spread || 140;
             this.height = options.height || 40;
             this.fallSpeed = options.fallSpeed ?? 0.3;
             this.drift = options.drift ?? 0.15;
-            this.lifetime = options.lifetime ?? 10;
-            this.emitRate = options.emitRate ?? 1.0;
-            this.burstCount = options.burstCount ?? 0;
+            this.lifetime = options.lifetime || 10;
+            this.emitRate = options.emitRate || 1.0;
+            this.burstCount = options.burstCount || 0;
             this.attractors = options.attractors || [];
             this.repulsors = options.repulsors || [];
             this._clock = 0;
@@ -105,9 +123,11 @@
         }
         
         // ============================================================
-        //  🚀 CONSTRUIR SISTEMA (mejorado)
+        //  🚀 CONSTRUIR SISTEMA (compatible)
         //  ============================================================
         _build(options) {
+            const THREE = window.THREE;
+            
             const geometry = new THREE.BufferGeometry();
             
             // Datos por partícula
@@ -120,38 +140,34 @@
             const lifetime = new Float32Array(this.count);
             const type = new Float32Array(this.count);
             
-            // Velocidades para diferentes tipos
             const speedBase = options.speed || 1.0;
+            const colorBase = new THREE.Color(options.color || 0xffffff);
             
             for (let i = 0; i < this.count; i++) {
-                // Posición inicial
                 basePos[i * 3] = (Math.random() - 0.5) * this.spread;
                 basePos[i * 3 + 1] = Math.random() * this.height;
                 basePos[i * 3 + 2] = (Math.random() - 0.5) * this.spread;
                 
                 seed[i] = Math.random() * 100;
                 
-                // Velocidad según tipo
                 const angle = Math.random() * Math.PI * 2;
                 const speed = (0.5 + Math.random() * 0.5) * speedBase;
                 velocity[i * 3] = Math.cos(angle) * speed;
                 velocity[i * 3 + 1] = (Math.random() - 0.5) * speed;
                 velocity[i * 3 + 2] = Math.sin(angle) * speed;
                 
-                // Tamaño
                 size[i] = 0.1 + Math.random() * 0.4;
                 
-                // Color
-                const hue = Math.random();
-                const col = new THREE.Color().setHSL(hue, 0.8, 0.6);
+                // Color con variación
+                const col = colorBase.clone();
+                col.multiplyScalar(0.7 + Math.random() * 0.6);
                 color[i * 3] = col.r;
                 color[i * 3 + 1] = col.g;
                 color[i * 3 + 2] = col.b;
                 
-                // Edad y vida
                 age[i] = Math.random() * (this.lifetime || 10);
                 lifetime[i] = (this.lifetime || 10) * (0.5 + Math.random() * 0.5);
-                type[i] = i % 3; // Variación de tipo
+                type[i] = i % 3;
             }
             
             geometry.setAttribute('position', new THREE.BufferAttribute(basePos, 3));
@@ -211,7 +227,7 @@
         }
         
         // ============================================================
-        //  📝 SHADER DE VÉRTICES (mejorado)
+        //  📝 SHADER DE VÉRTICES
         //  ============================================================
         _getVertexShader() {
             return `
@@ -254,34 +270,27 @@
                     vLifetime = aLifetime;
                     vType = aType;
                     
-                    // Calcular edad actual
                     float age = aAge + uTime * 0.1;
                     float lifeProgress = age / aLifetime;
                     vAlpha = 1.0 - lifeProgress;
                     
-                    // Posición base
                     vec3 pos = position;
                     
-                    // === MOVIMIENTO SEGÚN TIPO ===
-                    // Tipo 0: Caída (polvo, lluvia)
+                    // Movimiento según tipo
                     if (uType < 0.5) {
                         float fallOffset = mod(uTime * uFallSpeed + aSeed, uHeight);
                         pos.y = uHeight - fallOffset;
                         pos.x += sin(uTime * 0.8 + aSeed) * uDrift;
                         pos.x += uWind.x * uTime * 0.1;
                         pos.z += uWind.z * uTime * 0.1;
-                    }
-                    // Tipo 1: Swirl (remolino)
-                    else if (uType < 1.5) {
+                    } else if (uType < 1.5) {
                         float angle = uTime * 0.5 + aSeed * 0.1;
                         float radius = 0.5 + sin(uTime * 0.3 + aSeed) * 0.3;
                         float heightOffset = mod(uTime * 0.2 + aSeed, uHeight);
                         pos.x = sin(angle) * radius * uSpread * 0.3;
                         pos.z = cos(angle) * radius * uSpread * 0.3;
                         pos.y = heightOffset;
-                    }
-                    // Tipo 2: Vortex (vórtice)
-                    else {
+                    } else {
                         float angle = uTime * 0.8 + aSeed * 0.2;
                         float radius = 0.1 + (1.0 - lifeProgress) * 0.9;
                         float heightOffset = (1.0 - lifeProgress) * uHeight;
@@ -290,12 +299,12 @@
                         pos.y = heightOffset;
                     }
                     
-                    // === TURBULENCIA ===
+                    // Turbulencia
                     float turb = uTurbulence * sin(uTime * 2.0 + aSeed + pos.x * 0.01);
                     pos.x += turb;
                     pos.z += turb * 0.7;
                     
-                    // === ATRACTOR ===
+                    // Atractor
                     if (uAttractorStrength > 0.0) {
                         vec3 toAttractor = uAttractorPos - pos;
                         float dist = length(toAttractor);
@@ -304,7 +313,7 @@
                         }
                     }
                     
-                    // === REPULSOR ===
+                    // Repulsor
                     if (uRepulsorStrength > 0.0) {
                         vec3 fromRepulsor = pos - uRepulsorPos;
                         float dist = length(fromRepulsor);
@@ -313,7 +322,7 @@
                         }
                     }
                     
-                    // === VÓRTICE ===
+                    // Vórtice
                     if (uVortexStrength > 0.0) {
                         vec3 center = vec3(0.0, uHeight * 0.5, 0.0);
                         vec3 toCenter = pos - center;
@@ -324,13 +333,12 @@
                         }
                     }
                     
-                    // === RECICLAR ALREDEDOR DE CÁMARA ===
+                    // Reciclar alrededor de cámara
                     vec3 relativeToCam = pos - uCameraPos;
                     relativeToCam.x = mod(relativeToCam.x + uSpread * 0.5, uSpread) - uSpread * 0.5;
                     relativeToCam.z = mod(relativeToCam.z + uSpread * 0.5, uSpread) - uSpread * 0.5;
                     pos = uCameraPos + relativeToCam;
                     
-                    // Tamaño según edad
                     float sizeFactor = 1.0 - lifeProgress * 0.5;
                     float finalSize = uSize * aSize * sizeFactor;
                     
@@ -342,7 +350,7 @@
         }
         
         // ============================================================
-        //  📝 SHADER DE FRAGMENTOS (mejorado)
+        //  📝 SHADER DE FRAGMENTOS
         //  ============================================================
         _getFragmentShader() {
             return `
@@ -357,29 +365,23 @@
                 varying float vType;
                 
                 void main() {
-                    // Punto redondeado
                     vec2 c = gl_PointCoord - 0.5;
                     float d = length(c);
                     if (d > 0.5) discard;
                     
-                    // Brillo con caída
                     float alpha = 1.0 - smoothstep(0.0, 0.5, d);
                     alpha = pow(alpha, 1.5);
                     
-                    // Efecto de brillo (glow)
                     float glow = exp(-d * 8.0);
                     vec3 color = vColor + vec3(glow * 0.3);
                     
-                    // Color según edad
                     float lifeProgress = 1.0 - vAlpha;
                     if (lifeProgress > 0.7) {
-                        // Desvanecimiento al final
                         float fade = 1.0 - (lifeProgress - 0.7) / 0.3;
                         alpha *= fade;
                         color *= fade;
                     }
                     
-                    // Opacidad final
                     float finalAlpha = alpha * vAlpha * uOpacity;
                     
                     gl_FragColor = vec4(color, finalAlpha);
@@ -409,13 +411,12 @@
         }
         
         // ============================================================
-        //  🔄 ACTUALIZACIÓN (mejorada)
+        //  🔄 ACTUALIZACIÓN
         //  ============================================================
         update(elapsedTime, cameraPos, options = {}) {
             this._elapsed = elapsedTime;
             this._clock += 0.016;
             
-            // Actualizar uniforms
             const uniforms = this.mesh.material.uniforms;
             uniforms.uTime.value = elapsedTime;
             
@@ -423,7 +424,6 @@
                 uniforms.uCameraPos.value.copy(cameraPos);
             }
             
-            // Actualizar opciones en tiempo real
             if (options.wind) {
                 uniforms.uWind.value.copy(options.wind);
             }
@@ -457,90 +457,60 @@
                 uniforms.uSize.value = options.size;
             }
             
-            // Actualizar estadísticas
             this.stats.elapsed = elapsedTime;
-            this.stats.alive = this.count; // Simplificado
+            this.stats.alive = this.count;
         }
         
         // ============================================================
         //  🎯 MÉTODOS DE CONTROL
         //  ============================================================
-        
-        /**
-         * Establecer la posición del atractor
-         */
-        setAttractor(position, strength = 1.0) {
+        setAttractor(position, strength) {
             const uniforms = this.mesh.material.uniforms;
             if (position) {
                 uniforms.uAttractorPos.value.copy(position);
-                uniforms.uAttractorStrength.value = strength;
+                uniforms.uAttractorStrength.value = strength || 1.0;
             } else {
                 uniforms.uAttractorStrength.value = 0;
             }
         }
         
-        /**
-         * Establecer la posición del repulsor
-         */
-        setRepulsor(position, strength = 1.0) {
+        setRepulsor(position, strength) {
             const uniforms = this.mesh.material.uniforms;
             if (position) {
                 uniforms.uRepulsorPos.value.copy(position);
-                uniforms.uRepulsorStrength.value = strength;
+                uniforms.uRepulsorStrength.value = strength || 1.0;
             } else {
                 uniforms.uRepulsorStrength.value = 0;
             }
         }
         
-        /**
-         * Establecer el viento
-         */
         setWind(wind) {
             if (wind) {
                 this.mesh.material.uniforms.uWind.value.copy(wind);
             }
         }
         
-        /**
-         * Establecer la velocidad de caída
-         */
         setFallSpeed(v) {
             this.mesh.material.uniforms.uFallSpeed.value = v;
         }
         
-        /**
-         * Establecer la opacidad
-         */
         setOpacity(v) {
             this.mesh.material.uniforms.uOpacity.value = v;
         }
         
-        /**
-         * Establecer el color
-         */
         setColor(hex) {
             this.mesh.material.uniforms.uColor.value.set(hex);
         }
         
-        /**
-         * Establecer la visibilidad
-         */
         setVisible(v) {
             this.mesh.visible = v;
         }
         
-        /**
-         * Establecer el tamaño
-         */
         setSize(v) {
             this.mesh.material.uniforms.uSize.value = v;
         }
         
-        /**
-         * Crear una ráfaga de partículas
-         */
-        burst(count = 100, position = null) {
-            // Resetear partículas existentes
+        burst(count, position) {
             const geometry = this.mesh.geometry;
             const posAttr = geometry.attributes.position;
             const ageAttr = geometry.attributes.aAge;
@@ -550,7 +520,8 @@
                 const age = ageAttr.array;
                 const spread = this.spread * 0.5;
                 
-                for (let i = 0; i < Math.min(count, this.count); i++) {
+                const burstCount = Math.min(count || 100, this.count);
+                for (let i = 0; i < burstCount; i++) {
                     const idx = Math.floor(Math.random() * this.count);
                     if (position) {
                         pos[idx * 3] = position.x + (Math.random() - 0.5) * spread;
@@ -567,21 +538,17 @@
                 ageAttr.needsUpdate = true;
             }
             
-            this.stats.emitted += count;
+            this.stats.emitted += count || 100;
         }
         
-        /**
-         * Dispersar partículas (explosión)
-         */
-        explode(position, strength = 1.0) {
+        explode(position, strength) {
             const geometry = this.mesh.geometry;
             const posAttr = geometry.attributes.position;
-            const velAttr = geometry.attributes.aVelocity;
             
-            if (posAttr && velAttr) {
+            if (posAttr) {
                 const pos = posAttr.array;
-                const vel = velAttr.array;
                 const spread = this.spread * 0.3;
+                const force = strength || 1.0;
                 
                 for (let i = 0; i < this.count; i++) {
                     const dir = new THREE.Vector3(
@@ -590,19 +557,14 @@
                         (Math.random() - 0.5) * 2
                     ).normalize();
                     
-                    const speed = strength * (0.5 + Math.random() * 1.5);
-                    vel[i * 3] = dir.x * speed;
-                    vel[i * 3 + 1] = dir.y * speed;
-                    vel[i * 3 + 2] = dir.z * speed;
-                    
+                    const speed = force * (0.5 + Math.random() * 1.5);
                     if (position) {
-                        pos[i * 3] = position.x + (Math.random() - 0.5) * spread;
-                        pos[i * 3 + 1] = position.y + (Math.random() - 0.5) * spread;
-                        pos[i * 3 + 2] = position.z + (Math.random() - 0.5) * spread;
+                        pos[i * 3] = position.x + dir.x * spread;
+                        pos[i * 3 + 1] = position.y + dir.y * spread;
+                        pos[i * 3 + 2] = position.z + dir.z * spread;
                     }
                 }
                 posAttr.needsUpdate = true;
-                velAttr.needsUpdate = true;
             }
         }
         
@@ -626,8 +588,8 @@
         //  🗑️ LIMPIAR
         //  ============================================================
         dispose() {
-            this.mesh.geometry.dispose();
-            this.mesh.material.dispose();
+            if (this.mesh.geometry) this.mesh.geometry.dispose();
+            if (this.mesh.material) this.mesh.material.dispose();
             this._isAlive = null;
             this._particleAge = null;
             this._particleSeed = null;
@@ -684,4 +646,4 @@
         module.exports = ParticleSystem;
     }
     
-})();
+})();        
