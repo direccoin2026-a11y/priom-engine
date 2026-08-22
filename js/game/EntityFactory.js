@@ -1,26 +1,11 @@
 /**
- * 🧬 PRIOM V0.4 - ENTITY FACTORY CUÁNTICA
+ * 🧬 PRIOM V0.4 - ENTITY FACTORY CUÁNTICA (CORREGIDA)
  * "La fábrica de vida del universo con IA generativa"
  * 
  * 📁 Ubicación: js/game/EntityFactory.js
  * 📦 Versión: 0.4.0
- * 🎯 Propósito: Creación de entidades con IA generativa y optimización extrema
  * 
- * ⭐ INNOVACIONES:
- * - Sistema de templates con herencia y composición
- * - IA generativa para variaciones únicas (DNA procedural)
- * - Sistema de pooling con memoria caché L2
- * - Factory con inteligencia predictiva (qué entidades crear)
- * - Sistema de colores con armonía cromática (IA)
- * - Optimización de memoria con SharedArrayBuffer
- * - Sistema de mutación genética (evolución)
- * - Creación batch con SIMD
- * - Sistema de prefabricados (prefabs) con herencia
- * - Estadísticas avanzadas con predicción de uso
- * - Sistema de nombres generados por IA
- * - Integración con WorldAI para creación contextual
- * - Sistema de LOD automático al crear
- * - Pool de entidades con reciclaje inteligente
+ * 🔧 CORRECCIÓN: Método createWater restaurado
  * ============================================================ */
 
 (function() {
@@ -54,7 +39,7 @@
             };
             
             // ============================================================
-            //  🧬 SISTEMA DE DNA (generación procedural)
+            //  🧬 SISTEMA DE DNA
             //  ============================================================
             this._dnaSystem = {
                 seeds: new Map(),
@@ -67,7 +52,6 @@
             //  📋 TEMPLATES MEJORADOS
             //  ============================================================
             this.templates = {
-                // ===== GEOMETRÍA BÁSICA =====
                 geometry: {
                     type: ENTITY_TYPES.GEOMETRY,
                     flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC,
@@ -80,8 +64,6 @@
                     lodLevels: 3,
                     dna: { variation: 0.1, complexity: 0.3 }
                 },
-                
-                // ===== ÁRBOL (mejorado) =====
                 tree: {
                     type: ENTITY_TYPES.TREE,
                     flags: ENTITY_FLAGS.SOLID | ENTITY_FLAGS.STATIC,
@@ -95,14 +77,8 @@
                     variants: ['oak', 'pine', 'palm', 'maple', 'willow', 'baobab', 'redwood'],
                     lodLevels: 4,
                     dna: { variation: 0.2, complexity: 0.7, growthRate: 0.5 },
-                    prefab: {
-                        trunkHeight: 0.5,
-                        crownSize: 0.4,
-                        branchCount: 3
-                    }
+                    prefab: { trunkHeight: 0.5, crownSize: 0.4, branchCount: 3 }
                 },
-                
-                // ===== ROCA (mejorada) =====
                 rock: {
                     type: ENTITY_TYPES.ROCK,
                     flags: ENTITY_FLAGS.SOLID | ENTITY_FLAGS.STATIC,
@@ -117,8 +93,34 @@
                     lodLevels: 3,
                     dna: { variation: 0.25, complexity: 0.4 }
                 },
-                
-                // ===== ANIMAL (mejorado) =====
+                // ===== AGUA (IMPORTANTE: mantener este template) =====
+                water: {
+                    type: ENTITY_TYPES.WATER,
+                    flags: ENTITY_FLAGS.WATER | ENTITY_FLAGS.TRANSPARENT,
+                    color: { r: 20, g: 80, b: 220 },
+                    scale: 2.0,
+                    mass: 100.0,
+                    friction: 0.1,
+                    restitution: 0.0,
+                    shadowCaster: 0,
+                    isWater: 1,
+                    transparent: 1,
+                    lodLevels: 2,
+                    dna: { variation: 0.05, complexity: 0.2 }
+                },
+                particle: {
+                    type: ENTITY_TYPES.PARTICLE,
+                    flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC,
+                    color: { r: 255, g: 200, b: 100 },
+                    scale: 0.15,
+                    mass: 0.01,
+                    friction: 0.1,
+                    restitution: 0.2,
+                    shadowCaster: 0,
+                    isParticle: 1,
+                    lodLevels: 1,
+                    dna: { variation: 0.3, complexity: 0.1 }
+                },
                 animal: {
                     type: ENTITY_TYPES.ANIMAL,
                     flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC | ENTITY_FLAGS.AI_CONTROLLED,
@@ -132,14 +134,8 @@
                     variants: ['deer', 'rabbit', 'fox', 'wolf', 'bear', 'bison', 'eagle', 'snake'],
                     lodLevels: 3,
                     dna: { variation: 0.15, complexity: 0.8, speed: 0.5, strength: 0.5 },
-                    prefab: {
-                        legs: 4,
-                        tail: true,
-                        horns: false
-                    }
+                    prefab: { legs: 4, tail: true, horns: false }
                 },
-                
-                // ===== EDIFICIO (mejorado) =====
                 building: {
                     type: ENTITY_TYPES.BUILDING,
                     flags: ENTITY_FLAGS.SOLID | ENTITY_FLAGS.STATIC,
@@ -153,16 +149,95 @@
                     variants: ['house', 'tower', 'castle', 'ruin', 'temple', 'bridge', 'wall'],
                     lodLevels: 4,
                     dna: { variation: 0.1, complexity: 0.6 },
-                    prefab: {
-                        floors: 1,
-                        roofType: 'gabled',
-                        windows: 4
-                    }
+                    prefab: { floors: 1, roofType: 'gabled', windows: 4 }
+                },
+                character: {
+                    type: ENTITY_TYPES.CHARACTER,
+                    flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC | 
+                           ENTITY_FLAGS.AI_CONTROLLED | ENTITY_FLAGS.INTERACTABLE,
+                    color: { r: 200, g: 180, b: 160 },
+                    scale: 0.8,
+                    mass: 5.0,
+                    friction: 0.5,
+                    restitution: 0.2,
+                    shadowCaster: 1,
+                    variants: ['human', 'elf', 'dwarf', 'orc'],
+                    lodLevels: 3,
+                    dna: { variation: 0.1, complexity: 0.9 }
+                },
+                enemy: {
+                    type: ENTITY_TYPES.ENEMY,
+                    flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC | 
+                           ENTITY_FLAGS.AI_CONTROLLED | ENTITY_FLAGS.DESTRUCTIBLE,
+                    color: { r: 200, g: 50, b: 50 },
+                    scale: 0.9,
+                    mass: 4.0,
+                    friction: 0.4,
+                    restitution: 0.2,
+                    shadowCaster: 1,
+                    isEnemy: 1,
+                    variants: ['goblin', 'skeleton', 'demon', 'dragon'],
+                    lodLevels: 3,
+                    dna: { variation: 0.15, complexity: 0.8 }
+                },
+                item: {
+                    type: ENTITY_TYPES.ITEM,
+                    flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC | 
+                           ENTITY_FLAGS.INTERACTABLE | ENTITY_FLAGS.SELECTABLE,
+                    color: { r: 255, g: 215, b: 0 },
+                    scale: 0.3,
+                    mass: 0.5,
+                    friction: 0.3,
+                    restitution: 0.4,
+                    shadowCaster: 1,
+                    variants: ['sword', 'shield', 'potion', 'chest'],
+                    lodLevels: 2,
+                    dna: { variation: 0.05, complexity: 0.4 }
+                },
+                projectile: {
+                    type: ENTITY_TYPES.PROJECTILE,
+                    flags: ENTITY_FLAGS.GRAVITY | ENTITY_FLAGS.DYNAMIC | 
+                           ENTITY_FLAGS.DESTRUCTIBLE,
+                    color: { r: 255, g: 100, b: 50 },
+                    scale: 0.2,
+                    mass: 0.1,
+                    friction: 0.1,
+                    restitution: 0.1,
+                    shadowCaster: 0,
+                    variants: ['arrow', 'fireball', 'rocket', 'bullet'],
+                    lodLevels: 1,
+                    dna: { variation: 0.05, complexity: 0.2 }
+                },
+                light: {
+                    type: ENTITY_TYPES.LIGHT,
+                    flags: ENTITY_FLAGS.LIGHT_SOURCE | ENTITY_FLAGS.STATIC,
+                    color: { r: 255, g: 200, b: 150 },
+                    scale: 0.5,
+                    mass: 0.0,
+                    friction: 0.0,
+                    restitution: 0.0,
+                    shadowCaster: 0,
+                    isLight: 1,
+                    lodLevels: 1,
+                    dna: { variation: 0.02, complexity: 0.1 }
+                },
+                decoration: {
+                    type: ENTITY_TYPES.DECORATION,
+                    flags: ENTITY_FLAGS.SOLID | ENTITY_FLAGS.STATIC,
+                    color: { r: 150, g: 150, b: 150 },
+                    scale: 0.5,
+                    mass: 5.0,
+                    friction: 0.8,
+                    restitution: 0.1,
+                    shadowCaster: 1,
+                    variants: ['statue', 'fountain', 'bench', 'lamp'],
+                    lodLevels: 3,
+                    dna: { variation: 0.1, complexity: 0.3 }
                 }
             };
             
             // ============================================================
-            //  🎨 PALETAS DE COLORES (mejoradas)
+            //  🎨 PALETAS DE COLORES
             //  ============================================================
             this.colorPalettes = {
                 nature: [
@@ -203,7 +278,6 @@
                     { r: 220, g: 210, b: 190 },
                     { r: 150, g: 140, b: 130 }
                 ],
-                // Nuevas paletas
                 neon: [
                     { r: 255, g: 0, b: 100 },
                     { r: 0, g: 255, b: 200 },
@@ -219,7 +293,7 @@
             };
             
             // ============================================================
-            //  📊 ESTADÍSTICAS MEJORADAS
+            //  📊 ESTADÍSTICAS
             //  ============================================================
             this.stats = {
                 totalCreated: 0,
@@ -274,35 +348,28 @@
             
             console.log('🧬 EntityFactory Cuántica inicializada');
             console.log(`📋 ${Object.keys(this.templates).length} templates disponibles`);
-            console.log(`🧬 DNA System: ${this._config.useDNA ? 'Activado' : 'Desactivado'}`);
-            console.log(`📦 Pool: ${this._poolSize}/${this._maxPoolSize}`);
-            console.log(`🎨 Paletas: ${Object.keys(this.colorPalettes).length}`);
         }
         
         // ============================================================
         //  🚀 INICIALIZACIÓN
         //  ============================================================
         _init() {
-            // Inicializar estadísticas por tipo
             for (const key of Object.keys(this.templates)) {
                 this.stats.byType[key] = 0;
             }
             
-            // Inicializar DNA para cada template
             for (const [key, template] of Object.entries(this.templates)) {
                 if (template.dna) {
                     this._generateDNA(key, template.dna);
                 }
             }
             
-            // Inicializar predictor
             this._initPredictor();
-            
             console.log('✅ EntityFactory Cuántica inicializada correctamente');
         }
         
         // ============================================================
-        //  🧬 SISTEMA DNA (Generación Procedural)
+        //  🧬 SISTEMA DNA
         //  ============================================================
         _generateDNA(templateName, dnaConfig) {
             const dna = {
@@ -315,7 +382,6 @@
                 generation: 0
             };
             
-            // Generar genes según configuración
             for (const [key, value] of Object.entries(dnaConfig)) {
                 if (key !== 'variation' && key !== 'complexity') {
                     const variance = value * dnaConfig.variation;
@@ -330,7 +396,6 @@
             
             this._dnaSystem.seeds.set(templateName, dna);
             this._dnaSystem.cache.set(templateName, dna);
-            
             return dna;
         }
         
@@ -349,29 +414,23 @@
             
             this._dnaSystem.mutations.set(`${templateName}_${mutated.mutations}`, mutated);
             this.stats.dnaMutations++;
-            
             return mutated;
         }
         
         _getDNA(templateName) {
-            // Intentar obtener de caché
             if (this._dnaCache.has(templateName)) {
                 this.stats.cacheHits++;
                 return this._dnaCache.get(templateName);
             }
             
             this.stats.cacheMisses++;
-            
-            // Obtener de seeds
             const dna = this._dnaSystem.seeds.get(templateName);
             if (dna) {
-                // Guardar en caché
                 if (this._dnaCache.size < this._dnaCacheSize) {
                     this._dnaCache.set(templateName, dna);
                 }
                 return dna;
             }
-            
             return null;
         }
         
@@ -379,39 +438,30 @@
         //  🧠 SISTEMA DE PREDICCIÓN
         //  ============================================================
         _initPredictor() {
-            // Analizar patrones de creación
             this._predictor.usagePatterns.set('tree', 0);
             this._predictor.usagePatterns.set('rock', 0);
             this._predictor.usagePatterns.set('animal', 0);
             this._predictor.usagePatterns.set('building', 0);
+            this._predictor.usagePatterns.set('water', 0);
             
-            // Predicciones iniciales
             this._predictor.predictedTypes = ['tree', 'rock'];
             this._predictor.confidence = 0.5;
         }
         
         _updatePredictor(templateName) {
-            // Actualizar patrones de uso
             const count = this._predictor.usagePatterns.get(templateName) || 0;
             this._predictor.usagePatterns.set(templateName, count + 1);
             
-            // Guardar historial
             this._predictor.history.push({
                 type: templateName,
                 time: Date.now(),
                 count: this.stats.totalCreated
             });
             
-            // Mantener historial
             if (this._predictor.history.length > 1000) {
                 this._predictor.history.shift();
             }
             
-            // Predecir próximos tipos
-            this._predictNextTypes();
-        }
-        
-        _predictNextTypes() {
             const patterns = this._predictor.usagePatterns;
             const sorted = Array.from(patterns.entries())
                 .sort((a, b) => b[1] - a[1]);
@@ -425,7 +475,7 @@
         }
         
         // ============================================================
-        //  📦 SISTEMA DE POOLING MEJORADO
+        //  📦 SISTEMA DE POOLING
         //  ============================================================
         _getFromPool(templateName) {
             for (let i = 0; i < this._pool.length; i++) {
@@ -436,14 +486,12 @@
                     return entry.id;
                 }
             }
-            
             this.stats.poolMisses++;
             return -1;
         }
         
         _returnToPool(id, templateName) {
             if (this._poolSize >= this._maxPoolSize) {
-                // Eliminar el más antiguo
                 const oldest = this._pool.shift();
                 this.soa.destroyEntity(oldest.id);
                 this._poolSize--;
@@ -455,12 +503,11 @@
                 available: true,
                 timestamp: Date.now()
             });
-            
             this._poolSize++;
         }
         
         // ============================================================
-        //  🎯 MÉTODOS DE CREACIÓN MEJORADOS
+        //  🎯 MÉTODO PRINCIPAL DE CREACIÓN
         //  ============================================================
         createEntity(templateName, x, y, z, overrides = {}) {
             const startTime = performance.now();
@@ -472,57 +519,43 @@
                 return -1;
             }
             
-            // === INTENTAR OBTENER DEL POOL ===
             const pooledId = this._getFromPool(templateName);
             if (pooledId !== -1) {
-                // Actualizar posición
                 this.soa.posX[pooledId] = x;
                 this.soa.posY[pooledId] = y;
                 this.soa.posZ[pooledId] = z;
                 this.soa.active[pooledId] = 1;
                 this.soa.visible[pooledId] = 1;
-                
-                // Actualizar estadísticas
                 this.stats.totalCreated++;
                 this.stats.byType[templateName] = (this.stats.byType[templateName] || 0) + 1;
                 this.stats.lastCreated = { template: templateName, id: pooledId };
-                
                 return pooledId;
             }
             
-            // === GENERAR DNA ===
             let dna = this._getDNA(templateName);
             if (this._config.useDNA && dna) {
-                // Aplicar evolución
                 if (this._config.enableEvolution && Math.random() < 0.01) {
                     dna = this._mutateDNA(templateName);
                     this.stats.evolutions++;
                 }
             }
             
-            // === APLICAR VARIACIONES ===
             const variation = overrides.variation || template.dna?.variation || 0.1;
             const color = this._mutateColor(template.color, variation);
             const scale = this._mutateScale(template.scale, variation);
             
-            // === CREAR ENTIDAD ===
             const id = this.soa.createEntity(x, y, z, template.type);
             if (id === -1) {
                 this.stats.totalFailed++;
                 return -1;
             }
             
-            // === APLICAR PROPIEDADES ===
             const props = {
-                posX: x,
-                posY: y,
-                posZ: z,
+                posX: x, posY: y, posZ: z,
                 colR: Math.min(255, Math.max(0, Math.round(color.r))),
                 colG: Math.min(255, Math.max(0, Math.round(color.g))),
                 colB: Math.min(255, Math.max(0, Math.round(color.b))),
-                scaleX: scale,
-                scaleY: scale,
-                scaleZ: scale,
+                scaleX: scale, scaleY: scale, scaleZ: scale,
                 mass: template.mass,
                 friction: template.friction,
                 restitution: template.restitution,
@@ -530,7 +563,6 @@
                 flags: template.flags || 0
             };
             
-            // Aplicar propiedades específicas
             if (template.isTree) this.soa.isTree[id] = 1;
             if (template.isRock) this.soa.isRock[id] = 1;
             if (template.isWater) this.soa.isWater[id] = 1;
@@ -540,14 +572,12 @@
             if (template.isGeometry) this.soa.isGeometry[id] = 1;
             if (template.isEnemy) this.soa.isEnemy[id] = 1;
             
-            // Aplicar propiedades base
             for (const [key, value] of Object.entries(props)) {
                 if (this.soa[key] !== undefined) {
                     this.soa[key][id] = value;
                 }
             }
             
-            // === APLICAR OVERRIDES ===
             for (const [key, value] of Object.entries(overrides)) {
                 if (key === 'variation') continue;
                 if (key === 'scale') {
@@ -559,26 +589,19 @@
                 }
             }
             
-            // === APLICAR LOD ===
             if (this._config.prefabLOD && template.lodLevels) {
-                // Asignar LOD inicial basado en distancia (se actualizará después)
                 this.soa.lodLevel[id] = 0;
             }
             
-            // === OPTIMIZACIÓN: DORMIR ENTIDADES ESTÁTICAS ===
             if ((template.isTree || template.isRock || template.isBuilding) && !overrides.velY) {
                 this.soa.sleep(id);
             }
             
-            // === ACTUALIZAR ESTADÍSTICAS ===
             this.stats.totalCreated++;
             this.stats.byType[templateName] = (this.stats.byType[templateName] || 0) + 1;
             this.stats.lastCreated = { template: templateName, id: id };
-            
-            // === ACTUALIZAR PREDICTOR ===
             this._updatePredictor(templateName);
             
-            // === TIEMPO DE CREACIÓN ===
             const elapsed = performance.now() - startTime;
             this.stats.avgCreationTime = this.stats.avgCreationTime * 0.9 + elapsed * 0.1;
             if (elapsed > this.stats.peakCreationTime) {
@@ -589,13 +612,10 @@
         }
         
         // ============================================================
-        //  🌳 CREACIÓN ESPECÍFICA (mejorada)
+        //  🌳 CREACIÓN ESPECÍFICA
         //  ============================================================
         createTree(x, y, z, variant = null) {
-            const overrides = {
-                variation: 0.15,
-                scale: 0.5 + Math.random() * 2.5
-            };
+            const overrides = { variation: 0.15, scale: 0.5 + Math.random() * 2.5 };
             
             if (variant) {
                 const colorMap = {
@@ -614,7 +634,6 @@
                 }
             }
             
-            // DNA para árboles
             if (this._config.useDNA) {
                 const dna = this._getDNA('tree');
                 if (dna && dna.genes) {
@@ -627,10 +646,7 @@
         }
         
         createRock(x, y, z, variant = null) {
-            const overrides = {
-                variation: 0.2,
-                scale: 0.5 + Math.random() * 4.0
-            };
+            const overrides = { variation: 0.2, scale: 0.5 + Math.random() * 4.0 };
             
             if (variant) {
                 const colorMap = {
@@ -651,13 +667,46 @@
             return this.createEntity('rock', x, y, z, overrides);
         }
         
-        createAnimal(x, y, z, isPredator = false, variant = null) {
+        // ============================================================
+        //  💧 AGUA (MÉTODO RESTAURADO - CORREGIDO)
+        //  ============================================================
+        createWater(x, y, z) {
             const overrides = {
-                variation: 0.15,
-                scale: 0.2 + Math.random() * 0.4
+                variation: 0.05,
+                scale: 1.0 + Math.random() * 2.0
             };
             
-            // Colores según tipo y variante
+            const hueShift = Math.random() * 20 - 10;
+            overrides.colR = Math.max(0, Math.min(255, 20 + hueShift));
+            overrides.colG = Math.max(0, Math.min(255, 80 + hueShift));
+            overrides.colB = Math.max(0, Math.min(255, 220 - hueShift));
+            
+            return this.createEntity('water', x, y, z, overrides);
+        }
+        
+        createParticle(x, y, z) {
+            const overrides = {
+                variation: 0.3,
+                scale: 0.05 + Math.random() * 0.15
+            };
+            
+            const colors = [
+                { r: 255, g: 200, b: 100 },
+                { r: 255, g: 220, b: 150 },
+                { r: 200, g: 180, b: 100 },
+                { r: 150, g: 200, b: 255 }
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            overrides.colR = color.r;
+            overrides.colG = color.g;
+            overrides.colB = color.b;
+            
+            return this.createEntity('particle', x, y, z, overrides);
+        }
+        
+        createAnimal(x, y, z, isPredator = false, variant = null) {
+            const overrides = { variation: 0.15, scale: 0.2 + Math.random() * 0.4 };
+            
             if (variant) {
                 const colorMap = {
                     'deer': { r: 180, g: 150, b: 100 },
@@ -696,7 +745,6 @@
                 overrides.colB = color.b;
             }
             
-            // DNA para animales
             if (this._config.useDNA) {
                 const dna = this._getDNA('animal');
                 if (dna && dna.genes) {
@@ -728,51 +776,190 @@
             return id;
         }
         
+        createBuilding(x, y, z, variant = null) {
+            const overrides = { variation: 0.1, scale: 0.8 + Math.random() * 1.5 };
+            
+            if (variant) {
+                const colorMap = {
+                    'house': { r: 160, g: 140, b: 120 },
+                    'tower': { r: 120, g: 110, b: 100 },
+                    'castle': { r: 140, g: 130, b: 120 },
+                    'ruin': { r: 100, g: 90, b: 80 },
+                    'temple': { r: 180, g: 170, b: 150 },
+                    'bridge': { r: 150, g: 140, b: 130 },
+                    'wall': { r: 130, g: 120, b: 110 }
+                };
+                if (colorMap[variant]) {
+                    overrides.colR = colorMap[variant].r;
+                    overrides.colG = colorMap[variant].g;
+                    overrides.colB = colorMap[variant].b;
+                }
+            }
+            
+            return this.createEntity('building', x, y, z, overrides);
+        }
+        
+        createCharacter(x, y, z, variant = null) {
+            const overrides = { variation: 0.1, scale: 0.7 + Math.random() * 0.3 };
+            
+            if (variant) {
+                const colorMap = {
+                    'human': { r: 200, g: 180, b: 160 },
+                    'elf': { r: 180, g: 200, b: 180 },
+                    'dwarf': { r: 160, g: 140, b: 120 },
+                    'orc': { r: 120, g: 100, b: 80 }
+                };
+                if (colorMap[variant]) {
+                    overrides.colR = colorMap[variant].r;
+                    overrides.colG = colorMap[variant].g;
+                    overrides.colB = colorMap[variant].b;
+                }
+            }
+            
+            return this.createEntity('character', x, y, z, overrides);
+        }
+        
+        createEnemy(x, y, z, variant = null) {
+            const overrides = { variation: 0.15, scale: 0.8 + Math.random() * 0.4 };
+            
+            if (variant) {
+                const colorMap = {
+                    'goblin': { r: 80, g: 100, b: 80 },
+                    'skeleton': { r: 200, g: 200, b: 200 },
+                    'demon': { r: 200, g: 50, b: 50 },
+                    'dragon': { r: 200, g: 80, b: 50 }
+                };
+                if (colorMap[variant]) {
+                    overrides.colR = colorMap[variant].r;
+                    overrides.colG = colorMap[variant].g;
+                    overrides.colB = colorMap[variant].b;
+                }
+            }
+            
+            return this.createEntity('enemy', x, y, z, overrides);
+        }
+        
+        createItem(x, y, z, variant = null) {
+            const overrides = { variation: 0.05, scale: 0.2 + Math.random() * 0.3 };
+            
+            if (variant) {
+                const colorMap = {
+                    'sword': { r: 200, g: 180, b: 160 },
+                    'shield': { r: 100, g: 100, b: 200 },
+                    'potion': { r: 200, g: 50, b: 50 },
+                    'chest': { r: 180, g: 150, b: 80 }
+                };
+                if (colorMap[variant]) {
+                    overrides.colR = colorMap[variant].r;
+                    overrides.colG = colorMap[variant].g;
+                    overrides.colB = colorMap[variant].b;
+                }
+            }
+            
+            return this.createEntity('item', x, y, z, overrides);
+        }
+        
+        createProjectile(x, y, z, direction = { x: 0, y: 0, z: 0 }) {
+            const overrides = {
+                variation: 0.05,
+                scale: 0.15 + Math.random() * 0.1,
+                mass: 0.1,
+                friction: 0.05
+            };
+            
+            const id = this.createEntity('projectile', x, y, z, overrides);
+            
+            if (id !== -1) {
+                const speed = 10 + Math.random() * 5;
+                this.soa.velX[id] = direction.x * speed;
+                this.soa.velY[id] = direction.y * speed;
+                this.soa.velZ[id] = direction.z * speed;
+            }
+            
+            return id;
+        }
+        
+        createLight(x, y, z, color = { r: 255, g: 200, b: 150 }, intensity = 1.0) {
+            const overrides = {
+                variation: 0.0,
+                colR: color.r,
+                colG: color.g,
+                colB: color.b,
+                scale: 0.5 * intensity
+            };
+            
+            return this.createEntity('light', x, y, z, overrides);
+        }
+        
+        createDecoration(x, y, z, variant = null) {
+            const overrides = { variation: 0.1, scale: 0.4 + Math.random() * 0.4 };
+            
+            if (variant) {
+                const colorMap = {
+                    'statue': { r: 200, g: 200, b: 200 },
+                    'fountain': { r: 180, g: 180, b: 200 },
+                    'bench': { r: 120, g: 100, b: 80 },
+                    'lamp': { r: 200, g: 180, b: 100 }
+                };
+                if (colorMap[variant]) {
+                    overrides.colR = colorMap[variant].r;
+                    overrides.colG = colorMap[variant].g;
+                    overrides.colB = colorMap[variant].b;
+                }
+            }
+            
+            return this.createEntity('decoration', x, y, z, overrides);
+        }
+        
         // ============================================================
-        //  📦 CREACIÓN BATCH (SIMD optimizado)
+        //  📦 CREACIÓN BATCH
         //  ============================================================
         createBatch(templateName, positions, overrides = {}) {
             const startTime = performance.now();
             const results = [];
             const batchSize = positions.length;
             
-            // Usar SIMD si está disponible
-            if (this._config.useSIMD && typeof SIMD !== 'undefined') {
-                // Procesar en lotes SIMD
-                for (let i = 0; i < batchSize; i += 4) {
-                    const batch = positions.slice(i, i + 4);
-                    for (const pos of batch) {
-                        if (pos) {
-                            const id = this.createEntity(templateName, pos.x, pos.y, pos.z, overrides);
-                            results.push(id);
-                        }
-                    }
-                }
-            } else {
-                // Procesamiento normal
-                for (const pos of positions) {
-                    const id = this.createEntity(templateName, pos.x, pos.y, pos.z, overrides);
-                    results.push(id);
-                }
+            for (const pos of positions) {
+                const id = this.createEntity(templateName, pos.x, pos.y, pos.z, overrides);
+                results.push(id);
             }
             
             this.stats.batchCreations++;
             const elapsed = performance.now() - startTime;
             
-            if (this._config.useDNA) {
-                // Mutar DNA después de batch
-                if (Math.random() < 0.05) {
-                    this._mutateDNA(templateName, 0.05);
-                }
+            if (this._config.useDNA && Math.random() < 0.05) {
+                this._mutateDNA(templateName, 0.05);
             }
             
             console.log(`📦 Batch creado: ${results.length} ${templateName}s (${elapsed.toFixed(2)}ms)`);
-            
             return results;
         }
         
         // ============================================================
-        //  🎨 COLORES MEJORADOS
+        //  🧬 MUTACIONES
+        //  ============================================================
+        _mutateColor(color, variation) {
+            if (!color) return { r: 200, g: 200, b: 200 };
+            
+            const r = color.r + (Math.random() - 0.5) * 255 * variation;
+            const g = color.g + (Math.random() - 0.5) * 255 * variation;
+            const b = color.b + (Math.random() - 0.5) * 255 * variation;
+            
+            return {
+                r: Math.min(255, Math.max(0, r)),
+                g: Math.min(255, Math.max(0, g)),
+                b: Math.min(255, Math.max(0, b))
+            };
+        }
+        
+        _mutateScale(scale, variation) {
+            if (!scale) return 1.0;
+            const factor = 1 + (Math.random() - 0.5) * variation * 2;
+            return Math.max(0.1, scale * factor);
+        }
+        
+        // ============================================================
+        //  🎨 SELECCIÓN DE COLOR
         //  ============================================================
         getColorFromPalette(paletteName) {
             const palette = this.colorPalettes[paletteName];
@@ -787,7 +974,6 @@
         }
         
         getHarmonizedColor(baseColor) {
-            // Generar colores armónicos (IA)
             const hue = this._rgbToHue(baseColor.r, baseColor.g, baseColor.b);
             const variations = [
                 { r: 0, g: 0, b: 0 },
@@ -823,30 +1009,7 @@
         }
         
         // ============================================================
-        //  🧬 MUTACIONES
-        //  ============================================================
-        _mutateColor(color, variation) {
-            if (!color) return { r: 200, g: 200, b: 200 };
-            
-            const r = color.r + (Math.random() - 0.5) * 255 * variation;
-            const g = color.g + (Math.random() - 0.5) * 255 * variation;
-            const b = color.b + (Math.random() - 0.5) * 255 * variation;
-            
-            return {
-                r: Math.min(255, Math.max(0, r)),
-                g: Math.min(255, Math.max(0, g)),
-                b: Math.min(255, Math.max(0, b))
-            };
-        }
-        
-        _mutateScale(scale, variation) {
-            if (!scale) return 1.0;
-            const factor = 1 + (Math.random() - 0.5) * variation * 2;
-            return Math.max(0.1, scale * factor);
-        }
-        
-        // ============================================================
-        //  📊 ESTADÍSTICAS MEJORADAS
+        //  📊 ESTADÍSTICAS
         //  ============================================================
         getStats() {
             return {
@@ -883,7 +1046,7 @@
         //  ============================================================
         cleanPool() {
             const now = Date.now();
-            const threshold = 60000; // 1 minuto
+            const threshold = 60000;
             
             this._pool = this._pool.filter(entry => {
                 if (entry.available && (now - entry.timestamp) > threshold) {
@@ -898,17 +1061,15 @@
         }
         
         // ============================================================
-        //  🔄 RESET MEJORADO
+        //  🔄 RESET
         //  ============================================================
         reset() {
-            // Limpiar pool
             for (const entry of this._pool) {
                 this.soa.destroyEntity(entry.id);
             }
             this._pool = [];
             this._poolSize = 0;
             
-            // Resetear estadísticas
             this.stats = {
                 totalCreated: 0,
                 byType: {},
@@ -933,7 +1094,6 @@
             this._dnaCache.clear();
             this._creationCount = 0;
             
-            // Regenerar DNA
             for (const [key, template] of Object.entries(this.templates)) {
                 if (template.dna) {
                     this._generateDNA(key, template.dna);
@@ -954,7 +1114,6 @@
             this._dnaSystem.cache.clear();
             this._predictor.usagePatterns.clear();
             this._predictor.history = [];
-            
             console.log('🗑️ EntityFactory Cuántica destruida');
         }
     }
@@ -965,12 +1124,6 @@
     window.EntityFactory = EntityFactory;
     
     console.log('🧬 EntityFactory Cuántica cargada');
-    console.log('🧠 IA generativa de entidades');
-    console.log('🧬 Sistema DNA con evolución');
-    console.log('📦 Pool inteligente de entidades');
-    console.log('🎨 Paletas de colores armónicas');
-    console.log('📊 Predictor de uso de entidades');
-    console.log('⚡ Batch creation con SIMD');
     
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = EntityFactory;
