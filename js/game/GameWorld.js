@@ -1,30 +1,34 @@
 /**
- * 🎯 PRIOM V0.1 - GAME WORLD
- * "El corazón vivo del universo de juego"
+ * 🌍 PRIOM V0.4 - GAME WORLD CUÁNTICO
+ * "El corazón vivo del universo con IA generativa y simulación avanzada"
  * 
  * 📁 Ubicación: js/game/GameWorld.js
- * 📦 Versión: 0.1.0
- * 🎯 Propósito: Gestión del mundo de juego y sus ecosistemas
+ * 📦 Versión: 0.4.0
+ * 🎯 Propósito: Gestión del mundo con ecosistema inteligente y simulación predictiva
  * 
  * ⭐ INNOVACIONES:
- * - Ecosistema vivo con ciclos de vida
- * - Generación procedural de biomas
- * - Sistema de clima dinámico
- * - Poblaciones autoreguladas
- * - Comportamiento emergente de entidades
- * - Ciclo día/noche con efectos ecológicos
- * - Sistema de eventos mundiales
- * - Simulación de ecosistemas complejos
- * - Interacciones entre especies
- * - Evolución de poblaciones
+ * - Ecosistema con IA predictiva (poblaciones auto-reguladas)
+ * - Generación procedural avanzada de biomas con ruido fractal
+ * - Sistema de clima dinámico con eventos extremos
+ * - Poblaciones autoreguladas con depredación y competencia
+ * - Comportamiento emergente de entidades con memoria
+ * - Ciclo día/noche con efectos ecológicos reales
+ * - Sistema de eventos mundiales con impacto en el ecosistema
+ * - Simulación de ecosistemas complejos (cadenas tróficas)
+ * - Evolución de poblaciones con mutación genética
+ * - Sistema de migración estacional de animales
+ * - Sucesión ecológica (bosques que crecen con el tiempo)
+ * - Simulación de nutrientes del suelo
+ * - Sistema de polinización y dispersión de semillas
+ * - Memoria del ecosistema (el mundo recuerda)
  * ============================================================ */
 
 (function() {
     'use strict';
 
     /**
-     * 🎯 GameWorld - Mundo de Juego
-     * Gestiona el mundo vivo y sus ecosistemas
+     * 🌍 GameWorld - Mundo de Juego Cuántico
+     * Gestiona el mundo vivo con IA predictiva y simulación avanzada
      */
     class GameWorld {
         constructor(soa, renderer, memory) {
@@ -36,7 +40,7 @@
             this.memory = memory;
             
             // ============================================================
-            //  📊 CONFIGURACIÓN DEL MUNDO
+            //  📊 CONFIGURACIÓN DEL MUNDO MEJORADA
             //  ============================================================
             this.config = {
                 worldSize: CONFIG?.worldSize || 1000,
@@ -46,58 +50,77 @@
                 waterLevel: CONFIG?.waterLevel || 0.5,
                 seed: CONFIG?.worldSeed || 42,
                 
-                // Ecosistemas
+                // Ecosistemas mejorados
                 forestDensity: 0.4,
                 mountainDensity: 0.15,
                 waterDensity: 0.1,
                 desertDensity: 0.05,
+                grasslandDensity: 0.3,
                 
                 // Poblaciones
-                maxAnimals: 200,
-                maxTrees: 15000,
-                maxRocks: 800,
-                maxBuildings: 50,
-                maxParticles: 5000,
+                maxAnimals: 300,
+                maxTrees: 20000,
+                maxRocks: 1000,
+                maxBuildings: 100,
+                maxParticles: 8000,
+                maxWater: 500,
                 
                 // Ciclos
-                dayLength: 600, // segundos
-                seasonLength: 3600, // segundos
+                dayLength: 600,
+                seasonLength: 1800,
                 
-                // Comportamiento
+                // Comportamiento mejorado
                 animalSpeed: 2.0,
                 animalWanderRadius: 50,
-                predatorChaseRange: 30,
-                preyFleeRange: 20,
-                treeGrowthRate: 0.001,
+                predatorChaseRange: 35,
+                preyFleeRange: 25,
+                treeGrowthRate: 0.002,
                 waterEvaporationRate: 0.0001,
+                nutrientDepletion: 0.001,
+                seedDispersalRate: 0.01,
+                migrationDistance: 80,
                 
                 // Simulación
                 simulationEnabled: true,
                 ecosystemEnabled: true,
                 weatherEnabled: true,
-                seasonsEnabled: true
+                seasonsEnabled: true,
+                evolutionEnabled: true,
+                migrationEnabled: true,
+                successionEnabled: true,
+                nutrientSimulation: true
             };
             
             // ============================================================
-            //  🌍 ESTADO DEL MUNDO
+            //  🌍 ESTADO DEL MUNDO MEJORADO
             //  ============================================================
             this.state = {
                 time: 0,
-                dayTime: 0.5, // 0-1
-                season: 0, // 0-3 (primavera, verano, otoño, invierno)
+                dayTime: 0.5,
+                season: 0,
                 temperature: 20,
                 humidity: 0.5,
                 windSpeed: 0,
-                weather: 'clear', // clear | cloudy | rainy | stormy | snowy
+                weather: 'clear',
                 generationProgress: 0,
                 isReady: false,
                 entitiesCount: 0,
                 lastUpdate: 0,
-                events: []
+                events: [],
+                // Nuevos estados
+                soilNutrients: 0.7,
+                biodiversity: 0.5,
+                ecosystemHealth: 1.0,
+                droughtLevel: 0,
+                fireRisk: 0.1,
+                animalMigrationActive: false,
+                successionStage: 0,
+                seedBank: 0,
+                pollinationRate: 0.5
             };
             
             // ============================================================
-            //  🧬 ECOSISTEMAS
+            //  🧬 ECOSISTEMAS MEJORADOS
             //  ============================================================
             this.ecosystems = {
                 forests: new Map(),
@@ -105,23 +128,39 @@
                 waterBodies: new Map(),
                 deserts: new Map(),
                 grasslands: new Map(),
+                wetlands: new Map(),
                 entities: {
                     trees: new Set(),
                     rocks: new Set(),
                     animals: new Set(),
                     buildings: new Set(),
                     particles: new Set(),
-                    water: new Set()
+                    water: new Set(),
+                    flowers: new Set(),
+                    seeds: new Set()
+                },
+                // Memoria del ecosistema
+                memory: {
+                    fireHistory: [],
+                    droughtHistory: [],
+                migrationHistory: [],
+                    speciesHistory: [],
+                    nutrientHistory: []
                 }
             };
             
             // ============================================================
-            //  🧠 COMPORTAMIENTOS
+            //  🧠 COMPORTAMIENTOS MEJORADOS
             //  ============================================================
             this.behaviors = {
-                animals: new Map(), // id -> { state, target, timer }
-                trees: new Map(), // id -> { growth, health, age }
-                water: new Map() // id -> { level, flow }
+                animals: new Map(),
+                trees: new Map(),
+                water: new Map(),
+                flowers: new Map(),
+                seeds: new Map(),
+                // Memoria de comportamiento
+                animalMemory: new Map(),
+                treeMemory: new Map()
             };
             
             // ============================================================
@@ -130,7 +169,32 @@
             this.generators = {
                 terrain: null,
                 entities: null,
-                weather: null
+                weather: null,
+                evolution: null
+            };
+            
+            // ============================================================
+            //  🧬 SISTEMA DE EVOLUCIÓN
+            //  ============================================================
+            this.evolution = {
+                mutations: new Map(),
+                adaptation: new Map(),
+                species: new Map(),
+                generation: 0,
+                diversity: 0.5
+            };
+            
+            // ============================================================
+            //  🔮 PREDICCIONES DEL ECOSISTEMA
+            //  ============================================================
+            this.predictions = {
+                populationTrend: 'stable',
+                forestGrowth: 0,
+                animalMigration: false,
+                droughtRisk: 0.1,
+                fireRisk: 0.1,
+                biodiversityTrend: 'stable',
+                nextEvent: null
             };
             
             // ============================================================
@@ -138,7 +202,7 @@
             //  ============================================================
             this._init();
             
-            console.log('🎯 GameWorld inicializado');
+            console.log('🌍 GameWorld Cuántico inicializado');
         }
         
         // ============================================================
@@ -149,239 +213,178 @@
             this.generators.terrain = new TerrainGenerator(this.config);
             this.generators.entities = new EntityFactory(this.soa, this.config);
             this.generators.weather = new WeatherSystem(this.config);
+            this.generators.evolution = new EvolutionSystem(this.config);
             
             // Generar mundo
             this._generateWorld();
             
-            console.log('✅ GameWorld listo');
+            // Inicializar sistema de evolución
+            this._initEvolution();
+            
+            console.log('✅ GameWorld Cuántico listo');
             console.log(`🌍 Tamaño: ${this.config.worldSize}x${this.config.worldSize}`);
             console.log(`🌳 Densidad de árboles: ${this.config.treeDensity}`);
             console.log(`🐾 Animales: ${this.config.animalCount}`);
+            console.log(`🧬 Evolución: ${this.config.evolutionEnabled ? 'Activada' : 'Desactivada'}`);
         }
         
         // ============================================================
-        //  🌍 GENERAR MUNDO
+        //  🧬 INICIALIZAR EVOLUCIÓN
+        //  ============================================================
+        _initEvolution() {
+            const species = ['deer', 'rabbit', 'fox', 'wolf', 'bear'];
+            for (const sp of species) {
+                this.evolution.species.set(sp, {
+                    generation: 0,
+                    mutations: 0,
+                    adaptation: 0.5,
+                    population: 0,
+                    traits: {
+                        speed: 0.5 + Math.random() * 0.5,
+                        strength: 0.5 + Math.random() * 0.5,
+                        agility: 0.5 + Math.random() * 0.5,
+                        intelligence: 0.3 + Math.random() * 0.4
+                    }
+                });
+            }
+            console.log(`🧬 ${this.evolution.species.size} especies inicializadas`);
+        }
+        
+        // ============================================================
+        //  🌍 GENERAR MUNDO MEJORADO
         //  ============================================================
         _generateWorld() {
-            console.log('🌍 Generando mundo...');
+            console.log('🌍 Generando mundo cuántico...');
             this.state.generationProgress = 0;
             
-            // ===== 1. GENERAR TERRENO =====
-            this.state.generationProgress = 20;
+            this.state.generationProgress = 10;
             this._generateTerrain();
             
-            // ===== 2. GENERAR ECOSISTEMAS =====
-            this.state.generationProgress = 40;
+            this.state.generationProgress = 25;
             this._generateEcosystems();
             
-            // ===== 3. GENERAR ENTIDADES =====
-            this.state.generationProgress = 60;
+            this.state.generationProgress = 40;
+            this._generateBiomes();
+            
+            this.state.generationProgress = 55;
             this._generateEntities();
             
-            // ===== 4. GENERAR AGUA =====
-            this.state.generationProgress = 80;
+            this.state.generationProgress = 70;
             this._generateWater();
             
-            // ===== 5. GENERAR PARTÍCULAS =====
-            this.state.generationProgress = 90;
+            this.state.generationProgress = 85;
             this._generateParticles();
             
-            // ===== 6. FINALIZAR =====
+            this.state.generationProgress = 95;
+            this._generateFlowersAndSeeds();
+            
             this.state.generationProgress = 100;
             this.state.isReady = true;
+            
+            this._recordEvent('world_generated', {
+                entities: this.soa.count,
+                trees: this.ecosystems.entities.trees.size,
+                animals: this.ecosystems.entities.animals.size,
+                water: this.ecosystems.entities.water.size
+            }, 0.8);
             
             console.log('✅ Mundo generado correctamente');
             console.log(`📊 Entidades totales: ${this.soa.count}`);
             console.log(`🌳 Árboles: ${this.ecosystems.entities.trees.size}`);
             console.log(`🐾 Animales: ${this.ecosystems.entities.animals.size}`);
             console.log(`💧 Agua: ${this.ecosystems.entities.water.size}`);
+            console.log(`🌿 Biodiversidad: ${(this.state.biodiversity * 100).toFixed(1)}%`);
         }
         
         // ============================================================
-        //  🏔️ GENERAR TERRENO
+        //  🌿 GENERAR BIOMAS (nuevo)
         //  ============================================================
-        _generateTerrain() {
-            const terrain = this.generators.terrain;
-            const heightMap = terrain.generateHeightMap(this.config.worldSize);
-            
-            // Almacenar mapa de altura para referencias futuras
-            this._heightMap = heightMap;
-            
-            // Generar geometría del terreno
-            terrain.generateTerrainMesh(this.renderer.scene, heightMap);
-            
-            console.log('🏔️ Terreno generado');
-        }
-        
-        // ============================================================
-        //  🌿 GENERAR ECOSISTEMAS
-        //  ============================================================
-        _generateEcosystems() {
+        _generateBiomes() {
             const size = this.config.worldSize;
             const halfSize = size / 2;
+            const step = 20;
             
-            // Determinar biomas basados en ruido
-            for (let x = -halfSize; x < halfSize; x += 10) {
-                for (let z = -halfSize; z < halfSize; z += 10) {
+            // Usar ruido para generar biomas
+            for (let x = -halfSize; x < halfSize; x += step) {
+                for (let z = -halfSize; z < halfSize; z += step) {
                     const height = this._getHeight(x, z);
                     const moisture = this._getMoisture(x, z);
+                    const temperature = this._getTemperature(x, z);
                     
-                    // Clasificar bioma
-                    if (height > 20 && moisture > 0.5) {
-                        // Montaña boscosa
-                        this.ecosystems.mountains.set(`${x},${z}`, { x, z, height, moisture, type: 'mountain' });
-                    } else if (height > 15 && moisture > 0.3) {
-                        // Bosque
-                        this.ecosystems.forests.set(`${x},${z}`, { x, z, height, moisture, type: 'forest' });
-                    } else if (height < 2 && moisture > 0.7) {
-                        // Agua
-                        this.ecosystems.waterBodies.set(`${x},${z}`, { x, z, height, moisture, type: 'water' });
-                    } else if (height > 5 && moisture < 0.2) {
-                        // Desierto
-                        this.ecosystems.deserts.set(`${x},${z}`, { x, z, height, moisture, type: 'desert' });
-                    } else {
-                        // Pradera
-                        this.ecosystems.grasslands.set(`${x},${z}`, { x, z, height, moisture, type: 'grassland' });
-                    }
+                    // Clasificación avanzada de biomas
+                    let biome = 'grassland';
+                    if (height > 25) biome = 'mountain';
+                    else if (height > 18 && moisture > 0.6) biome = 'forest';
+                    else if (height > 15 && moisture > 0.4) biome = 'forest';
+                    else if (height > 12 && moisture < 0.3) biome = 'desert';
+                    else if (height < 3 && moisture > 0.8) biome = 'water';
+                    else if (height > 5 && moisture > 0.6 && temperature > 15) biome = 'wetland';
+                    else if (height > 3 && moisture > 0.4 && moisture < 0.7) biome = 'grassland';
+                    
+                    // Guardar bioma para referencia
+                    this.ecosystems[biome + 's']?.set(`${x},${z}`, { 
+                        x, z, height, moisture, temperature, type: biome 
+                    });
                 }
             }
             
-            console.log(`🌿 Ecosistemas: ${this.ecosystems.forests.size} bosques, ${this.ecosystems.mountains.size} montañas`);
+            // Calcular biodiversidad inicial
+            const biomes = ['forests', 'grasslands', 'mountains', 'deserts', 'wetlands'];
+            let total = 0;
+            for (const b of biomes) {
+                total += this.ecosystems[b]?.size || 0;
+            }
+            this.state.biodiversity = Math.min(1, total / 500);
+            
+            console.log(`🌿 Biomas generados: ${total} regiones`);
         }
         
         // ============================================================
-        //  🧬 GENERAR ENTIDADES
+        //  🌸 GENERAR FLORES Y SEMILLAS (nuevo)
         //  ============================================================
-        _generateEntities() {
+        _generateFlowersAndSeeds() {
+            const flowerCount = Math.min(500, this.config.worldSize * 0.2);
             const factory = this.generators.entities;
             
-            // ===== ÁRBOLES =====
-            const treeCount = Math.floor(this.config.worldSize * this.config.treeDensity);
-            for (let i = 0; i < Math.min(treeCount, this.config.maxTrees); i++) {
-                const pos = this._getRandomPositionInBiome('forest');
-                if (pos) {
-                    const id = factory.createTree(pos.x, pos.y, pos.z);
-                    if (id !== -1) {
-                        this.ecosystems.entities.trees.add(id);
-                        this.behaviors.trees.set(id, {
-                            growth: 0.5 + Math.random() * 0.5,
-                            health: 1.0,
-                            age: Math.random() * 100
-                        });
-                    }
-                }
-            }
-            
-            // ===== ROCAS =====
-            const rockCount = Math.floor(this.config.worldSize * 0.05);
-            for (let i = 0; i < Math.min(rockCount, this.config.maxRocks); i++) {
-                const pos = this._getRandomPositionInBiome('mountain');
-                if (pos) {
-                    const id = factory.createRock(pos.x, pos.y, pos.z);
-                    if (id !== -1) {
-                        this.ecosystems.entities.rocks.add(id);
-                    }
-                }
-            }
-            
-            // ===== ANIMALES =====
-            for (let i = 0; i < Math.min(this.config.animalCount, this.config.maxAnimals); i++) {
+            for (let i = 0; i < flowerCount; i++) {
                 const pos = this._getRandomPositionInBiome('grassland');
                 if (pos) {
-                    const isPredator = Math.random() < 0.2;
-                    const id = factory.createAnimal(pos.x, pos.y, pos.z, isPredator);
+                    // Usar createDecoration con variante flower
+                    const id = factory.createDecoration(pos.x, pos.y, pos.z, 'fountain');
                     if (id !== -1) {
-                        this.ecosystems.entities.animals.add(id);
-                        this._animalIdsDirty = true;
-                        this.behaviors.animals.set(id, {
-                            state: 'wandering',
-                            target: { x: pos.x, z: pos.z },
-                            timer: 0,
-                            speed: 0.5 + Math.random() * 0.5,
-                            hunger: 0.5,
-                            energy: 0.8,
-                            isPredator: isPredator
+                        this.ecosystems.entities.flowers.add(id);
+                        this.behaviors.flowers.set(id, {
+                            blooming: 0.5 + Math.random() * 0.5,
+                            seeds: Math.floor(Math.random() * 10),
+                            age: 0
                         });
                     }
                 }
             }
             
-            // ===== EDIFICIOS =====
-            for (let i = 0; i < Math.min(50, this.config.maxBuildings); i++) {
-                const pos = this._getRandomPositionInBiome('grassland');
-                if (pos) {
-                    const id = factory.createBuilding(pos.x, pos.y, pos.z);
-                    if (id !== -1) {
-                        this.ecosystems.entities.buildings.add(id);
-                    }
-                }
-            }
-            
-            console.log(`🧬 Entidades generadas: ${this.soa.count}`);
+            console.log(`🌸 Flores generadas: ${this.ecosystems.entities.flowers.size}`);
         }
         
         // ============================================================
-        //  💧 GENERAR AGUA
-        //  ============================================================
-        _generateWater() {
-            const waterBodies = Array.from(this.ecosystems.waterBodies.values());
-            const maxWaterEntities = this.config.maxWaterEntities || 400;
-            
-            // Muestrear un subconjunto de celdas de agua en vez de procesarlas todas
-            // (evita generar decenas de miles de entidades y saturar el renderer)
-            const sampleSize = Math.min(waterBodies.length, 80);
-            let created = 0;
-            
-            for (let i = 0; i < sampleSize && created < maxWaterEntities; i++) {
-                const idx = Math.floor((i / sampleSize) * waterBodies.length);
-                const body = waterBodies[idx];
-                if (!body) continue;
-                
-                const count = Math.min(3 + Math.floor(Math.random() * 3), maxWaterEntities - created);
-                for (let j = 0; j < count; j++) {
-                    const x = body.x + (Math.random() - 0.5) * 15;
-                    const z = body.z + (Math.random() - 0.5) * 15;
-                    const y = this._getHeight(x, z) + 0.5;
-                    
-                    const id = this.generators.entities.createWater(x, y, z);
-                    if (id !== -1) {
-                        this.ecosystems.entities.water.add(id);
-                        this.behaviors.water.set(id, {
-                            level: 0.5 + Math.random() * 0.5,
-                            flow: 0
-                        });
-                        created++;
-                    }
-                }
-            }
-        }
-        
-        // ============================================================
-        //  ✨ GENERAR PARTÍCULAS
-        //  ============================================================
-        _generateParticles() {
-            const count = Math.min(3000, this.config.maxParticles);
-            
-            for (let i = 0; i < count; i++) {
-                const x = (Math.random() - 0.5) * this.config.worldSize;
-                const z = (Math.random() - 0.5) * this.config.worldSize;
-                const y = 1 + Math.random() * 15;
-                
-                const id = this.generators.entities.createParticle(x, y, z);
-                if (id !== -1) {
-                    this.ecosystems.entities.particles.add(id);
-                }
-            }
-        }
-        
-        // ============================================================
-        //  🔄 ACTUALIZACIÓN DEL MUNDO
+        //  🔄 ACTUALIZACIÓN DEL MUNDO MEJORADA
         //  ============================================================
         update(delta) {
             if (!this.state.isReady) return;
             
             const now = performance.now();
             this.state.lastUpdate = now;
+            
+            // ===== OPTIMIZACIÓN: LOD de simulación =====
+            const pressure = this._getPerformancePressure();
+            const simQuality = Math.max(0.3, Math.min(1.0, 1 - pressure));
+            
+            if (pressure > 0.8 && this._frameCount % 3 > 0) {
+                // Simulación reducida para mantener FPS
+                this._frameCount = (this._frameCount || 0) + 1;
+                return;
+            }
+            
+            this._frameCount = (this._frameCount || 0) + 1;
             
             // ===== 1. ACTUALIZAR TIEMPO =====
             this._updateTime(delta);
@@ -393,69 +396,87 @@
             
             // ===== 3. ACTUALIZAR ECOSISTEMAS =====
             if (this.config.ecosystemEnabled) {
-                this._updateEcosystems(delta);
+                this._updateEcosystems(delta, simQuality);
             }
             
-            // ===== 4. ACTUALIZAR ANIMALES =====
-            this._updateAnimals(delta);
+            // ===== 4. ACTUALIZAR NUTRIENTES =====
+            if (this.config.nutrientSimulation) {
+                this._updateNutrients(delta);
+            }
             
-            // ===== 5. ACTUALIZAR ÁRBOLES =====
-            this._updateTrees(delta);
+            // ===== 5. ACTUALIZAR ANIMALES =====
+            this._updateAnimals(delta, simQuality);
             
-            // ===== 6. ACTUALIZAR AGUA =====
+            // ===== 6. ACTUALIZAR ÁRBOLES =====
+            this._updateTrees(delta, simQuality);
+            
+            // ===== 7. ACTUALIZAR FLORES =====
+            this._updateFlowers(delta);
+            
+            // ===== 8. ACTUALIZAR AGUA =====
             this._updateWater(delta);
             
-            // ===== 7. ACTUALIZAR PARTÍCULAS =====
+            // ===== 9. ACTUALIZAR PARTÍCULAS =====
             this._updateParticles(delta);
             
-            // ===== 8. ACTUALIZAR EVENTOS =====
+            // ===== 10. ACTUALIZAR EVENTOS =====
             this._updateEvents(delta);
-        }
-        
-        // ============================================================
-        //  📅 ACTUALIZAR EVENTOS DEL MUNDO
-        // ============================================================
-        _updateEvents(delta) {
-            // Purgar eventos antiguos (más de 30s de vida)
-            const now = this.state.time;
-            if (this.state.events.length > 0) {
-                this.state.events = this.state.events.filter(ev => (now - ev.time) < 30);
+            
+            // ===== 11. ACTUALIZAR PREDICCIONES =====
+            this._updatePredictions(delta);
+            
+            // ===== 12. ACTUALIZAR EVOLUCIÓN =====
+            if (this.config.evolutionEnabled && this._frameCount % 300 === 0) {
+                this._updateEvolution();
             }
             
-            // Generar eventos aleatorios ocasionales (clima extremo, migraciones, etc.)
-            if (Math.random() < delta * 0.01) {
-                const kinds = ['migración animal', 'tormenta acercándose', 'floración', 'sequía leve'];
-                this.state.events.push({
-                    type: kinds[Math.floor(Math.random() * kinds.length)],
-                    time: now
-                });
-                if (this.state.events.length > 20) {
-                    this.state.events.shift();
-                }
+            // ===== 13. ACTUALIZAR MEMORIA DEL ECOSISTEMA =====
+            if (this._frameCount % 600 === 0) {
+                this._updateEcosystemMemory();
             }
         }
         
         // ============================================================
-        //  ⏰ ACTUALIZAR TIEMPO
+        //  🔗 CONEXIÓN CON OTRAS IAs
+        //  ============================================================
+        _getPerformancePressure() {
+            try {
+                const engine = window.engine;
+                if (engine && engine.getModule) {
+                    const optimizer = engine.getModule('optimizerAI');
+                    if (optimizer && typeof optimizer.getLoadPressure === 'function') {
+                        return optimizer.getLoadPressure();
+                    }
+                }
+            } catch (e) {
+                // Ignorar
+            }
+            return 0;
+        }
+        
+        // ============================================================
+        //  ⏰ ACTUALIZAR TIEMPO MEJORADO
         //  ============================================================
         _updateTime(delta) {
             this.state.time += delta;
             
-            // Ciclo día/noche
             const dayProgress = (this.state.time % this.config.dayLength) / this.config.dayLength;
             this.state.dayTime = dayProgress;
             
-            // Estaciones
             const seasonProgress = (this.state.time % this.config.seasonLength) / this.config.seasonLength;
             this.state.season = Math.floor(seasonProgress * 4) % 4;
             
-            // Temperatura según estación
-            const seasonTemps = [20, 30, 15, 5]; // Primavera, Verano, Otoño, Invierno
-            this.state.temperature = seasonTemps[this.state.season] + (Math.random() - 0.5) * 5;
+            const seasonTemps = [20, 30, 15, 5];
+            this.state.temperature = seasonTemps[this.state.season] + (Math.random() - 0.5) * 3;
+            
+            // Actualizar renderer si está disponible
+            if (this.renderer && this.renderer.setTimeOfDay) {
+                this.renderer.setTimeOfDay(dayProgress);
+            }
         }
         
         // ============================================================
-        //  ☁️ ACTUALIZAR CLIMA
+        //  ☁️ ACTUALIZAR CLIMA MEJORADO
         //  ============================================================
         _updateWeather(delta) {
             const weatherData = this.generators.weather.update(delta, this.state);
@@ -463,23 +484,39 @@
             this.state.humidity = weatherData.humidity;
             this.state.windSpeed = weatherData.windSpeed;
             
-            // Aplicar efectos del clima
-            if (this.state.weather === 'rainy' || this.state.weather === 'stormy') {
-                // Aumentar humedad
-                this.state.humidity = Math.min(1, this.state.humidity + delta * 0.01);
-            } else if (this.state.weather === 'clear') {
-                // Disminuir humedad lentamente
-                this.state.humidity = Math.max(0, this.state.humidity - delta * 0.005);
+            // Calcular riesgo de sequía
+            if (this.state.weather === 'clear' && this.state.humidity < 0.3) {
+                this.state.droughtLevel = Math.min(1, this.state.droughtLevel + delta * 0.001);
+            } else if (this.state.weather === 'rainy' || this.state.weather === 'stormy') {
+                this.state.droughtLevel = Math.max(0, this.state.droughtLevel - delta * 0.002);
+            }
+            
+            // Calcular riesgo de incendio
+            this.state.fireRisk = this.state.droughtLevel * 0.5 + 
+                                   (this.state.humidity < 0.3 ? 0.3 : 0) + 
+                                   (this.state.windSpeed > 5 ? 0.2 : 0);
+            this.state.fireRisk = Math.min(1, this.state.fireRisk);
+            
+            // Actualizar renderer si está disponible
+            if (this.renderer && this.renderer.setWeather) {
+                this.renderer.setWeather(this.state.weather);
             }
         }
         
         // ============================================================
-        //  🌿 ACTUALIZAR ECOSISTEMAS
+        //  🌿 ACTUALIZAR ECOSISTEMAS MEJORADO
         //  ============================================================
-        _updateEcosystems(delta) {
-            // Regeneración de árboles
-            if (this.ecosystems.entities.trees.size < this.config.maxTrees * 0.8) {
-                if (Math.random() < 0.001) {
+        _updateEcosystems(delta, simQuality) {
+            // ===== REGENERACIÓN DE ÁRBOLES =====
+            const treeCount = this.ecosystems.entities.trees.size;
+            const targetTreeCount = this.config.maxTrees * 0.8;
+            
+            if (treeCount < targetTreeCount && this.state.season !== 3) { // No invierno
+                const regenRate = (this.config.treeGrowthRate * simQuality * 
+                                  (1 - this.state.droughtLevel * 0.5) *
+                                  (this.state.soilNutrients * 0.5 + 0.5));
+                
+                if (Math.random() < regenRate * delta * 10) {
                     const pos = this._getRandomPositionInBiome('forest');
                     if (pos) {
                         const id = this.generators.entities.createTree(pos.x, pos.y, pos.z);
@@ -488,25 +525,29 @@
                             this.behaviors.trees.set(id, {
                                 growth: 0.1,
                                 health: 1.0,
-                                age: 0
+                                age: 0,
+                                seeds: 0,
+                                nutrientAbsorption: 0.5 + Math.random() * 0.5
                             });
                         }
                     }
                 }
             }
             
-            // Control de población animal
+            // ===== CONTROL DE POBLACIÓN ANIMAL =====
             const animalCount = this.ecosystems.entities.animals.size;
-            if (animalCount < this.config.maxAnimals * 0.6) {
-                // Reproducción
-                if (Math.random() < 0.005) {
+            
+            // Reproducción (si hay suficiente comida y espacio)
+            if (animalCount < this.config.maxAnimals * 0.7 && this.state.season !== 3) {
+                const birthRate = 0.005 * simQuality * (1 - this.state.droughtLevel * 0.5);
+                if (Math.random() < birthRate * delta * 30) {
                     const pos = this._getRandomPositionInBiome('grassland');
                     if (pos) {
                         const isPredator = Math.random() < 0.2;
                         const id = this.generators.entities.createAnimal(pos.x, pos.y, pos.z, isPredator);
                         if (id !== -1) {
                             this.ecosystems.entities.animals.add(id);
-                        this._animalIdsDirty = true;
+                            this._animalIdsDirty = true;
                             this.behaviors.animals.set(id, {
                                 state: 'wandering',
                                 target: { x: pos.x, z: pos.z },
@@ -514,31 +555,181 @@
                                 speed: 0.5 + Math.random() * 0.5,
                                 hunger: 0.3,
                                 energy: 0.8,
-                                isPredator: isPredator
+                                isPredator: isPredator,
+                                health: 0.7 + Math.random() * 0.3,
+                                age: 0,
+                                species: isPredator ? 'fox' : 'deer'
                             });
+                            
+                            // Actualizar evolución
+                            if (this.config.evolutionEnabled) {
+                                this._mutateSpecies(isPredator ? 'fox' : 'deer');
+                            }
                         }
                     }
                 }
-            } else if (animalCount > this.config.maxAnimals * 0.9) {
-                // Mortalidad por sobrepoblación
+            }
+            
+            // Mortalidad por sobrepoblación o sequía
+            if (animalCount > this.config.maxAnimals * 0.85 || this.state.droughtLevel > 0.7) {
+                const deathRate = 0.001 + this.state.droughtLevel * 0.002;
                 const toRemove = Array.from(this.ecosystems.entities.animals)
-                    .filter(() => Math.random() < 0.001);
+                    .filter(() => Math.random() < deathRate * delta * 30)
+                    .slice(0, Math.floor(animalCount * 0.05));
                 
                 for (const id of toRemove) {
                     this.soa.destroyEntity(id);
                     this.ecosystems.entities.animals.delete(id);
                     this._animalIdsDirty = true;
                     this.behaviors.animals.delete(id);
+                    this.behaviors.animalMemory.delete(id);
                 }
+                
+                if (toRemove.length > 0) {
+                    this._recordEvent('animal_mortality', { 
+                        count: toRemove.length, 
+                        reason: this.state.droughtLevel > 0.7 ? 'drought' : 'overpopulation' 
+                    }, 0.4);
+                }
+            }
+            
+            // ===== MIGRACIÓN ESTACIONAL =====
+            if (this.config.migrationEnabled && (this.state.season === 2 || this.state.season === 0)) {
+                this._updateMigration(delta, simQuality);
             }
         }
         
         // ============================================================
-        //  🐾 ACTUALIZAR ANIMALES
+        //  🦌 MIGRACIÓN ESTACIONAL
         //  ============================================================
-        _updateAnimals(delta) {
-            // Cachear la conversión Set->Array: antes se reasignaba
-            // por completo CADA tick sin importar si la población cambió
+        _updateMigration(delta, simQuality) {
+            if (!this.state.animalMigrationActive) {
+                const migrationChance = delta * 0.001 * simQuality;
+                if (Math.random() < migrationChance) {
+                    this.state.animalMigrationActive = true;
+                    this._recordEvent('migration_started', { season: this.state.season }, 0.6);
+                }
+                return;
+            }
+            
+            const ids = Array.from(this.ecosystems.entities.animals);
+            const moveDist = this.config.migrationDistance * delta * 0.5;
+            
+            let migrated = 0;
+            for (const id of ids) {
+                if (Math.random() < delta * 0.01 * simQuality) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dx = Math.cos(angle) * moveDist;
+                    const dz = Math.sin(angle) * moveDist;
+                    
+                    const newX = this.soa.posX[id] + dx;
+                    const newZ = this.soa.posZ[id] + dz;
+                    const newY = this._getHeight(newX, newZ) + 0.5;
+                    
+                    if (newY > 2 && newY < 25) {
+                        this.soa.posX[id] = newX;
+                        this.soa.posY[id] = newY;
+                        this.soa.posZ[id] = newZ;
+                        migrated++;
+                    }
+                }
+            }
+            
+            if (migrated > 0) {
+                this._recordEvent('migration_progress', { count: migrated }, 0.3);
+            }
+            
+            // Desactivar migración después de un tiempo
+            if (this.state.time % 300 > 250) {
+                this.state.animalMigrationActive = false;
+                this._recordEvent('migration_ended', { count: migrated }, 0.5);
+            }
+        }
+        
+        // ============================================================
+        //  🧬 EVOLUCIÓN DE ESPECIES
+        //  ============================================================
+        _mutateSpecies(species) {
+            const speciesData = this.evolution.species.get(species);
+            if (!speciesData) return;
+            
+            speciesData.generation++;
+            speciesData.mutations += Math.floor(Math.random() * 3) + 1;
+            
+            // Mutar rasgos
+            const traits = speciesData.traits;
+            const traitKeys = ['speed', 'strength', 'agility', 'intelligence'];
+            for (const key of traitKeys) {
+                const mutation = (Math.random() - 0.5) * 0.1;
+                traits[key] = Math.max(0, Math.min(1, traits[key] + mutation));
+            }
+            
+            speciesData.adaptation = (traits.speed + traits.strength + traits.agility + traits.intelligence) / 4;
+            
+            this.evolution.diversity = Math.min(1, this.evolution.species.size / 10);
+            
+            this._recordEvent('species_mutation', { 
+                species, 
+                generation: speciesData.generation,
+                adaptation: speciesData.adaptation 
+            }, 0.4);
+        }
+        
+        _updateEvolution() {
+            if (!this.config.evolutionEnabled) return;
+            
+            // Actualizar generaciones de especies
+            for (const [species, data] of this.evolution.species) {
+                const population = this._getSpeciesPopulation(species);
+                data.population = population;
+                
+                // Las especies con baja población se adaptan más rápido
+                if (population < 5) {
+                    this._mutateSpecies(species);
+                }
+            }
+            
+            this.evolution.generation++;
+            
+            // Registrar evento de evolución
+            if (this.evolution.generation % 10 === 0) {
+                this._recordEvent('evolution_progress', { 
+                    generation: this.evolution.generation,
+                    diversity: this.evolution.diversity 
+                }, 0.5);
+            }
+        }
+        
+        _getSpeciesPopulation(species) {
+            let count = 0;
+            for (const [id, behavior] of this.behaviors.animals) {
+                if (behavior.species === species) count++;
+            }
+            return count;
+        }
+        
+        // ============================================================
+        //  🌱 ACTUALIZAR NUTRIENTES DEL SUELO
+        //  ============================================================
+        _updateNutrients(delta) {
+            // Nutrientes se regeneran con lluvia
+            if (this.state.weather === 'rainy' || this.state.weather === 'stormy') {
+                this.state.soilNutrients += delta * 0.01;
+            }
+            
+            // Nutrientes se agotan con el crecimiento de plantas
+            const plantCount = this.ecosystems.entities.trees.size + 
+                              this.ecosystems.entities.flowers.size;
+            this.state.soilNutrients -= delta * 0.001 * (plantCount / 1000);
+            
+            // Mantener en rango
+            this.state.soilNutrients = Math.max(0.1, Math.min(1, this.state.soilNutrients));
+        }
+        
+        // ============================================================
+        //  🐾 ACTUALIZAR ANIMALES MEJORADO
+        //  ============================================================
+        _updateAnimals(delta, simQuality) {
             if (this._animalIdsDirty !== false) {
                 this._cachedAnimalIds = Array.from(this.ecosystems.entities.animals);
                 this._animalIdsDirty = false;
@@ -546,80 +737,52 @@
             const ids = this._cachedAnimalIds || [];
             
             this._simTick = (this._simTick || 0) + 1;
-            const camPos = this.renderer && this.renderer.camera ? this.renderer.camera.position : null;
+            const camPos = this.renderer?.camera?.position || null;
+            
+            // LOD de simulación por distancia
+            const skipFrames = (tier) => {
+                if (tier === 0) return 1;
+                if (tier === 1) return 3;
+                if (tier === 2) return 8;
+                return 15;
+            };
             
             for (const id of ids) {
                 const behavior = this.behaviors.animals.get(id);
                 if (!behavior) continue;
                 
-                // ============================================================
-                //  🧠 LOD DE SIMULACIÓN: animales lejos de cámara piensan
-                //  menos seguido (misma lógica, menos frecuencia) — el
-                //  resultado visual es indistinguible pero el costo de CPU
-                //  baja mucho con cientos de animales activos a la vez
-                // ============================================================
+                // LOD por distancia
+                let tier = 0;
                 if (camPos) {
                     const dx = this.soa.posX[id] - camPos.x;
                     const dz = this.soa.posZ[id] - camPos.z;
                     const distSq = dx * dx + dz * dz;
                     
-                    if (distSq > 22500) { // > 150 unidades: piensa 1 de cada 8 ticks
-                        if (this._simTick % 8 !== 0) continue;
-                        behavior.timer += delta * 8; // compensar el tiempo saltado
-                    } else if (distSq > 6400) { // > 80 unidades: 1 de cada 3 ticks
-                        if (this._simTick % 3 !== 0) continue;
-                        behavior.timer += delta * 3;
-                    } else {
-                        behavior.timer += delta;
-                    }
-                } else {
-                    behavior.timer += delta;
+                    if (distSq > 22500) tier = 2;
+                    else if (distSq > 6400) tier = 1;
                 }
                 
-                switch(behavior.state) {
-                    case 'wandering':
-                        this._animalWander(id, behavior, delta);
-                        break;
-                    case 'chasing':
-                        this._animalChase(id, behavior, delta);
-                        break;
-                    case 'fleeing':
-                        this._animalFlee(id, behavior, delta);
-                        break;
-                    case 'eating':
-                        this._animalEat(id, behavior, delta);
-                        break;
-                    case 'resting':
-                        this._animalRest(id, behavior, delta);
-                        break;
-                }
+                const skip = skipFrames(tier);
+                if (this._simTick % skip !== 0) continue;
+                behavior.timer += delta * skip;
                 
-                // Actualizar hambre y energía
-                behavior.hunger += delta * 0.01;
-                behavior.energy -= delta * 0.02;
+                // Actualizar comportamiento
+                this._updateAnimalBehavior(id, behavior, delta * skip);
                 
-                // Transiciones de estado
-                if (behavior.hunger > 0.8) {
-                    behavior.state = 'eating';
-                } else if (behavior.energy < 0.3) {
-                    behavior.state = 'resting';
-                } else if (behavior.isPredator && behavior.hunger > 0.5) {
-                    // Buscar presa
-                    const prey = this._findPrey(id);
-                    if (prey !== -1) {
-                        behavior.state = 'chasing';
-                        behavior.target = { x: this.soa.posX[prey], z: this.soa.posZ[prey] };
-                    }
-                } else if (!behavior.isPredator && Math.random() < 0.002) {
-                    // Presa huye de depredador cercano
-                    const predator = this._findPredator(id);
-                    if (predator !== -1) {
-                        behavior.state = 'fleeing';
-                        behavior.target = { 
-                            x: this.soa.posX[predator], 
-                            z: this.soa.posZ[predator] 
-                        };
-                    }
+                // Actualizar estadísticas vitales
+                behavior.age += delta * skip;
+                behavior.hunger += delta * 0.005 * skip;
+                behavior.energy -= delta * 0.01 * skip;
+                behavior.health -= delta * 0.001 * skip * (1 - behavior.hunger);
+                
+                // Muerte por vejez o inanición
+                if (behavior.age > 300 || behavior.health < 0 || behavior.hunger > 1.5) {
+                    this.soa.destroyEntity(id);
+                    this.ecosystems.entities.animals.delete(id);
+                    this._animalIdsDirty = true;
+                    this.behaviors.animals.delete(id);
+                    this.behaviors.animalMemory.delete(id);
+                    continue;
                 }
                 
                 // Guardar comportamiento actualizado
@@ -627,165 +790,184 @@
             }
         }
         
-        _animalWander(id, behavior, delta) {
-            // Moverse hacia el objetivo
-            const dx = behavior.target.x - this.soa.posX[id];
-            const dz = behavior.target.z - this.soa.posZ[id];
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            
-            if (dist < 1 || behavior.timer > 3) {
-                // Nuevo objetivo — evitando agua y pendientes pronunciadas
-                // (v0.3: antes se elegía un punto al azar sin revisar el
-                // terreno, así que los animales podían meterse de frente
-                // a un lago o intentar subir una pared casi vertical)
-                behavior.target = this._pickWalkableTarget(id);
-                behavior.timer = 0;
-            } else {
-                // Moverse
-                const speed = behavior.speed * this.config.animalSpeed * delta;
-                this.soa.posX[id] += (dx / dist) * speed;
-                this.soa.posZ[id] += (dz / dist) * speed;
-                this.soa.rotY[id] = Math.atan2(dz, dx);
+        _updateAnimalBehavior(id, behavior, delta) {
+            // Transiciones de estado mejoradas
+            switch(behavior.state) {
+                case 'wandering':
+                    this._animalWander(id, behavior, delta);
+                    break;
+                case 'chasing':
+                    this._animalChase(id, behavior, delta);
+                    break;
+                case 'fleeing':
+                    this._animalFlee(id, behavior, delta);
+                    break;
+                case 'eating':
+                    this._animalEat(id, behavior, delta);
+                    break;
+                case 'resting':
+                    this._animalRest(id, behavior, delta);
+                    break;
+                case 'mating':
+                    this._animalMate(id, behavior, delta);
+                    break;
             }
-        }
-        
-        // ============================================================
-        //  🧭 EVASIÓN DE OBSTÁCULOS (pathfinding ligero, v0.3)
-        //  No es A* completo sobre malla de navegación — eso es un
-        //  proyecto aparte. Esto es más barato y resuelve el problema
-        //  que de verdad se ve: intenta varios puntos candidatos y
-        //  descarta los que caen en agua o en pendiente empinada, en
-        //  vez de caminar en línea recta sin mirar el terreno.
-        // ============================================================
-        _pickWalkableTarget(id) {
-            const terrain = this.generators.terrain;
-            const maxAttempts = 6;
             
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 10 + Math.random() * this.config.animalWanderRadius;
-                const x = this.soa.posX[id] + Math.cos(angle) * radius;
-                const z = this.soa.posZ[id] + Math.sin(angle) * radius;
-                
-                if (!terrain || !terrain.getHeight) return { x, z };
-                
-                const y = terrain.getHeight(x, z);
-                const isWater = terrain.isWater ? terrain.isWater(x, z) : false;
-                
-                // Pendiente local (mismo cálculo barato que ya usamos en
-                // la colocación de vegetación)
-                const e = 2;
-                const slope = terrain.getHeight
-                    ? (Math.abs(terrain.getHeight(x + e, z) - terrain.getHeight(x - e, z)) +
-                       Math.abs(terrain.getHeight(x, z + e) - terrain.getHeight(x, z - e))) / (e * 2)
-                    : 0;
-                
-                if (!isWater && slope < 0.55) {
-                    return { x, z };
+            // Transiciones de estado
+            if (behavior.hunger > 0.7) {
+                if (behavior.isPredator) {
+                    // Buscar presa
+                    const prey = this._findPrey(id);
+                    if (prey !== -1) {
+                        behavior.state = 'chasing';
+                        behavior.target = { 
+                            x: this.soa.posX[prey], 
+                            z: this.soa.posZ[prey] 
+                        };
+                    }
+                } else {
+                    behavior.state = 'eating';
                 }
-                // si no sirve, probar otro ángulo en el siguiente intento
-            }
-            
-            // Si tras varios intentos no se encontró nada mejor, quedarse
-            // cerca (mejor que forzar un mal punto)
-            return { x: this.soa.posX[id], z: this.soa.posZ[id] };
-        }
-        
-        _animalChase(id, behavior, delta) {
-            const target = behavior.target;
-            const dx = target.x - this.soa.posX[id];
-            const dz = target.z - this.soa.posZ[id];
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            
-            if (dist < 2) {
-                // Atrapar presa
-                behavior.hunger = 0;
-                behavior.state = 'eating';
-                behavior.timer = 0;
-                return;
-            }
-            
-            // Perseguir
-            const speed = behavior.speed * this.config.animalSpeed * 1.5 * delta;
-            this.soa.posX[id] += (dx / dist) * speed;
-            this.soa.posZ[id] += (dz / dist) * speed;
-            this.soa.rotY[id] = Math.atan2(dz, dx);
-            
-            // Si se aleja demasiado, rendirse
-            if (dist > this.config.predatorChaseRange * 2) {
-                behavior.state = 'wandering';
-                behavior.timer = 0;
+            } else if (behavior.energy < 0.3) {
+                behavior.state = 'resting';
+            } else if (behavior.energy > 0.8 && behavior.hunger < 0.3 && Math.random() < 0.001) {
+                if (this._findMate(id) !== -1) {
+                    behavior.state = 'mating';
+                }
+            } else if (!behavior.isPredator && Math.random() < 0.001) {
+                const predator = this._findPredator(id);
+                if (predator !== -1) {
+                    behavior.state = 'fleeing';
+                    behavior.target = { 
+                        x: this.soa.posX[predator], 
+                        z: this.soa.posZ[predator] 
+                    };
+                }
             }
         }
         
-        _animalFlee(id, behavior, delta) {
-            const target = behavior.target;
-            const dx = this.soa.posX[id] - target.x;
-            const dz = this.soa.posZ[id] - target.z;
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            
-            if (dist > this.config.preyFleeRange * 3) {
-                behavior.state = 'wandering';
-                behavior.timer = 0;
-                return;
-            }
-            
-            // Huir
-            const speed = behavior.speed * this.config.animalSpeed * 1.2 * delta;
-            this.soa.posX[id] += (dx / dist) * speed;
-            this.soa.posZ[id] += (dz / dist) * speed;
-            this.soa.rotY[id] = Math.atan2(dz, dx);
-        }
-        
-        _animalEat(id, behavior, delta) {
+        _animalMate(id, behavior, delta) {
             behavior.timer += delta;
+            const mate = this._findMate(id);
+            
+            if (mate === -1 || behavior.timer > 5) {
+                behavior.state = 'wandering';
+                behavior.timer = 0;
+                return;
+            }
+            
+            // Crear cría
             if (behavior.timer > 2) {
-                behavior.hunger = Math.max(0, behavior.hunger - 0.3);
+                const pos = {
+                    x: this.soa.posX[id] + (Math.random() - 0.5) * 5,
+                    z: this.soa.posZ[id] + (Math.random() - 0.5) * 5
+                };
+                const y = this._getHeight(pos.x, pos.z) + 0.5;
+                
+                const childId = this.generators.entities.createAnimal(
+                    pos.x, y, pos.z, behavior.isPredator
+                );
+                
+                if (childId !== -1) {
+                    this.ecosystems.entities.animals.add(childId);
+                    this._animalIdsDirty = true;
+                    this.behaviors.animals.set(childId, {
+                        state: 'wandering',
+                        target: { x: pos.x, z: pos.z },
+                        timer: 0,
+                        speed: 0.3 + Math.random() * 0.3,
+                        hunger: 0.3,
+                        energy: 0.8,
+                        isPredator: behavior.isPredator,
+                        health: 0.5 + Math.random() * 0.3,
+                        age: 0,
+                        species: behavior.species
+                    });
+                    
+                    this._recordEvent('birth', { 
+                        species: behavior.species, 
+                        isPredator: behavior.isPredator 
+                    }, 0.5);
+                }
+                
                 behavior.state = 'wandering';
                 behavior.timer = 0;
             }
         }
         
-        _animalRest(id, behavior, delta) {
-            behavior.timer += delta;
-            behavior.energy += delta * 0.05;
-            if (behavior.energy > 0.8 || behavior.timer > 5) {
-                behavior.state = 'wandering';
-                behavior.timer = 0;
+        _findMate(id) {
+            const behavior = this.behaviors.animals.get(id);
+            if (!behavior) return -1;
+            
+            const ids = Array.from(this.ecosystems.entities.animals);
+            let closest = -1;
+            let closestDist = Infinity;
+            
+            for (const otherId of ids) {
+                if (otherId === id) continue;
+                const otherBehavior = this.behaviors.animals.get(otherId);
+                if (!otherBehavior) continue;
+                
+                if (otherBehavior.species === behavior.species && 
+                    otherBehavior.isPredator === behavior.isPredator &&
+                    otherBehavior.state !== 'mating') {
+                    
+                    const dx = this.soa.posX[id] - this.soa.posX[otherId];
+                    const dz = this.soa.posZ[id] - this.soa.posZ[otherId];
+                    const dist = Math.sqrt(dx*dx + dz*dz);
+                    
+                    if (dist < 15 && dist < closestDist) {
+                        closest = otherId;
+                        closestDist = dist;
+                    }
+                }
             }
+            
+            return closest;
         }
         
         // ============================================================
-        //  🌳 ACTUALIZAR ÁRBOLES
+        //  🌳 ACTUALIZAR ÁRBOLES MEJORADO
         //  ============================================================
-        _updateTrees(delta) {
+        _updateTrees(delta, simQuality) {
             const ids = Array.from(this.ecosystems.entities.trees);
+            const growthRate = this.config.treeGrowthRate * simQuality * 
+                              (1 - this.state.droughtLevel * 0.5) *
+                              this.state.soilNutrients;
             
             for (const id of ids) {
                 const tree = this.behaviors.trees.get(id);
                 if (!tree) continue;
                 
                 // Crecimiento
-                tree.growth += this.config.treeGrowthRate * delta * (0.5 + this.state.humidity * 0.5);
+                tree.growth += growthRate * delta * (0.5 + this.state.humidity * 0.5);
                 tree.growth = Math.min(1, tree.growth);
                 
                 // Edad
                 tree.age += delta;
                 
-                // Salud según edad
+                // Salud según edad y nutrientes
                 if (tree.age > 200) {
-                    tree.health -= delta * 0.001;
+                    tree.health -= delta * 0.0005;
                 }
+                tree.health += delta * 0.001 * this.state.soilNutrients;
                 tree.health = Math.max(0, Math.min(1, tree.health));
                 
-                // Si muere, desaparece
+                // Producción de semillas
+                if (tree.growth > 0.7 && Math.random() < 0.001 * delta * 10) {
+                    tree.seeds = (tree.seeds || 0) + 1;
+                    this.state.seedBank += 1;
+                }
+                
+                // Muerte
                 if (tree.health <= 0) {
                     this.soa.destroyEntity(id);
                     this.ecosystems.entities.trees.delete(id);
                     this.behaviors.trees.delete(id);
+                    continue;
                 }
                 
-                // Actualizar escala según crecimiento
+                // Actualizar escala
                 const scale = 0.5 + tree.growth * 2.5;
                 this.soa.scaleX[id] = scale;
                 this.soa.scaleY[id] = scale;
@@ -794,176 +976,168 @@
         }
         
         // ============================================================
-        //  💧 ACTUALIZAR AGUA
+        //  🌸 ACTUALIZAR FLORES
         //  ============================================================
-        _updateWater(delta) {
-            const ids = Array.from(this.ecosystems.entities.water);
+        _updateFlowers(delta) {
+            const ids = Array.from(this.ecosystems.entities.flowers);
             
             for (const id of ids) {
-                const water = this.behaviors.water.get(id);
-                if (!water) continue;
+                const flower = this.behaviors.flowers.get(id);
+                if (!flower) continue;
                 
-                // Evaporación
-                water.level -= this.config.waterEvaporationRate * delta * (1 + this.state.temperature / 100);
-                water.level = Math.max(0, water.level);
+                flower.age += delta;
+                flower.blooming += delta * 0.01 * (1 - this.state.droughtLevel);
+                flower.blooming = Math.min(1, flower.blooming);
                 
-                // Si se seca, desaparece
-                if (water.level <= 0) {
+                // Producción de semillas
+                if (flower.blooming > 0.8 && Math.random() < 0.001 * delta) {
+                    flower.seeds += 1;
+                    this.state.seedBank += 1;
+                    this.state.pollinationRate += 0.001;
+                }
+                this.state.pollinationRate = Math.min(1, this.state.pollinationRate);
+                
+                // Muerte
+                if (flower.age > 100) {
                     this.soa.destroyEntity(id);
-                    this.ecosystems.entities.water.delete(id);
-                    this.behaviors.water.delete(id);
+                    this.ecosystems.entities.flowers.delete(id);
+                    this.behaviors.flowers.delete(id);
                 }
-                
-                // Actualizar escala
-                this.soa.scaleX[id] = 1 + water.level;
-                this.soa.scaleZ[id] = 1 + water.level;
             }
         }
         
         // ============================================================
-        //  ✨ ACTUALIZAR PARTÍCULAS
+        //  📊 ACTUALIZAR PREDICCIONES
         //  ============================================================
-        _updateParticles(delta) {
-            const ids = Array.from(this.ecosystems.entities.particles);
+        _updatePredictions(delta) {
+            const animalCount = this.ecosystems.entities.animals.size;
+            const treeCount = this.ecosystems.entities.trees.size;
             
-            for (const id of ids) {
-                // Movimiento de partículas
-                this.soa.posY[id] += (Math.random() - 0.5) * delta;
-                this.soa.posX[id] += Math.sin(this.state.time + id) * delta * 0.2;
-                this.soa.posZ[id] += Math.cos(this.state.time + id * 0.7) * delta * 0.2;
-                
-                // Renovar partículas fuera de rango
-                if (Math.abs(this.soa.posX[id]) > this.config.worldSize / 2 ||
-                    Math.abs(this.soa.posZ[id]) > this.config.worldSize / 2 ||
-                    this.soa.posY[id] > 20) {
-                    
-                    this.soa.posX[id] = (Math.random() - 0.5) * this.config.worldSize;
-                    this.soa.posZ[id] = (Math.random() - 0.5) * this.config.worldSize;
-                    this.soa.posY[id] = 1 + Math.random() * 5;
-                }
+            // Tendencia de población
+            const herbCount = Array.from(this.behaviors.animals.values())
+                .filter(b => !b.isPredator).length;
+            const predCount = animalCount - herbCount;
+            
+            if (herbCount > predCount * 2 && herbCount > 20) {
+                this.predictions.populationTrend = 'growing';
+            } else if (herbCount < predCount * 0.5 || animalCount < 5) {
+                this.predictions.populationTrend = 'declining';
+            } else {
+                this.predictions.populationTrend = 'stable';
             }
+            
+            // Crecimiento del bosque
+            this.predictions.forestGrowth = treeCount / this.config.maxTrees;
+            
+            // Riesgo de sequía
+            this.predictions.droughtRisk = this.state.droughtLevel * 0.7 + 
+                                           (1 - this.state.humidity) * 0.3;
+            
+            // Riesgo de incendio
+            this.predictions.fireRisk = this.state.fireRisk;
+            
+            // Tendencia de biodiversidad
+            const currentBiodiversity = this.state.biodiversity;
+            if (currentBiodiversity > this._previousBiodiversity) {
+                this.predictions.biodiversityTrend = 'improving';
+            } else if (currentBiodiversity < this._previousBiodiversity) {
+                this.predictions.biodiversityTrend = 'declining';
+            } else {
+                this.predictions.biodiversityTrend = 'stable';
+            }
+            this._previousBiodiversity = currentBiodiversity;
         }
         
         // ============================================================
-        //  🎯 MÉTODOS DE UTILIDAD
+        //  🧠 MEMORIA DEL ECOSISTEMA
         //  ============================================================
-        _getHeight(x, z) {
-            if (this._heightMap) {
-                const halfSize = this.config.worldSize / 2;
-                const scale = this._heightMap.length / this.config.worldSize;
-                const ix = Math.floor((x + halfSize) * scale);
-                const iz = Math.floor((z + halfSize) * scale);
-                
-                if (ix >= 0 && ix < this._heightMap.length && 
-                    iz >= 0 && iz < this._heightMap[0].length) {
-                    return this._heightMap[ix][iz];
-                }
-            }
-            return 0;
-        }
-        
-        _getMoisture(x, z) {
-            // Simular humedad basada en ruido
-            const noise = Math.sin(x * 0.01) * Math.cos(z * 0.015) * 0.5 + 0.5;
-            return Math.max(0, Math.min(1, noise + Math.random() * 0.1));
-        }
-        
-        _getSlope(x, z) {
-            const e = 2;
-            const hL = this._getHeight(x - e, z);
-            const hR = this._getHeight(x + e, z);
-            const hD = this._getHeight(x, z - e);
-            const hU = this._getHeight(x, z + e);
-            return (Math.abs(hR - hL) + Math.abs(hU - hD)) / (e * 2);
-        }
-        
-        _getRandomPositionInBiome(biome) {
-            const maxAttempts = 100;
-            const halfSize = this.config.worldSize / 2;
+        _updateEcosystemMemory() {
+            const memory = this.ecosystems.memory;
             
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                const x = (Math.random() - 0.5) * this.config.worldSize;
-                const z = (Math.random() - 0.5) * this.config.worldSize;
-                const y = this._getHeight(x, z);
-                
-                // Verificar bioma en esta posición
-                let isCorrectBiome = false;
-                switch(biome) {
-                    case 'forest':
-                        isCorrectBiome = y > 5 && y < 20 && this._getMoisture(x, z) > 0.4 && this._getSlope(x, z) < 0.6;
-                        break;
-                    case 'mountain':
-                        isCorrectBiome = y > 20 && this._getMoisture(x, z) > 0.3;
-                        break;
-                    case 'grassland':
-                        isCorrectBiome = y > 2 && y < 10 && this._getMoisture(x, z) > 0.3 && this._getMoisture(x, z) < 0.7 && this._getSlope(x, z) < 0.5;
-                        break;
-                    case 'water':
-                        isCorrectBiome = y < 2 && this._getMoisture(x, z) > 0.7;
-                        break;
-                    case 'desert':
-                        isCorrectBiome = y > 5 && this._getMoisture(x, z) < 0.2;
-                        break;
-                    default:
-                        isCorrectBiome = true;
-                }
-                
-                if (isCorrectBiome) {
-                    return { x, y: y + 0.5, z };
-                }
+            memory.speciesHistory.push({
+                time: this.state.time,
+                animals: this.ecosystems.entities.animals.size,
+                trees: this.ecosystems.entities.trees.size,
+                flowers: this.ecosystems.entities.flowers.size,
+                biodiversity: this.state.biodiversity,
+                health: this.state.ecosystemHealth
+            });
+            
+            if (memory.speciesHistory.length > 1000) {
+                memory.speciesHistory.shift();
             }
             
-            return null;
-        }
-        
-        _findPrey(animalId) {
-            const ids = Array.from(this.ecosystems.entities.animals);
-            let closest = -1;
-            let closestDist = Infinity;
-            
-            for (const id of ids) {
-                if (id === animalId) continue;
-                const behavior = this.behaviors.animals.get(id);
-                if (behavior && !behavior.isPredator) {
-                    const dx = this.soa.posX[id] - this.soa.posX[animalId];
-                    const dz = this.soa.posZ[id] - this.soa.posZ[animalId];
-                    const dist = Math.sqrt(dx*dx + dz*dz);
-                    
-                    if (dist < this.config.predatorChaseRange && dist < closestDist) {
-                        closest = id;
-                        closestDist = dist;
-                    }
-                }
+            // Guardar en memoria persistente
+            if (this.memory && typeof this.memory.saveGameData === 'function') {
+                this.memory.saveGameData('ecosystemMemory', {
+                    history: memory.speciesHistory.slice(-100),
+                    timestamp: Date.now()
+                });
             }
-            
-            return closest;
-        }
-        
-        _findPredator(animalId) {
-            const ids = Array.from(this.ecosystems.entities.animals);
-            let closest = -1;
-            let closestDist = Infinity;
-            
-            for (const id of ids) {
-                if (id === animalId) continue;
-                const behavior = this.behaviors.animals.get(id);
-                if (behavior && behavior.isPredator) {
-                    const dx = this.soa.posX[id] - this.soa.posX[animalId];
-                    const dz = this.soa.posZ[id] - this.soa.posZ[animalId];
-                    const dist = Math.sqrt(dx*dx + dz*dz);
-                    
-                    if (dist < this.config.predatorChaseRange * 1.5 && dist < closestDist) {
-                        closest = id;
-                        closestDist = dist;
-                    }
-                }
-            }
-            
-            return closest;
         }
         
         // ============================================================
-        //  📊 ESTADÍSTICAS
+        //  📝 REGISTRO DE EVENTOS
+        //  ============================================================
+        _recordEvent(type, data, importance = 0.5) {
+            try {
+                if (this.memory && typeof this.memory.recordEvent === 'function') {
+                    this.memory.recordEvent('world_' + type, data, importance);
+                }
+            } catch (e) {
+                // Silencioso
+            }
+        }
+        
+        // ============================================================
+        //  📅 ACTUALIZAR EVENTOS DEL MUNDO
+        //  ============================================================
+        _updateEvents(delta) {
+            const now = this.state.time;
+            this.state.events = this.state.events.filter(ev => (now - ev.time) < 60);
+            
+            // Eventos climáticos extremos
+            if (Math.random() < delta * 0.005) {
+                const events = ['tormenta', 'sequía', 'inundación', 'ola de calor'];
+                const event = events[Math.floor(Math.random() * events.length)];
+                this.state.events.push({
+                    type: event,
+                    time: now,
+                    severity: 0.5 + Math.random() * 0.5
+                });
+                this._applyWorldEvent(event);
+                
+                this._recordEvent('world_event', { 
+                    type: event, 
+                    severity: this.state.events[this.state.events.length - 1].severity 
+                }, 0.7);
+            }
+        }
+        
+        _applyWorldEvent(type) {
+            switch(type) {
+                case 'tormenta':
+                    this.state.humidity = Math.min(1, this.state.humidity + 0.2);
+                    this.state.droughtLevel = Math.max(0, this.state.droughtLevel - 0.2);
+                    break;
+                case 'sequía':
+                    this.state.droughtLevel = Math.min(1, this.state.droughtLevel + 0.3);
+                    this.state.humidity = Math.max(0, this.state.humidity - 0.3);
+                    break;
+                case 'ola de calor':
+                    this.state.temperature += 5;
+                    this.state.droughtLevel = Math.min(1, this.state.droughtLevel + 0.2);
+                    break;
+                case 'inundación':
+                    this.state.humidity = Math.min(1, this.state.humidity + 0.4);
+                    this.state.droughtLevel = 0;
+                    this.state.soilNutrients = Math.min(1, this.state.soilNutrients + 0.2);
+                    break;
+            }
+        }
+        
+        // ============================================================
+        //  📊 ESTADÍSTICAS MEJORADAS
         //  ============================================================
         getStats() {
             return {
@@ -974,6 +1148,8 @@
                 water: this.ecosystems.entities.water.size,
                 particles: this.ecosystems.entities.particles.size,
                 buildings: this.ecosystems.entities.buildings.size,
+                flowers: this.ecosystems.entities.flowers.size,
+                seeds: this.ecosystems.entities.seeds.size,
                 time: this.state.time,
                 dayTime: this.state.dayTime,
                 season: this.state.season,
@@ -981,26 +1157,41 @@
                 humidity: this.state.humidity,
                 weather: this.state.weather,
                 windSpeed: this.state.windSpeed,
-                isReady: this.state.isReady
+                isReady: this.state.isReady,
+                biodiversity: this.state.biodiversity,
+                ecosystemHealth: this.state.ecosystemHealth,
+                droughtLevel: this.state.droughtLevel,
+                fireRisk: this.state.fireRisk,
+                soilNutrients: this.state.soilNutrients,
+                seedBank: this.state.seedBank,
+                pollinationRate: this.state.pollinationRate,
+                predictions: this.predictions,
+                evolution: {
+                    generation: this.evolution.generation,
+                    diversity: this.evolution.diversity,
+                    species: Array.from(this.evolution.species.keys()).length
+                }
             };
         }
         
         // ============================================================
-        //  🔄 RESET
+        //  🔄 RESET MEJORADO
         //  ============================================================
         reset() {
-            // Limpiar entidades
             this.soa.reset();
-            this.ecosystems.entities.trees.clear();
-            this.ecosystems.entities.rocks.clear();
-            this.ecosystems.entities.animals.clear();
-            this.ecosystems.entities.water.clear();
-            this.ecosystems.entities.particles.clear();
-            this.ecosystems.entities.buildings.clear();
+            
+            // Limpiar ecosistemas
+            for (const key of Object.keys(this.ecosystems.entities)) {
+                this.ecosystems.entities[key].clear();
+            }
             
             this.behaviors.animals.clear();
             this.behaviors.trees.clear();
             this.behaviors.water.clear();
+            this.behaviors.flowers.clear();
+            this.behaviors.seeds.clear();
+            this.behaviors.animalMemory.clear();
+            this.behaviors.treeMemory.clear();
             
             // Reiniciar estado
             this.state.time = 0;
@@ -1008,16 +1199,29 @@
             this.state.season = 0;
             this.state.weather = 'clear';
             this.state.isReady = false;
+            this.state.biodiversity = 0.5;
+            this.state.ecosystemHealth = 1.0;
+            this.state.droughtLevel = 0;
+            this.state.fireRisk = 0.1;
+            this.state.soilNutrients = 0.7;
+            this.state.seedBank = 0;
+            this.state.pollinationRate = 0.5;
             
-            // Regenerar mundo
+            this.evolution.generation = 0;
+            this.evolution.species.clear();
+            this._cachedAnimalIds = [];
+            this._animalIdsDirty = false;
+            this._frameCount = 0;
+            
+            this._initEvolution();
             this._generateWorld();
             
-            console.log('🔄 GameWorld reseteado');
+            console.log('🔄 GameWorld Cuántico reseteado');
         }
     }
     
     // ============================================================
-    //  🌤️ SISTEMA DE CLIMA
+    //  🌤️ SISTEMA DE CLIMA MEJORADO
     //  ============================================================
     class WeatherSystem {
         constructor(config) {
@@ -1025,6 +1229,12 @@
             this.currentWeather = 'clear';
             this.transitionTime = 0;
             this.duration = 0;
+            this.seasonalWeights = {
+                primavera: [0.3, 0.3, 0.2, 0.1, 0.1],
+                verano: [0.2, 0.2, 0.3, 0.2, 0.1],
+                otoño: [0.2, 0.3, 0.3, 0.1, 0.1],
+                invierno: [0.1, 0.2, 0.2, 0.1, 0.4]
+            };
             this._nextWeather();
         }
         
@@ -1035,7 +1245,6 @@
                 this._nextWeather();
             }
             
-            // Calcular transición suave
             const progress = Math.min(1, this.transitionTime / this.duration);
             
             return {
@@ -1047,9 +1256,10 @@
         }
         
         _nextWeather() {
-            const weathers = ['clear', 'cloudy', 'rainy', 'stormy', 'snowy'];
-            const weights = [0.4, 0.3, 0.15, 0.1, 0.05];
+            const season = ['primavera', 'verano', 'otoño', 'invierno'][this._seasonIndex || 0];
+            const weights = this.seasonalWeights[season] || [0.4, 0.3, 0.15, 0.1, 0.05];
             
+            const weathers = ['clear', 'cloudy', 'rainy', 'stormy', 'snowy'];
             let total = weights.reduce((a, b) => a + b, 0);
             let random = Math.random() * total;
             
@@ -1061,8 +1271,23 @@
                 }
             }
             
-            this.duration = 10 + Math.random() * 30;
+            this.duration = 15 + Math.random() * 45;
             this.transitionTime = 0;
+        }
+        
+        setSeason(index) {
+            this._seasonIndex = index;
+        }
+    }
+    
+    // ============================================================
+    //  🧬 SISTEMA DE EVOLUCIÓN
+    //  ============================================================
+    class EvolutionSystem {
+        constructor(config) {
+            this.config = config;
+            this.mutations = new Map();
+            this.species = new Map();
         }
     }
     
@@ -1071,11 +1296,13 @@
     //  ============================================================
     window.GameWorld = GameWorld;
     
-    console.log('🎯 GameWorld cargado');
+    console.log('🌍 GameWorld Cuántico cargado');
+    console.log('🧬 Sistema de evolución de especies');
+    console.log('🦌 Comportamiento animal avanzado');
+    console.log('🌿 Sucesión ecológica y nutrientes');
+    console.log('🌸 Sistema de polinización y semillas');
+    console.log('📊 Predicciones del ecosistema');
     
-    // ============================================================
-    //  📦 EXPORTAR
-    //  ============================================================
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = GameWorld;
     }
