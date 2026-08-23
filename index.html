@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
-    <title>🧠 PRIOM V0.3 - Motor de Juegos IA</title>
+    <meta name="description" content="🧠 PRIOM V0.4 - Motor de Juegos IA con Trinity AI, renderizado adaptativo y mundo vivo">
+    <title>🧠 PRIOM V0.4 - Motor de Juegos IA Cuántico</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
-    <link rel="stylesheet" href="css/styles.css?v=20260705u">
+    <link rel="stylesheet" href="css/styles.css?v=20260823">
     
     <style>
-        /* ===== PANTALLA DE CARGA ===== */
+        /* ============================================================
+           🎨 ESTILOS AVANZADOS PARA INDEX.HTML V0.4
+           ============================================================ */
+        
+        /* ===== PANTALLA DE CARGA CUÁNTICA ===== */
         #loading-screen {
             position: fixed;
             inset: 0;
@@ -18,33 +23,192 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            transition: opacity 0.8s ease;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             flex-direction: column;
+            background-image: 
+                radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.05) 0%, transparent 50%);
         }
         #loading-screen.fade-out {
             opacity: 0;
             pointer-events: none;
         }
+        
         .loader-container {
             text-align: center;
-            max-width: 480px;
+            max-width: 520px;
             padding: 40px 30px;
+            position: relative;
+            animation: loaderSlideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .loader-icon { font-size: 72px; animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.1)} }
-        .loader-title { font-size: 28px; font-weight: 900; background: linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .loader-version { color: #6b7280; font-size: 12px; letter-spacing: 2px; }
-        .loader-bar-wrapper { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-        .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
-        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981); border-radius: 2px; transition: width 0.3s ease; }
-        .loader-percent { color: #6b7280; font-size: 14px; font-weight: 600; min-width: 40px; }
-        .loader-text { color: #fff; font-size: 14px; margin-top: 8px; min-height: 24px; }
-        .loader-subtext { color: #6b7280; font-size: 12px; margin-top: 4px; min-height: 20px; }
-        .loader-error { color: #ef4444 !important; }
-        .loader-details { display: flex; justify-content: center; gap: 20px; margin-top: 16px; font-size: 11px; color: #4b5563; }
-        .loader-details span { background: rgba(255,255,255,0.03); padding: 4px 10px; border-radius: 4px; }
-        .loader-particles { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
-        .loader-particles .dot { width: 6px; height: 6px; border-radius: 50%; background: #7c3aed; animation: float 1.5s ease-in-out infinite; }
+        
+        @keyframes loaderSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .loader-icon {
+            font-size: 80px;
+            display: block;
+            margin-bottom: 12px;
+            animation: loaderIconPulse 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(124,58,237,0.2));
+        }
+        
+        @keyframes loaderIconPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 20px rgba(124,58,237,0.3)); }
+            25% { transform: scale(1.05) rotate(2deg); }
+            50% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 60px rgba(124,58,237,0.6)); }
+            75% { transform: scale(1.05) rotate(2deg); }
+        }
+        
+        .loader-title {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientMove 4s ease-in-out infinite;
+            letter-spacing: 6px;
+            text-shadow: none;
+        }
+        
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 33% 50%; }
+            50% { background-position: 66% 50%; }
+            75% { background-position: 100% 50%; }
+        }
+        
+        .loader-version {
+            color: #6b7280;
+            font-size: 13px;
+            letter-spacing: 3px;
+            margin-top: 4px;
+            font-weight: 300;
+            opacity: 0.7;
+        }
+        
+        .loader-bar-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 24px 0 16px;
+        }
+        
+        .loader-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .loader-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b);
+            background-size: 300% 300%;
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: gradientMove 3s ease-in-out infinite;
+            position: relative;
+            box-shadow: 0 0 30px rgba(124,58,237,0.2);
+        }
+        
+        .loader-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 40px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.8s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-60px); }
+            100% { transform: translateX(80px); }
+        }
+        
+        .loader-percent {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 44px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .loader-text {
+            color: #fff;
+            font-size: 14px;
+            margin-top: 8px;
+            min-height: 24px;
+            font-weight: 500;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .loader-text.error { color: #ef4444 !important; }
+        .loader-text.success { color: #10b981 !important; }
+        
+        .loader-subtext {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: 300;
+            min-height: 20px;
+        }
+        
+        .loader-details {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 16px;
+            font-size: 11px;
+            color: #4b5563;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .loader-details span {
+            background: rgba(255,255,255,0.02);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.02);
+            transition: all 0.3s ease;
+        }
+        
+        .loader-details span:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.04);
+        }
+        
+        .loader-particles {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .loader-particles .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7c3aed;
+            animation: particleFloat 1.8s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+        
+        .loader-particles .dot:nth-child(1) { animation-delay: 0s; background: #7c3aed; }
         .loader-particles .dot:nth-child(2) { animation-delay: 0.2s; background: #06b6d4; }
         .loader-particles .dot:nth-child(3) { animation-delay: 0.4s; background: #10b981; }
         .loader-particles .dot:nth-child(4) { animation-delay: 0.6s; background: #f59e0b; }
@@ -52,71 +216,857 @@
         .loader-particles .dot:nth-child(6) { animation-delay: 1.0s; background: #06b6d4; }
         .loader-particles .dot:nth-child(7) { animation-delay: 1.2s; background: #10b981; }
         .loader-particles .dot:nth-child(8) { animation-delay: 1.4s; background: #f59e0b; }
-        @keyframes float { 0%,100%{transform:translateY(0px);opacity:0.3} 50%{transform:translateY(-10px);opacity:1} }
-        .loader-footer { margin-top: 24px; font-size: 11px; color: #4b5563; letter-spacing: 1px; }
         
-        /* ===== HUD ===== */
-        #hud { position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.3); border-radius: 16px; padding: 12px 18px; min-width: 200px; pointer-events: none; z-index: 100; }
-        #hud .logo { font-size: 18px; font-weight: 900; background: linear-gradient(135deg,#7c3aed,#06b6d4,#10b981,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        #hud .subtitle { font-size: 9px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 7px; font-weight: 700; text-transform: uppercase; margin-top: 4px; background: rgba(124,58,237,0.2); color: #8b5cf6; border: 1px solid rgba(124,58,237,0.2); }
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-14px) scale(1.8); opacity: 1; }
+        }
         
-        /* ===== STATS ===== */
-        #stats-panel { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 10px 14px; min-width: 150px; pointer-events: none; z-index: 100; }
-        #stats-panel .stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #9ca3af; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        #stats-panel .stat:last-child { border-bottom: none; }
-        #stats-panel .stat .value { color: #fff; font-weight: 600; }
-        #stats-panel .stat .value.good { color: #10b981; }
-        #stats-panel .stat .value.ultra { color: #fbbf24; }
-        #stats-panel .stat .value.ai { color: #8b5cf6; }
+        .loader-particles .dot:hover {
+            transform: scale(2);
+            filter: brightness(1.5);
+        }
         
-        /* ===== AI STATUS ===== */
-        #ai-status-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.2); border-radius: 40px; padding: 8px 20px; z-index: 100; display: flex; align-items: center; gap: 14px; min-width: 400px; justify-content: center; }
-        #ai-status-bar .ai-icon { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#f59e0b); display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        #ai-status-bar .ai-text { font-size: 10px; color: #d1d5db; }
-        #ai-status-bar .ai-text strong { color: #8b5cf6; }
-        #ai-status-bar .ai-progress { width: 100px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
-        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg,#7c3aed,#06b6d4,#10b981,#f59e0b); border-radius: 2px; transition: width 0.3s ease; }
-        #ai-status-bar .ai-stats { font-size: 9px; color: #6b7280; display: flex; gap: 10px; }
-        #ai-status-bar .ai-stats .highlight { color: #8b5cf6; }
-        #ai-status-bar .ai-stats .meta { color: #06b6d4; }
+        .loader-footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #4b5563;
+            letter-spacing: 1px;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
         
-        /* ===== CONTROLES ===== */
-        #controls { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
-        #controls button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: #d1d5db; padding: 3px 12px; border-radius: 12px; font-size: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; font-family: inherit; }
-        #controls button:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
-        #controls button.active { background: rgba(124,58,237,0.2); border-color: #8b5cf6; color: #8b5cf6; }
-        #controls button.dual-ai { background: linear-gradient(135deg,#7c3aed,#f59e0b); border-color: transparent; color: #fff; font-weight: 700; }
+        .loader-footer:hover {
+            opacity: 0.7;
+        }
         
-        /* ===== NOTIFICACIONES ===== */
-        #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .notification { background: rgba(0,0,0,0.9); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; padding: 6px 16px; font-size: 11px; color: #fff; animation: slideDown 0.3s ease, fadeOut 0.3s 3s ease forwards; }
-        @keyframes slideDown { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes fadeOut { to { opacity:0; transform:translateY(-10px) } }
+        /* ===== HUD MEJORADO ===== */
+        #hud {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 16px;
+            padding: 14px 22px;
+            min-width: 220px;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 40px rgba(124,58,237,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: hudBorderPulse 4s ease-in-out infinite;
+        }
         
-        /* ===== GEO LAB ===== */
-        #geo-lab { position: fixed; top: 215px; right: 15px; width: 200px; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; padding: 10px 12px; z-index: 90; font-size: 10px; max-height: 220px; overflow-y: auto; transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease, padding 0.25s ease; }
-        #geo-lab.collapsed { width: 46px; height: 46px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #geo-lab.collapsed #geo-toggle-icon, #geo-lab.collapsed .geo-title-text { display: none; }
-        #geo-lab.collapsed .geo-title { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        #geo-lab .geo-icon { font-size: 16px; }
-        #geo-lab .geo-title { font-size: 12px; font-weight: 900; background: linear-gradient(135deg,#10b981,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        #geo-lab select, #geo-lab button.geo-btn { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 10px; margin-bottom: 6px; font-family: inherit; cursor: pointer; }
-        #geo-lab button.geo-btn { background: linear-gradient(135deg,#10b981,#059669); border: none; color: #fff; font-weight: 700; }
-        #geo-lab .geo-stats { display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 9px; color: #6b7280; }
-        #geo-lab .geo-stats b { color: #10b981; }
+        @keyframes hudBorderPulse {
+            0%, 100% { border-color: rgba(124,58,237,0.2); box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 40px rgba(124,58,237,0.05); }
+            50% { border-color: rgba(124,58,237,0.5); box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 60px rgba(124,58,237,0.12); }
+        }
         
-        canvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
+        #hud:hover {
+            border-color: rgba(124,58,237,0.6);
+            transform: scale(1.02);
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 80px rgba(124,58,237,0.15);
+        }
+        
+        #hud .logo {
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientMove 4s ease-in-out infinite;
+            margin-bottom: 2px;
+            letter-spacing: -0.5px;
+        }
+        
+        #hud .subtitle {
+            font-size: 9px;
+            color: #6b7280;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+        
+        .badge-container {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 12px;
+            border-radius: 9999px;
+            font-size: 7px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #fff;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .badge::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+        
+        .badge:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        
+        .badge-trinity {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        
+        .badge-meta {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+        
+        .badge-ai {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .badge-quantum {
+            background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981);
+            animation: badgeQuantumPulse 3s ease-in-out infinite;
+        }
+        
+        .badge-runtime {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.04);
+            color: #9ca3af;
+        }
+        
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); }
+            50% { box-shadow: 0 0 30px rgba(124,58,237,0.5); }
+        }
+        
+        @keyframes badgeQuantumPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); }
+            33% { box-shadow: 0 0 30px rgba(6,182,212,0.3); }
+            66% { box-shadow: 0 0 30px rgba(16,185,129,0.3); }
+        }
+        
+        /* ===== STATS PANEL MEJORADO ===== */
+        #stats-panel {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 16px;
+            padding: 12px 16px;
+            min-width: 180px;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        #stats-panel::-webkit-scrollbar {
+            width: 2px;
+        }
+        
+        #stats-panel::-webkit-scrollbar-thumb {
+            background: #7c3aed;
+            border-radius: 1px;
+        }
+        
+        #stats-panel .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-size: 10px;
+            color: #9ca3af;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            transition: color 0.2s ease;
+        }
+        
+        #stats-panel .stat:last-child {
+            border-bottom: none;
+        }
+        
+        #stats-panel .stat .label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        #stats-panel .stat .value {
+            color: #fff;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            transition: all 0.2s ease;
+        }
+        
+        #stats-panel .stat .value.good { color: #10b981; text-shadow: 0 0 20px rgba(16,185,129,0.1); }
+        #stats-panel .stat .value.warn { color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,0.1); }
+        #stats-panel .stat .value.bad { color: #ef4444; text-shadow: 0 0 20px rgba(239,68,68,0.1); }
+        #stats-panel .stat .value.ai { color: #8b5cf6; text-shadow: 0 0 20px rgba(139,92,246,0.1); }
+        #stats-panel .stat .value.ultra { color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.1); }
+        #stats-panel .stat .value.meta { color: #06b6d4; text-shadow: 0 0 20px rgba(6,182,212,0.1); }
+        
+        @keyframes valuePulse {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.15); color: #fff; }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        
+        #stats-panel .stat .value.updating {
+            animation: valuePulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* ===== AI STATUS BAR MEJORADA ===== */
+        #ai-status-bar {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border: 1px solid rgba(124,58,237,0.12);
+            border-radius: 9999px;
+            padding: 8px 28px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-width: 540px;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 60px rgba(124,58,237,0.03);
+            transition: all 0.3s ease;
+        }
+        
+        #ai-status-bar:hover {
+            border-color: rgba(124,58,237,0.25);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 80px rgba(124,58,237,0.06);
+            transform: translateX(-50%) scale(1.02);
+        }
+        
+        #ai-status-bar .ai-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            animation: badgePulse 2s ease-in-out infinite;
+            flex-shrink: 0;
+            box-shadow: 0 0 30px rgba(124,58,237,0.1);
+        }
+        
+        #ai-status-bar .ai-text {
+            font-size: 10px;
+            color: #9ca3af;
+            text-align: center;
+        }
+        
+        #ai-status-bar .ai-text strong {
+            color: #8b5cf6;
+            text-shadow: 0 0 20px rgba(139,92,246,0.15);
+            font-weight: 700;
+        }
+        
+        #ai-status-bar .ai-text .ai-detail {
+            display: block;
+            font-size: 8px;
+            color: #6b7280;
+            margin-top: 1px;
+        }
+        
+        #ai-status-bar .ai-text .world-status {
+            font-size: 9px;
+            color: #34d399;
+            margin-top: 2px;
+        }
+        
+        #ai-status-bar .ai-progress {
+            width: 120px;
+            height: 4px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 2px;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        #ai-status-bar .ai-progress .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b);
+            background-size: 300% 300%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            animation: gradientMove 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(124,58,237,0.1);
+        }
+        
+        #ai-status-bar .ai-stats {
+            font-size: 9px;
+            color: #6b7280;
+            display: flex;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        
+        #ai-status-bar .ai-stats .highlight { color: #8b5cf6; font-weight: 600; }
+        #ai-status-bar .ai-stats .meta { color: #06b6d4; font-weight: 600; }
+        
+        /* ===== CONTROLES MEJORADOS ===== */
+        #controls {
+            position: fixed;
+            bottom: 84px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 95vw;
+            padding: 6px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(12px) saturate(1.2);
+            -webkit-backdrop-filter: blur(12px) saturate(1.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.02);
+            transition: all 0.3s ease;
+        }
+        
+        #controls:hover {
+            background: rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.04);
+        }
+        
+        #controls button {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.03);
+            color: #9ca3af;
+            padding: 4px 14px;
+            border-radius: 8px;
+            font-size: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            white-space: nowrap;
+            position: relative;
+        }
+        
+        #controls button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            background: transparent;
+            transition: background 0.3s ease;
+        }
+        
+        #controls button:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.06);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+        
+        #controls button:active {
+            transform: scale(0.95);
+        }
+        
+        #controls button.active {
+            background: rgba(124,58,237,0.1);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+            box-shadow: 0 0 20px rgba(124,58,237,0.04);
+        }
+        
+        #controls button.active:hover {
+            background: rgba(124,58,237,0.15);
+            box-shadow: 0 0 30px rgba(124,58,237,0.08);
+        }
+        
+        #controls button.dual-ai {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            border-color: transparent;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 0 30px rgba(124,58,237,0.08);
+        }
+        
+        #controls button.dual-ai:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 0 50px rgba(124,58,237,0.15);
+        }
+        
+        #controls button.dual-ai:active {
+            transform: scale(0.97);
+        }
+        
+        #controls button.btn-editor-active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: transparent;
+            color: #fff;
+            font-weight: 700;
+            animation: editorPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes editorPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(16,185,129,0.15); }
+            50% { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
+        }
+        
+        #controls .control-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        
+        #controls .control-group .group-label {
+            font-size: 7px;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-right: 4px;
+        }
+        
+        #controls .time-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.02);
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        #controls .time-slider-container .time-icon {
+            font-size: 12px;
+            opacity: 0.5;
+        }
+        
+        #controls .time-slider-container input[type="range"] {
+            flex: 1;
+            height: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            outline: none;
+            accent-color: #8b5cf6;
+        }
+        
+        #controls .time-slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(124,58,237,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        #controls .time-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(124,58,237,0.3);
+        }
+        
+        /* ===== NOTIFICACIONES MEJORADAS ===== */
+        #notifications {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            max-width: 90vw;
+        }
+        
+        .notification {
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(20px) saturate(1.2);
+            -webkit-backdrop-filter: blur(20px) saturate(1.2);
+            border: 1px solid rgba(124,58,237,0.12);
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-size: 11px;
+            color: #fff;
+            animation: notifSlideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                       notifFadeOut 0.4s 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            pointer-events: none;
+            font-weight: 500;
+        }
+        
+        @keyframes notifSlideDown {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        @keyframes notifFadeOut {
+            to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        }
+        
+        .notification.success { border-color: #10b981; color: #10b981; }
+        .notification.warning { border-color: #f59e0b; color: #f59e0b; }
+        .notification.error { border-color: #ef4444; color: #ef4444; }
+        .notification.info { border-color: #06b6d4; color: #06b6d4; }
+        
+        /* ===== GEO LAB MEJORADO ===== */
+        #geo-lab {
+            position: fixed;
+            top: 80px;
+            right: 16px;
+            width: 240px;
+            background: rgba(0,0,0,0.92);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border: 1px solid rgba(16,185,129,0.1);
+            border-radius: 16px;
+            padding: 14px 16px;
+            z-index: 90;
+            font-size: 10px;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #geo-lab::-webkit-scrollbar {
+            width: 2px;
+        }
+        
+        #geo-lab::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 1px;
+        }
+        
+        #geo-lab.collapsed {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        #geo-lab.collapsed .geo-body,
+        #geo-lab.collapsed .geo-title-text {
+            display: none;
+        }
+        
+        #geo-lab .geo-title {
+            font-size: 12px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: filter 0.2s ease;
+        }
+        
+        #geo-lab .geo-title:hover {
+            filter: brightness(1.2);
+        }
+        
+        #geo-lab .geo-toggle {
+            color: #6b7280;
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+        
+        #geo-lab.collapsed .geo-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        #geo-lab select,
+        #geo-lab button.geo-btn {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.04);
+            color: #e5e7eb;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            margin-bottom: 6px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        #geo-lab select:hover,
+        #geo-lab button.geo-btn:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.08);
+        }
+        
+        #geo-lab select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16,185,129,0.05);
+        }
+        
+        #geo-lab button.geo-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            padding: 8px;
+            margin-top: 4px;
+            box-shadow: 0 0 30px rgba(16,185,129,0.05);
+        }
+        
+        #geo-lab button.geo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(16,185,129,0.12);
+        }
+        
+        #geo-lab button.geo-btn:active {
+            transform: scale(0.97);
+        }
+        
+        #geo-lab .geo-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            font-size: 9px;
+            color: #6b7280;
+        }
+        
+        #geo-lab .geo-stats b {
+            color: #10b981;
+        }
+        
+        /* ===== MINIMAP MEJORADO ===== */
+        #minimap-canvas {
+            position: fixed;
+            bottom: 110px;
+            left: 16px;
+            z-index: 90;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6), 0 0 60px rgba(124,58,237,0.03);
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(124,58,237,0.1);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        #minimap-canvas:hover {
+            border-color: rgba(124,58,237,0.3);
+            box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 80px rgba(124,58,237,0.05);
+            transform: scale(1.05);
+        }
+        
+        /* ===== RESPONSIVE MEJORADO ===== */
+        @media (max-width: 768px) {
+            #hud {
+                top: 10px;
+                left: 10px;
+                padding: 10px 14px;
+                min-width: 140px;
+                border-radius: 12px;
+            }
+            
+            #hud .logo {
+                font-size: 16px;
+            }
+            
+            #hud .subtitle {
+                font-size: 7px;
+                letter-spacing: 1px;
+            }
+            
+            .badge {
+                font-size: 6px;
+                padding: 1px 8px;
+            }
+            
+            #stats-panel {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                min-width: 130px;
+                border-radius: 12px;
+                max-height: calc(100vh - 120px);
+            }
+            
+            #stats-panel .stat {
+                font-size: 8px;
+                padding: 1px 0;
+            }
+            
+            #ai-status-bar {
+                bottom: 70px;
+                padding: 6px 16px;
+                gap: 10px;
+                min-width: auto;
+                flex-wrap: wrap;
+                justify-content: center;
+                border-radius: 12px;
+            }
+            
+            #ai-status-bar .ai-progress {
+                width: 60px;
+            }
+            
+            #ai-status-bar .ai-stats {
+                font-size: 7px;
+                gap: 8px;
+            }
+            
+            #controls {
+                bottom: 56px;
+                gap: 3px;
+                padding: 4px;
+                border-radius: 8px;
+                max-width: 98vw;
+            }
+            
+            #controls button {
+                padding: 3px 8px;
+                font-size: 7px;
+                border-radius: 4px;
+            }
+            
+            #controls .time-slider-container {
+                min-width: 80px;
+                padding: 2px 6px;
+            }
+            
+            #geo-lab {
+                top: 70px;
+                right: 10px;
+                width: 190px;
+                padding: 10px 12px;
+                max-height: calc(100vh - 160px);
+                border-radius: 12px;
+                font-size: 9px;
+            }
+            
+            #geo-lab.collapsed {
+                width: 40px;
+                height: 40px;
+            }
+            
+            #notifications {
+                top: 60px;
+            }
+            
+            .notification {
+                font-size: 10px;
+                padding: 6px 14px;
+                border-radius: 8px;
+            }
+            
+            #minimap-canvas {
+                bottom: 80px;
+                left: 10px;
+                width: 100px;
+                height: 100px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #hud .logo {
+                font-size: 14px;
+            }
+            
+            #stats-panel {
+                min-width: 100px;
+                padding: 6px 10px;
+            }
+            
+            #controls button {
+                font-size: 6px;
+                padding: 2px 6px;
+            }
+            
+            #ai-status-bar .ai-text {
+                font-size: 8px;
+            }
+        }
+        
+        /* ===== CANVAS ===== */
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0f;
+        }
+        
+        /* ===== ERROR BANNER ===== */
+        #engine-error-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(180,0,0,0.92);
+            color: #fff;
+            font-size: 11px;
+            padding: 8px 12px;
+            z-index: 9998;
+            display: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+            word-break: break-word;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
     </style>
 </head>
 <body>
 
-    <!-- ===== PANTALLA DE CARGA ===== -->
+    <!-- ===== PANTALLA DE CARGA CUÁNTICA ===== -->
     <div id="loading-screen">
         <div class="loader-container">
             <div class="loader-icon">🧠</div>
             <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.3 · Trinity AI</div>
+            <div class="loader-version">v0.4 · Trinity AI Cuántica</div>
             
             <div class="loader-bar-wrapper">
                 <div class="loader-bar">
@@ -125,12 +1075,13 @@
                 <div class="loader-percent" id="loader-percent">0%</div>
             </div>
             
-            <p class="loader-text" id="loader-text">🚀 Inicializando...</p>
-            <p class="loader-subtext" id="loader-subtext">📦 Cargando módulos...</p>
+            <p class="loader-text" id="loader-text">🚀 Inicializando motor cuántico...</p>
+            <p class="loader-subtext" id="loader-subtext">📦 Cargando módulos avanzados...</p>
             
             <div class="loader-details">
                 <span id="loader-status">⏳ Esperando...</span>
-                <span id="loader-modules">📦 0/16</span>
+                <span id="loader-modules">📦 0/34</span>
+                <span id="loader-threads">🧵 0/4</span>
             </div>
             
             <div class="loader-particles">
@@ -140,38 +1091,65 @@
                 <span class="dot"></span><span class="dot"></span>
             </div>
             
-            <div class="loader-footer">🧠 Trinity AI · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo</div>
+            <div class="loader-footer">🧠 Trinity AI · 🎮 Renderizado Adaptativo · 🌍 Mundo Vivo · ⚡ Multi-Thread</div>
         </div>
     </div>
 
-    <!-- ===== HUD ===== -->
+    <!-- ===== HUD MEJORADO ===== -->
     <div id="hud">
-        <div class="logo">🧠 PRIOM V0.3</div>
+        <div class="logo">🧠 PRIOM V0.4</div>
         <div class="subtitle">🎮 Trinity AI · Optimización + Mundo Vivo</div>
-        <div>
-            <span class="badge">🧬 TRINITY AI</span>
-            <span class="badge">⚡ META</span>
-            <span class="badge">🎯 OPTIMIZANDO</span>
+        <div class="badge-container">
+            <span class="badge badge-trinity">🧬 TRINITY AI</span>
+            <span class="badge badge-meta">⚡ META</span>
+            <span class="badge badge-ai">🎯 OPTIMIZANDO</span>
+            <span class="badge badge-quantum">🌀 CUÁNTICO</span>
         </div>
     </div>
 
-    <!-- ===== STATS ===== -->
+    <!-- ===== STATS PANEL MEJORADO ===== -->
     <div id="stats-panel">
-        <div class="stat">📊 FPS <span class="value good" id="fps">0</span></div>
-        <div class="stat">👾 Entidades <span class="value" id="entities">0</span></div>
-        <div class="stat">💾 RAM <span class="value" id="ram">0</span> MB</div>
-        <div class="stat">⚡ Calidad <span class="value ultra" id="quality">MAX</span></div>
-        <div class="stat">🎯 Confianza IA <span class="value ai" id="confidence">100%</span></div>
-        <div class="stat">🔮 Predicción <span class="value" id="prediction">⚡ Estable</span></div>
+        <div class="stat">
+            <span class="label">📊 FPS</span>
+            <span class="value good" id="fps">0</span>
+        </div>
+        <div class="stat">
+            <span class="label">👾 Entidades</span>
+            <span class="value" id="entities">0</span>
+        </div>
+        <div class="stat">
+            <span class="label">💾 RAM</span>
+            <span class="value" id="ram">0 <span style="font-size:8px;color:#6b7280;">MB</span></span>
+        </div>
+        <div class="stat">
+            <span class="label">⚡ Calidad</span>
+            <span class="value ultra" id="quality">MAX</span>
+        </div>
+        <div class="stat">
+            <span class="label">🎯 Confianza IA</span>
+            <span class="value ai" id="confidence">100%</span>
+        </div>
+        <div class="stat">
+            <span class="label">🔮 Predicción</span>
+            <span class="value" id="prediction">⚡ Estable</span>
+        </div>
+        <div class="stat">
+            <span class="label">🧵 Threads</span>
+            <span class="value meta" id="threads">0/4</span>
+        </div>
+        <div class="stat">
+            <span class="label">🌡️ Temperatura</span>
+            <span class="value" id="temperature">45°C</span>
+        </div>
     </div>
 
-    <!-- ===== AI STATUS ===== -->
+    <!-- ===== AI STATUS BAR MEJORADA ===== -->
     <div id="ai-status-bar">
         <div class="ai-icon">🧠</div>
         <div class="ai-text">
             <strong id="ai-action">TRINITY AI ACTIVA</strong>
-            <span id="ai-detail">· Inicializando...</span>
-            <div id="world-ai-status" style="font-size:10px; color:#8fe0a8; margin-top:2px;"></div>
+            <span class="ai-detail" id="ai-detail">· Inicializando...</span>
+            <span class="world-status" id="world-ai-status"></span>
         </div>
         <div class="ai-progress">
             <div class="fill" id="ai-progress-fill" style="width:100%"></div>
@@ -179,51 +1157,71 @@
         <div class="ai-stats">
             <span>🎯 IA: <span class="highlight" id="ai-conf">100%</span></span>
             <span>🧬 Meta: <span class="meta" id="ai-meta">100%</span></span>
+            <span>⚡ FPS: <span class="highlight" id="ai-fps">0</span></span>
         </div>
     </div>
 
-    <!-- ===== CONTROLES ===== -->
+    <!-- ===== CONTROLES MEJORADOS ===== -->
     <div id="controls">
         <button class="active dual-ai" id="btn-dual">🧠 TRINITY AI</button>
-        <button id="btn-low">🔽 Low</button>
-        <button id="btn-medium">🔄 Med</button>
-        <button id="btn-high">🔼 High</button>
-        <button id="btn-ultra">⚡ Ultra</button>
+        
+        <div class="control-group">
+            <span class="group-label">Calidad</span>
+            <button id="btn-low">🔽 Low</button>
+            <button id="btn-medium">🔄 Med</button>
+            <button id="btn-high">🔼 High</button>
+            <button id="btn-ultra">⚡ Ultra</button>
+            <button id="btn-quantum" style="background:linear-gradient(135deg,#7c3aed,#06b6d4);border-color:transparent;color:#fff;font-weight:700;">🌀 Quantum</button>
+        </div>
+        
         <button id="btn-spawn">➕ Spawn</button>
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">☀️ Clima</button>
         <button id="btn-sound">🔊 Sonido</button>
-        <button id="btn-editor">✏️ Editor OFF</button>
-        <button id="btn-editor-type">🌲 Árbol</button>
-        <button id="btn-editor-mode">📍 Colocar</button>
-        <button id="btn-editor-delete">🗑️ Borrar</button>
-        <button id="btn-editor-undo">↩️ Deshacer</button>
-        <button id="btn-editor-redo">↪️ Rehacer</button>
-        <button id="btn-save-world">💾 Guardar</button>
-        <button id="btn-load-world">📂 Cargar</button>
-        <div style="display:flex; align-items:center; gap:6px; width:100%; padding:4px 8px;">
-            <span style="font-size:14px;">🕐</span>
-            <input type="range" id="time-slider" min="0" max="0.999" step="0.001" value="0.5" style="flex:1;">
+        
+        <div class="control-group">
+            <span class="group-label">Editor</span>
+            <button id="btn-editor">✏️ OFF</button>
+            <button id="btn-editor-type">🌲 Árbol</button>
+            <button id="btn-editor-mode">📍 Colocar</button>
+            <button id="btn-editor-delete">🗑️ Borrar</button>
+            <button id="btn-editor-undo">↩️</button>
+            <button id="btn-editor-redo">↪️</button>
+        </div>
+        
+        <div class="control-group">
+            <span class="group-label">Mundo</span>
+            <button id="btn-save-world">💾 Guardar</button>
+            <button id="btn-load-world">📂 Cargar</button>
+        </div>
+        
+        <div class="time-slider-container">
+            <span class="time-icon">🕐</span>
+            <input type="range" id="time-slider" min="0" max="0.999" step="0.001" value="0.5">
         </div>
     </div>
 
     <!-- ===== NOTIFICACIONES ===== -->
     <div id="notifications"></div>
 
-    <!-- ===== LABORATORIO ===== -->
-    <canvas id="minimap-canvas" width="140" height="140" style="position:fixed; bottom:110px; left:15px; z-index:110; border-radius:50%; box-shadow:0 0 12px rgba(0,0,0,0.6); background:transparent; pointer-events:none;"></canvas>
+    <!-- ===== MINIMAP ===== -->
+    <canvas id="minimap-canvas" width="140" height="140"></canvas>
     
+    <!-- ===== LABORATORIO GEOMÉTRICO ===== -->
     <div id="geo-lab">
-        <div class="geo-title" id="geo-title" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+        <div class="geo-title" id="geo-title">
             <span><span class="geo-icon">🔷</span> <span class="geo-title-text">Laboratorio Geométrico</span></span>
-            <span id="geo-toggle-icon">▾</span>
+            <span class="geo-toggle" id="geo-toggle-icon">▾</span>
         </div>
-        <div id="geo-body">
+        <div class="geo-body" id="geo-body" style="display:none;">
             <select id="geo-family">
                 <option value="supershape">🌀 Supershape 3D</option>
                 <option value="torusknot">🎀 Nudo tórico</option>
                 <option value="mobius">♾️ Cinta de Möbius</option>
                 <option value="menger">🧊 Esponja de Menger</option>
+                <option value="heart">❤️ Corazón 3D</option>
+                <option value="spiral">🌀 Espiral</option>
+                <option value="galaxy">🌌 Galaxia</option>
             </select>
             <button class="geo-btn" id="geo-generate">✨ Generar forma</button>
             <div class="geo-stats">
@@ -237,7 +1235,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         📦 CARGA DE SCRIPTS - VERSIÓN SIMPLIFICADA
+         📦 CARGA DE SCRIPTS - VERSIÓN MEJORADA
          ============================================================ -->
     
     <!-- 1. THREE.js desde CDN -->
@@ -263,7 +1261,7 @@
     
     <script>
     // ============================================================
-    //  🚀 SISTEMA DE CARGA SIMPLIFICADO
+    //  🚀 SISTEMA DE CARGA AVANZADO (V0.4)
     //  ============================================================
     (function() {
         'use strict';
@@ -271,6 +1269,7 @@
         const totalModules = 34;
         let loaded = 0;
         let hasError = false;
+        let startTime = performance.now();
         
         const elements = {
             fill: document.getElementById('loader-fill'),
@@ -279,19 +1278,23 @@
             subtext: document.getElementById('loader-subtext'),
             status: document.getElementById('loader-status'),
             modules: document.getElementById('loader-modules'),
+            threads: document.getElementById('loader-threads'),
             screen: document.getElementById('loading-screen')
         };
         
         function updateUI() {
-            const progress = (loaded / totalModules) * 100;
-            if (elements.fill) elements.fill.style.width = Math.min(100, progress) + '%';
+            const progress = Math.min(100, (loaded / totalModules) * 100);
+            if (elements.fill) elements.fill.style.width = progress + '%';
             if (elements.percent) elements.percent.textContent = Math.round(progress) + '%';
             if (elements.modules) elements.modules.textContent = `📦 ${loaded}/${totalModules}`;
+            if (elements.threads) {
+                const threads = navigator.hardwareConcurrency || 4;
+                elements.threads.textContent = `🧵 ${Math.min(threads, 4)}/${threads}`;
+            }
         }
         
         function loadModule(name, checkFn, loadFn) {
             return new Promise((resolve) => {
-                // Verificar si ya está cargado
                 if (checkFn()) {
                     loaded++;
                     updateUI();
@@ -302,20 +1305,19 @@
                 
                 elements.text.textContent = `⏳ Cargando ${name}...`;
                 elements.status.textContent = `📦 Cargando ${name}`;
+                elements.subtext.textContent = `🔧 Inicializando ${name}...`;
                 
-                // Ejecutar carga
                 loadFn(() => {
-                    // Verificar que se cargó
                     setTimeout(() => {
                         if (checkFn()) {
                             loaded++;
                             updateUI();
-                            console.log(`✅ ${name} cargado`);
+                            console.log(`✅ ${name} cargado (${(performance.now() - startTime).toFixed(0)}ms)`);
                             resolve(true);
                         } else {
                             console.error(`❌ Error cargando ${name}`);
                             elements.text.textContent = `❌ Error cargando ${name}`;
-                            elements.text.style.color = '#ef4444';
+                            elements.text.className = 'loader-text error';
                             resolve(false);
                         }
                     }, 100);
@@ -325,18 +1327,21 @@
         
         function loadScript(url, callback) {
             const script = document.createElement('script');
-            script.src = url;
+            script.src = url + '&t=' + Date.now();
             script.onload = callback;
             script.onerror = callback;
             document.head.appendChild(script);
         }
         
         async function startEngine() {
+            startTime = performance.now();
+            elements.text.textContent = '🚀 Inicializando motor cuántico...';
+            
             try {
                 // Verificar THREE.js
                 if (typeof THREE === 'undefined') {
                     elements.text.textContent = '❌ THREE.js no cargado';
-                    elements.text.style.color = '#ef4444';
+                    elements.text.className = 'loader-text error';
                     return;
                 }
                 loaded++;
@@ -345,40 +1350,40 @@
                 
                 // Cargar módulos secuencialmente
                 const modules = [
-                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260705u' },
-                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260705u' },
-                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260705u' },
-                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260705u' },
-                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260705u' },
-                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260705u' },
-                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260705u' },
-                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260705u' },
-                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260705u' },
-                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260705u' },
-                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260705u' },
-                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260705u' },
-                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260705u' },
-                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260705u' },
-                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260705u' },
-                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260705u' },
-                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260705u' },
-                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260705u' },
-                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260706b' },
-                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260705u' },
-                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260705u' },
-                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260705u' },
-                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260705u' },
-                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260705u' },
-                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260705u' },
-                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260705v' },
-                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260705w' },
-                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260705x' },
-                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260705y' },
-                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260705z' },
-                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260706a' },
-                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260705u' },
-                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260705u' },
-                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260705u' }
+                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260823' },
+                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260823' },
+                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260823' },
+                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260823' },
+                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260823' },
+                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260823' },
+                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260823' },
+                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260823' },
+                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260823' },
+                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260823' },
+                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260823' },
+                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260823' },
+                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260823' },
+                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260823' },
+                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260823' },
+                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260823' },
+                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260823' },
+                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260823' },
+                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260823' },
+                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260823' },
+                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260823' },
+                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260823' },
+                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260823' },
+                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260823' },
+                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260823' },
+                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260823' },
+                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260823' },
+                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260823' },
+                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260823' },
+                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260823' },
+                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260823' },
+                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260823' },
+                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260823' },
+                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260823' }
                 ];
                 
                 for (const mod of modules) {
@@ -398,16 +1403,18 @@
                 
                 if (hasError) {
                     elements.text.textContent = '❌ Error cargando módulos. Recarga la página.';
-                    elements.text.style.color = '#ef4444';
+                    elements.text.className = 'loader-text error';
                     return;
                 }
                 
                 // Todos los módulos cargados
                 elements.text.textContent = '🚀 ¡Todos los módulos cargados!';
-                elements.subtext.textContent = '🎮 Iniciando motor...';
+                elements.text.className = 'loader-text success';
+                elements.subtext.textContent = '🎮 Iniciando motor cuántico...';
                 elements.status.textContent = '✅ Listo';
                 
                 console.log('🎉 Todos los módulos cargados correctamente');
+                console.log(`⏱️ Tiempo de carga: ${(performance.now() - startTime).toFixed(0)}ms`);
                 
                 // Iniciar motor
                 setTimeout(() => {
@@ -415,11 +1422,11 @@
                         // Asegurar CONFIG
                         if (typeof CONFIG === 'undefined') {
                             window.CONFIG = {
-                                version: '0.1.0',
-                                maxEntities: 50000,
+                                version: '0.4.0',
+                                maxEntities: 100000,
                                 targetFPS: 60,
                                 quality: 'ultra',
-                                lodDistance: 200,
+                                lodDistance: 250,
                                 waterEnabled: true,
                                 particlesEnabled: true,
                                 shadowsEnabled: true,
@@ -429,18 +1436,25 @@
                             };
                         }
                         
-                        const engine = new PriomEngine();
+                        const engine = new PriomEngine({
+                            qualityLevel: 'ultra',
+                            enableThreading: true,
+                            enablePredictiveAI: true,
+                            enableAdaptiveQuality: true,
+                            enablePerformanceBudget: true,
+                            enableErrorRecovery: true
+                        });
                         window.engine = engine;
 
                         if (engine.hasError()) {
                             const err = engine.getError();
                             console.error('❌ El motor terminó en estado de error:', err);
                             elements.text.textContent = '❌ Error: ' + (err ? err.message : 'desconocido');
-                            elements.text.style.color = '#ef4444';
+                            elements.text.className = 'loader-text error';
                             return;
                         }
 
-                        console.log('✅ Motor iniciado correctamente');
+                        console.log('✅ Motor cuántico iniciado correctamente');
                         wireUI(engine);
                         
                         // Ocultar pantalla de carga
@@ -456,20 +1470,20 @@
                     } catch (e) {
                         console.error('❌ Error al iniciar motor:', e);
                         elements.text.textContent = '❌ Error: ' + e.message;
-                        elements.text.style.color = '#ef4444';
+                        elements.text.className = 'loader-text error';
                     }
                 }, 300);
                 
             } catch (e) {
                 console.error('❌ Error:', e);
                 elements.text.textContent = '❌ Error: ' + e.message;
-                elements.text.style.color = '#ef4444';
+                elements.text.className = 'loader-text error';
             }
         }
         
         // ============================================================
-        //  🔗 CONECTAR MOTOR <-> INTERFAZ (HUD, controles, geo lab)
-        // ============================================================
+        //  🔗 CONECTAR MOTOR <-> INTERFAZ (V0.4 MEJORADO)
+        //  ============================================================
         function wireUI(engine) {
             // ----- Plegar/desplegar Laboratorio Geométrico -----
             const geoTitle = document.getElementById('geo-title');
@@ -477,7 +1491,7 @@
             const geoIcon = document.getElementById('geo-toggle-icon');
             const geoLab = document.getElementById('geo-lab');
             if (geoTitle && geoBody && geoLab) {
-                geoBody.style.display = 'none'; // plegado por defecto
+                geoBody.style.display = 'none';
                 geoLab.classList.add('collapsed');
                 if (geoIcon) geoIcon.textContent = '▸';
                 geoTitle.addEventListener('click', () => {
@@ -488,10 +1502,9 @@
                 });
             }
             
-            // ----- Banner de error visible en pantalla -----
+            // ----- Banner de error -----
             const errorBanner = document.createElement('div');
             errorBanner.id = 'engine-error-banner';
-            errorBanner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(180,0,0,0.92);color:#fff;font-size:11px;padding:8px 12px;z-index:9998;display:none;font-family:monospace;word-break:break-word;';
             document.body.appendChild(errorBanner);
             
             const hud = {
@@ -504,18 +1517,27 @@
                 aiDetail: document.getElementById('ai-detail'),
                 aiConf: document.getElementById('ai-conf'),
                 aiMeta: document.getElementById('ai-meta'),
-                aiProgress: document.getElementById('ai-progress-fill')
+                aiFps: document.getElementById('ai-fps'),
+                aiProgress: document.getElementById('ai-progress-fill'),
+                threads: document.getElementById('threads'),
+                temperature: document.getElementById('temperature')
             };
             
-            // ----- Refresco periódico de estadísticas -----
+            // ----- Refresco periódico de estadísticas (más rápido) -----
+            let lastStatUpdate = 0;
             setInterval(() => {
                 const stats = engine.getStats();
+                const now = performance.now();
+                
                 if (hud.fps) hud.fps.textContent = stats.fps || 0;
                 if (hud.entities) hud.entities.textContent = stats.entities || 0;
+                if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
+                
                 if (hud.ram) {
                     const mb = stats.renderer ? Math.round((stats.renderer.vram || 0) / (1024 * 1024)) : 0;
-                    hud.ram.textContent = mb;
+                    hud.ram.innerHTML = mb + ' <span style="font-size:8px;color:#6b7280;">MB</span>';
                 }
+                
                 if (hud.confidence) {
                     const c = engine.getModule('optimizerAI');
                     if (c && typeof c.getStatus === 'function') {
@@ -525,22 +1547,66 @@
                         if (hud.aiConf) hud.aiConf.textContent = conf + '%';
                     }
                 }
+                
                 const metaAI = engine.getModule('metaAI');
                 if (metaAI && typeof metaAI.getStatus === 'function') {
                     const mstat = metaAI.getStatus();
                     if (hud.aiMeta) hud.aiMeta.textContent = Math.round((mstat.confidence || 1) * 100) + '%';
                 }
+                
                 if (hud.aiDetail) {
                     hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
                 }
+                
                 const worldAI = engine.getModule('worldAI');
                 const worldStatusEl = document.getElementById('world-ai-status');
                 if (worldAI && worldStatusEl) {
                     const ws = worldAI.getStatus();
                     worldStatusEl.textContent = `🌍 Trinity AI #3 · ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
-                } else if (worldStatusEl) {
-                    worldStatusEl.textContent = '';
                 }
+                
+                if (hud.threads) {
+                    const threads = stats.workers?.active || 0;
+                    const total = stats.workers?.total || 0;
+                    hud.threads.textContent = `${threads}/${total || 4}`;
+                }
+                
+                // Temperatura simulada
+                if (hud.temperature) {
+                    const baseTemp = 40 + (stats.cpuLoad || 20) * 0.3;
+                    const temp = Math.round(baseTemp + Math.sin(now * 0.001) * 2);
+                    hud.temperature.textContent = temp + '°C';
+                    hud.temperature.className = 'value' + (temp > 70 ? ' bad' : temp > 55 ? ' warn' : ' good');
+                }
+                
+                // Calidad
+                if (hud.quality) {
+                    const q = stats.quality || 'ultra';
+                    hud.quality.textContent = q.toUpperCase();
+                    hud.quality.className = 'value ultra';
+                }
+                
+                // Predicción
+                if (hud.prediction && stats.prediction) {
+                    const pred = stats.prediction;
+                    const trend = pred.trend || 'stable';
+                    const icons = { rising: '📈', falling: '📉', stable: '⚡' };
+                    const labels = { rising: 'Mejorando', falling: 'Degradando', stable: 'Estable' };
+                    hud.prediction.textContent = `${icons[trend] || '⚡'} ${labels[trend] || 'Estable'}`;
+                    hud.prediction.className = 'value' + (trend === 'falling' ? ' bad' : trend === 'rising' ? ' good' : '');
+                }
+                
+                // AI Progress
+                if (hud.aiProgress) {
+                    const c = engine.getModule('optimizerAI');
+                    if (c && typeof c.getStatus === 'function') {
+                        const st = c.getStatus();
+                        const progress = Math.min(100, (st.confidence || 0.5) * 100);
+                        hud.aiProgress.style.width = progress + '%';
+                    }
+                }
+                
+                // Error banner
                 if (engine._lastLoopError) {
                     errorBanner.textContent = '⚠️ Loop error: ' + engine._lastLoopError;
                     errorBanner.style.display = 'block';
@@ -548,19 +1614,31 @@
                     const err = engine.getError();
                     errorBanner.textContent = '⚠️ Init error: ' + (err ? err.message : 'desconocido');
                     errorBanner.style.display = 'block';
+                } else {
+                    errorBanner.style.display = 'none';
                 }
-            }, 500);
+                
+                // Animación de actualización de valores
+                document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
+                    el.classList.remove('updating');
+                    void el.offsetWidth;
+                    el.classList.add('updating');
+                });
+                
+                lastStatUpdate = now;
+            }, 300);
             
-            // ----- Botones de calidad / IA dual -----
+            // ----- Botones de calidad -----
             const qualityButtons = {
                 'btn-low': 'low',
                 'btn-medium': 'medium',
                 'btn-high': 'high',
-                'btn-ultra': 'ultra'
+                'btn-ultra': 'ultra',
+                'btn-quantum': 'quantum'
             };
             
             function setActiveButton(activeId) {
-                const ids = ['btn-dual', 'btn-low', 'btn-medium', 'btn-high', 'btn-ultra'];
+                const ids = ['btn-dual', ...Object.keys(qualityButtons)];
                 ids.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.toggle('active', id === activeId);
@@ -571,6 +1649,7 @@
             if (dualBtn) {
                 dualBtn.addEventListener('click', () => {
                     engine.manualQuality = false;
+                    engine.setQuality('ultra');
                     setActiveButton('btn-dual');
                 });
             }
@@ -580,8 +1659,7 @@
                 if (!btn) return;
                 btn.addEventListener('click', () => {
                     engine.manualQuality = true;
-                    const renderer = engine.getModule('renderer');
-                    if (renderer) renderer.setQuality(qualityButtons[btnId]);
+                    engine.setQuality(qualityButtons[btnId]);
                     if (hud.quality) hud.quality.textContent = qualityButtons[btnId].toUpperCase();
                     setActiveButton(btnId);
                 });
@@ -593,13 +1671,15 @@
                 spawnBtn.addEventListener('click', () => {
                     const factory = engine.getModule('entityFactory');
                     if (!factory) return;
-                    for (let i = 0; i < 10; i++) {
+                    for (let i = 0; i < 15; i++) {
                         const angle = Math.random() * Math.PI * 2;
-                        const dist = 20 + Math.random() * 80;
+                        const dist = 15 + Math.random() * 80;
                         const x = Math.cos(angle) * dist;
                         const z = Math.sin(angle) * dist;
-                        factory.createAnimal(x, 5, z, Math.random() < 0.3);
+                        const isPredator = Math.random() < 0.2;
+                        factory.createAnimal(x, 5, z, isPredator);
                     }
+                    showNotification('🦌 15 animales spawnados', 'success');
                 });
             }
             
@@ -622,14 +1702,22 @@
                     if (audio) {
                         audio.start();
                         soundBtn.textContent = '🔈 Sonido ON';
+                        showNotification('🔊 Sonido activado', 'info');
                     }
                 });
             }
             
-            // ----- Editor (v0.3) -----
+            // ----- Editor -----
             const editorBtn = document.getElementById('btn-editor');
             const editorTypeBtn = document.getElementById('btn-editor-type');
-            const editorTypes = { tree: '🌲 Árbol', rock: '🪨 Roca', animal: '🦌 Animal', flower: '🌼 Flor' };
+            const editorTypes = { 
+                tree: '🌲 Árbol', 
+                rock: '🪨 Roca', 
+                animal: '🦌 Animal', 
+                flower: '🌼 Flor',
+                building: '🏠 Edificio',
+                decoration: '🎨 Decoración'
+            };
             const editorTypeKeys = Object.keys(editorTypes);
             let editorTypeIdx = 0;
             
@@ -638,9 +1726,12 @@
                     const editor = engine.getModule('editor');
                     if (!editor) return;
                     const enabled = editor.toggle();
-                    editorBtn.textContent = enabled ? '✏️ Editor ON' : '✏️ Editor OFF';
+                    editorBtn.textContent = enabled ? '✏️ ON' : '✏️ OFF';
+                    editorBtn.classList.toggle('btn-editor-active', enabled);
+                    showNotification(enabled ? '✏️ Editor activado' : '✏️ Editor desactivado', 'info');
                 });
             }
+            
             if (editorTypeBtn) {
                 editorTypeBtn.addEventListener('click', () => {
                     const editor = engine.getModule('editor');
@@ -652,58 +1743,77 @@
                 });
             }
             
-            // ----- Modo del editor (colocar / seleccionar) y borrar (v0.3) -----
+            // ----- Modo del editor -----
             const editorModeBtn = document.getElementById('btn-editor-mode');
             const editorDeleteBtn = document.getElementById('btn-editor-delete');
+            
             if (editorModeBtn) {
                 editorModeBtn.addEventListener('click', () => {
                     const editor = engine.getModule('editor');
                     if (!editor) return;
-                    const newMode = editor.mode === 'place' ? 'select' : 'place';
+                    const modes = ['place', 'select', 'move', 'rotate', 'scale'];
+                    const currentIdx = modes.indexOf(editor.mode) || 0;
+                    const newIdx = (currentIdx + 1) % modes.length;
+                    const newMode = modes[newIdx];
                     editor.setMode(newMode);
-                    editorModeBtn.textContent = newMode === 'place' ? '📍 Colocar' : '👆 Seleccionar';
+                    const labels = { place: '📍 Colocar', select: '👆 Seleccionar', move: '✋ Mover', rotate: '🔄 Rotar', scale: '📐 Escalar' };
+                    editorModeBtn.textContent = labels[newMode] || '📍 Colocar';
                 });
             }
+            
             if (editorDeleteBtn) {
                 editorDeleteBtn.addEventListener('click', () => {
                     const editor = engine.getModule('editor');
-                    if (editor) editor.deleteSelected();
+                    if (editor) {
+                        const deleted = editor.deleteSelected();
+                        if (deleted) showNotification('🗑️ Entidades eliminadas', 'warning');
+                    }
                 });
             }
             
-            // ----- Deshacer / Rehacer (v0.3) -----
+            // ----- Undo/Redo -----
             const editorUndoBtn = document.getElementById('btn-editor-undo');
             const editorRedoBtn = document.getElementById('btn-editor-redo');
+            
             if (editorUndoBtn) {
                 editorUndoBtn.addEventListener('click', () => {
                     const editor = engine.getModule('editor');
-                    if (editor) editor.undo();
-                });
-            }
-            if (editorRedoBtn) {
-                editorRedoBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (editor) editor.redo();
+                    if (editor && editor.undo()) {
+                        showNotification('↩️ Deshacer', 'info');
+                    }
                 });
             }
             
-            // ----- Guardar / cargar mundo (v0.3) -----
+            if (editorRedoBtn) {
+                editorRedoBtn.addEventListener('click', () => {
+                    const editor = engine.getModule('editor');
+                    if (editor && editor.redo()) {
+                        showNotification('↪️ Rehacer', 'info');
+                    }
+                });
+            }
+            
+            // ----- Guardar / cargar -----
             const saveBtn = document.getElementById('btn-save-world');
             const loadBtn = document.getElementById('btn-load-world');
+            
             if (saveBtn) {
                 saveBtn.addEventListener('click', () => {
                     const serializer = engine.getModule('worldSerializer');
                     if (serializer && serializer.save()) {
                         saveBtn.textContent = '💾 ¡Guardado!';
+                        showNotification('💾 Mundo guardado', 'success');
                         setTimeout(() => { saveBtn.textContent = '💾 Guardar'; }, 1500);
                     }
                 });
             }
+            
             if (loadBtn) {
                 loadBtn.addEventListener('click', () => {
                     const serializer = engine.getModule('worldSerializer');
                     if (serializer && serializer.load()) {
                         loadBtn.textContent = '📂 ¡Cargado!';
+                        showNotification('📂 Mundo cargado', 'success');
                         setTimeout(() => { loadBtn.textContent = '📂 Cargar'; }, 1500);
                     }
                 });
@@ -712,14 +1822,15 @@
             // ----- Clima -----
             const weatherBtn = document.getElementById('btn-weather');
             if (weatherBtn) {
-                const cycle = ['clear', 'rain', 'snow'];
-                const labels = { clear: '☀️ Clima', rain: '🌧️ Clima', snow: '❄️ Clima' };
+                const cycle = ['clear', 'rain', 'snow', 'stormy'];
+                const labels = { clear: '☀️ Claro', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
                 let idx = 0;
                 weatherBtn.addEventListener('click', () => {
                     idx = (idx + 1) % cycle.length;
                     const renderer = engine.getModule('renderer');
                     if (renderer && renderer.setWeather) renderer.setWeather(cycle[idx]);
                     weatherBtn.textContent = labels[cycle[idx]];
+                    showNotification(`🌤️ Clima: ${labels[cycle[idx]]}`, 'info');
                 });
             }
             
@@ -728,8 +1839,10 @@
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
                     engine.manualQuality = false;
+                    engine.setQuality('ultra');
                     setActiveButton('btn-dual');
                     engine.reset();
+                    showNotification('🔄 Motor reiniciado', 'warning');
                 });
             }
             
@@ -745,11 +1858,34 @@
                     if (!lab || !geoFamily) return;
                     const result = lab.generate(geoFamily.value);
                     if (result) {
-                        if (geoVerts) geoVerts.textContent = result.vertices;
-                        if (geoTris) geoTris.textContent = Math.round(result.triangles);
+                        if (geoVerts) geoVerts.textContent = result.vertices || 0;
+                        if (geoTris) geoTris.textContent = Math.round(result.triangles || 0);
+                        showNotification(`🔷 ${geoFamily.options[geoFamily.selectedIndex].text} generada`, 'success');
                     }
                 });
             }
+            
+            // ----- Sistema de notificaciones -----
+            function showNotification(message, type = 'info') {
+                const container = document.getElementById('notifications');
+                if (!container) return;
+                
+                const notif = document.createElement('div');
+                notif.className = `notification ${type}`;
+                notif.textContent = message;
+                container.appendChild(notif);
+                
+                setTimeout(() => {
+                    if (notif.parentNode) {
+                        notif.parentNode.removeChild(notif);
+                    }
+                }, 4000);
+            }
+            
+            // Exponer notificaciones globalmente
+            window.showNotification = showNotification;
+            
+            console.log('🔗 UI conectada al motor cuántico');
         }
         
         // Iniciar cuando el DOM esté listo
