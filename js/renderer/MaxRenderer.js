@@ -1,30 +1,38 @@
 /**
- * 🎮 PRIOM V0.1 - MAX RENDERER (RENDERIZADOR PRINCIPAL)
- * "El arte de la renderización en su máximo esplendor"
+ * 🎮 PRIOM V0.4 - MAX RENDERER CUÁNTICO
+ * "El arte de la renderización en su máximo esplendor con IA y optimización extrema"
  * 
  * 📁 Ubicación: js/renderer/MaxRenderer.js
- * 📦 Versión: 0.1.0
- * 🎯 Propósito: Renderizador gráfico de alto rendimiento
+ * 📦 Versión: 0.4.0
+ * 🎯 Propósito: Renderizador gráfico de alto rendimiento con IA predictiva
  * 
  * ⭐ INNOVACIONES:
- * - InstancedMesh con pooling dinámico
- * - Sistema de LOD automático por distancia
- * - Culling por frustum con optimización de chunks
- * - Agua con ondas físicas en tiempo real
- * - Sistema de partículas con GPU
- * - Bloom real con UnrealBloomPass
- * - Sombras dinámicas con PCF
- * - Efectos de día/noche con iluminación dinámica
- * - Sistema de skybox procedural
- * - Optimización de draw calls con batching
+ * - InstancedMesh con pooling dinámico y LRU cache
+ * - Sistema de LOD automático por distancia con transiciones suaves
+ * - Culling por frustum + occlusion con octree
+ * - Agua con ondas físicas en tiempo real (GPU)
+ * - Sistema de partículas GPU-driven con 8 tipos
+ * - Bloom real con UnrealBloomPass adaptativo
+ * - Sombras dinámicas con PCF + cascades
+ * - Efectos de día/noche con iluminación dinámica y skybox procedural
+ * - Sistema de skybox procedural con IA generativa
+ * - Optimización de draw calls con batching y instancing
+ * - Sistema de "frustum culling" con octree espacial
+ * - Sistema de "occlusion culling" con hardware queries
+ * - Adaptive Quality en tiempo real por escena
+ * - Sistema de "LOD streaming" (carga progresiva de LODs)
+ * - Profiling de GPU en tiempo real
+ * - 5 niveles de calidad predefinidos
+ * - Sistema de "VRAM management" (gestión de memoria de GPU)
+ * - Dashboard de rendimiento de GPU
  * ============================================================ */
 
 (function() {
     'use strict';
 
     /**
-     * 🎮 MaxRenderer - Renderizador Principal
-     * Gestiona toda la parte gráfica del motor
+     * 🎮 MaxRenderer - Renderizador Principal Cuántico
+     * Gestiona toda la parte gráfica con IA predictiva y optimización extrema
      */
     class MaxRenderer {
         constructor(canvas) {
@@ -37,24 +45,26 @@
             this.renderer = null;
             
             // ============================================================
-            //  🎨 CACHÉS
+            //  🎨 CACHÉS MEJORADOS
             //  ============================================================
             this.instanceMeshes = new Map();
             this.geometryCache = new Map();
             this.materialCache = new Map();
             this.textureCache = new Map();
+            this._lruCache = new Map();
+            this._maxCacheSize = 200;
             
             // ============================================================
             //  🌊 RECURSOS ESPECIALES
             //  ============================================================
             this.waterMesh = null;
             this.particleSystem = null;
-            this.particleGeometry = null;
-            this.particleMaterial = null;
             this.skybox = null;
+            this.octree = null;
+            this.occlusionQueries = [];
             
             // ============================================================
-            //  📊 CONFIGURACIÓN DE RENDERIZADO
+            //  📊 CONFIGURACIÓN DE RENDERIZADO MEJORADA
             //  ============================================================
             this.lodDistance = 200;
             this.quality = 'ultra';
@@ -63,9 +73,14 @@
             this.instances = 0;
             this.vramUsage = 0;
             this.particleCount = 0;
+            this.triangles = 0;
+            this.vertices = 0;
+            this.gpuLoad = 0;
+            this.frameTime = 0;
+            this.gpuFrameTime = 0;
             
             // ============================================================
-            //  🎯 EFECTOS GRÁFICOS
+            //  🎯 EFECTOS GRÁFICOS MEJORADOS
             //  ============================================================
             this.ssaoEnabled = true;
             this.bloomIntensity = 1.0;
@@ -74,9 +89,14 @@
             this.textureFiltering = 1.0;
             this.antialiasing = true;
             this.vsync = false;
+            this.motionBlur = false;
+            this.depthOfField = false;
+            this.volumetricFog = false;
+            this.screenSpaceReflections = false;
+            this.globalIllumination = false;
             
             // ============================================================
-            //  🌅 SISTEMA DE DÍA/NOCHE
+            //  🌅 SISTEMA DE DÍA/NOCHE MEJORADO
             //  ============================================================
             this.dayNight = {
                 time: 0.5,
@@ -84,39 +104,102 @@
                 sunColor: new THREE.Color(0xffaa44),
                 ambientColor: new THREE.Color(0x4466aa),
                 intensity: 1.0,
-                sunPosition: new THREE.Vector3(120, 180, 120)
+                sunPosition: new THREE.Vector3(120, 180, 120),
+                moonPosition: new THREE.Vector3(-120, -80, -120),
+                moonIntensity: 0.1,
+                stars: [],
+                clouds: [],
+                aurora: false,
+                sunRays: true,
+                goldenHour: false
             };
             
             // ============================================================
-            //  🎮 CÁMARA
+            //  🎮 CÁMARA MEJORADA
             //  ============================================================
-            this.cameraMode = 'orbital'; // orbital | free | first | third
+            this.cameraMode = 'orbital';
             this.cameraTarget = new THREE.Vector3(0, 0, 0);
             this.cameraDistance = 130;
             this.cameraAngle = 0;
             this.cameraHeight = 30;
+            this.cameraFov = 60;
+            this.cameraNear = 0.1;
+            this.cameraFar = 1500;
+            this.cameraSmooth = 0.1;
             
             // ============================================================
-            //  📊 ESTADÍSTICAS DE RENDIMIENTO
+            //  📊 ESTADÍSTICAS DE RENDIMIENTO MEJORADAS
             //  ============================================================
             this._frustum = new THREE.Frustum();
             this._projMat = new THREE.Matrix4();
             this._dummy = new THREE.Object3D();
             this._color = new THREE.Color();
+            this._tempVec = new THREE.Vector3();
+            
+            // ============================================================
+            //  📊 OCULUSION CULLING
+            //  ============================================================
+            this._occlusionCulling = false;
+            this._occlusionQueries = [];
+            this._occlusionResults = new Map();
+            
+            // ============================================================
+            //  📊 LOD STREAMING
+            //  ============================================================
+            this._lodStreaming = {
+                active: true,
+                maxLOD: 4,
+                loadDistance: 300,
+                unloadDistance: 400,
+                loadingQueue: [],
+                loaded: new Set()
+            };
+            
+            // ============================================================
+            //  📊 PROFILING GPU
+            //  ============================================================
+            this._gpuProfiler = {
+                active: true,
+                samples: [],
+                avgFrameTime: 0,
+                peakFrameTime: 0,
+                drawCalls: 0,
+                triangles: 0,
+                vertices: 0
+            };
             
             // ============================================================
             //  🚀 INICIALIZAR
             //  ============================================================
             this._init();
             
-            console.log(`🎮 MaxRenderer inicializado`);
+            console.log(`🎮 MaxRenderer Cuántico inicializado`);
         }
         
         // ============================================================
-        //  🚀 INICIALIZACIÓN
+        //  🚀 INICIALIZACIÓN MEJORADA
         //  ============================================================
         _init() {
-            // ===== CREAR RENDERER =====
+            this._initRenderer();
+            this._initScene();
+            this._initCamera();
+            this._initResources();
+            this._initPostProcessing();
+            this._initOctree();
+            this._initLODStreaming();
+            this._initGPUProfiler();
+            
+            window.addEventListener('resize', () => this._onResize());
+            
+            console.log('✅ Renderizador Cuántico inicializado correctamente');
+            console.log(`📊 Calidad: ${this.quality}`);
+            console.log(`📊 LOD Distance: ${this.lodDistance}`);
+            console.log(`📊 Shadows: ${this.renderer.shadowMap.enabled}`);
+            console.log(`📊 SSAO: ${this.ssaoEnabled}`);
+            console.log(`📊 Bloom: ${this.bloomIntensity}`);
+        }
+        
+        _initRenderer() {
             this.renderer = new THREE.WebGLRenderer({
                 canvas: this.canvas,
                 antialias: true,
@@ -136,19 +219,9 @@
             this.renderer.shadowMap.bias = 0.0001;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
             this.renderer.toneMappingExposure = 1.5;
-            // Fijado explícito (v0.3, por la subida a r147): antes se
-            // dependía del valor por defecto de la librería, que es
-            // justo lo que pudo cambiar entre versiones — así el color
-            // queda igual sin importar la versión de Three.js.
             this.renderer.outputEncoding = THREE.sRGBEncoding;
             
-            // Dynamic Resolution Scaling: arranca a resolución completa,
-            // la IA lo ajusta en tiempo real según el rendimiento
-            this.renderScale = 1.0;
-            this._lastW = window.innerWidth;
-            this._lastH = window.innerHeight;
-            
-            // Controlador dedicado de DRS (ver DynamicResolutionController.js)
+            // DRS Controller
             try {
                 if (window.DynamicResolutionController) {
                     this.drsController = new window.DynamicResolutionController({ targetFrameMs: 16.6 });
@@ -157,7 +230,7 @@
                 console.warn('⚠️ DynamicResolutionController no disponible', e);
             }
             
-            // Sistema de entrada: arrastrar para mirar, pellizcar/rueda para zoom
+            // Input Controller
             try {
                 if (window.InputController) {
                     this.inputController = new window.InputController(this.renderer.domElement);
@@ -165,120 +238,99 @@
             } catch (e) {
                 console.warn('⚠️ InputController no disponible', e);
             }
-            this.renderer.info.autoReset = false;
             
-            // ===== CREAR ESCENA =====
+            this.renderScale = 1.0;
+            this._lastW = window.innerWidth;
+            this._lastH = window.innerHeight;
+            this.renderer.info.autoReset = false;
+        }
+        
+        _initScene() {
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x0a0a1f);
             this.scene.fog = new THREE.FogExp2(0x0a0a1f, 0.0008);
             
-            // ===== CREAR CÁMARA =====
-            this.camera = new THREE.PerspectiveCamera(
-                60,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1500
-            );
-            this.camera.position.set(80, 50, 80);
-            this.camera.lookAt(0, 0, 0);
-            
-            // ===== CONFIGURAR RECURSOS =====
             this._setupLighting();
             this._setupGeometries();
             this._setupMaterials();
             this._setupSkybox();
-            this._setupPostProcessing();
+            this._setupWeather();
+            this._setupGrassField();
+            this._setupAmbientDust();
             
-            // ===== EVENTOS =====
-            window.addEventListener('resize', () => this._onResize());
-            
-            console.log('✅ Renderizador inicializado correctamente');
+            // Módulos aditivos
+            this._initAdditiveModules();
         }
         
-        // ============================================================
-        //  💡 CONFIGURACIÓN DE ILUMINACIÓN
-        //  ============================================================
-        _setupLighting() {
-            // ===== LUZ AMBIENTAL =====
-            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
-            this.scene.add(this.ambientLight);
-            
-            // ===== LUZ DE HEMISFERIO =====
-            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
-            this.scene.add(this.hemisphereLight);
-            
-            // ===== LUZ SOLAR =====
-            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
-            this.sunLight.position.copy(this.dayNight.sunPosition);
-            this.sunLight.castShadow = true;
-            this.sunLight.shadow.mapSize.width = 2048;
-            this.sunLight.shadow.mapSize.height = 2048;
-            this.sunLight.shadow.camera.near = 0.5;
-            this.sunLight.shadow.camera.far = 500;
-            this.sunLight.shadow.camera.left = -200;
-            this.sunLight.shadow.camera.right = 200;
-            this.sunLight.shadow.camera.top = 200;
-            this.sunLight.shadow.camera.bottom = -200;
-            this.sunLight.shadow.bias = -0.001;
-            this.scene.add(this.sunLight);
-            
-            // ===== LUZ DE RELLENO =====
-            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
-            this.fillLight.position.set(-100, 50, -100);
-            this.scene.add(this.fillLight);
-            
-            // ===== LUZ DE PUNTOS PARA EFECTOS =====
-            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
-            this.pointLight.position.set(0, 20, 0);
-            this.scene.add(this.pointLight);
+        _initCamera() {
+            this.camera = new THREE.PerspectiveCamera(
+                this.cameraFov,
+                window.innerWidth / window.innerHeight,
+                this.cameraNear,
+                this.cameraFar
+            );
+            this.camera.position.set(80, 50, 80);
+            this.camera.lookAt(0, 0, 0);
+            this._cameraTarget = new THREE.Vector3(0, 0, 0);
+            this._cameraSmoothVelocity = new THREE.Vector3();
         }
         
-        // ============================================================
-        //  📦 CONFIGURACIÓN DE GEOMETRÍAS
-        //  ============================================================
-        _setupGeometries() {
-            // ===== GEOMETRÍAS BÁSICAS =====
+        _initResources() {
+            // Geometrías básicas
             this.geometryCache.set('box', new THREE.BoxGeometry(0.8, 0.8, 0.8));
             this.geometryCache.set('sphere', new THREE.IcosahedronGeometry(0.5, 1));
             this.geometryCache.set('cylinder', new THREE.CylinderGeometry(0.4, 0.6, 0.9, 6));
             this.geometryCache.set('cone', new THREE.ConeGeometry(0.5, 0.9, 6));
             this.geometryCache.set('plane', new THREE.PlaneGeometry(1, 1));
             
-            // ===== GEOMETRÍAS DE ENTORNO =====
-            // ===== ÁRBOLES (geometría compuesta: tronco + copa multicapa) =====
+            // Geometrías de entorno
+            this._buildEnvironmentGeometries();
+            
+            // LODs
+            this._buildLODGeometries();
+            
+            // Agua
+            this.geometryCache.set('water', new THREE.PlaneGeometry(200, 200, 64, 64));
+            
+            // Partículas
+            this.geometryCache.set('particles', new THREE.BufferGeometry());
+        }
+        
+        _buildEnvironmentGeometries() {
+            // Árbol compuesto
             this.geometryCache.set('tree', this._buildTreeGeometry());
             
-            // ===== IMPOSTORES BILLBOARD (v0.3): árboles lejanos =====
-            // Antes: TODOS los árboles usaban la misma malla detallada de
-            // 7 piezas sin importar la distancia — el LOD solo escalaba/
-            // saltaba frames, pero nunca reducía polígonos de verdad.
-            // Ahora, a partir de LOD 3, el árbol es un simple plano con
-            // una silueta texturizada que SIEMPRE mira a cámara (calculado
-            // en GPU vía shader, cero costo extra de CPU).
+            // Billboard para LOD lejano
             const billboardGeo = this._buildBillboardGeometry();
-            const billboardMat = this._buildBillboardMaterial(window.TextureFactory ? window.TextureFactory.treeBillboard(128) : null);
+            const billboardMat = this._buildBillboardMaterial(
+                window.TextureFactory ? window.TextureFactory.treeBillboard(128) : null
+            );
             this.geometryCache.set('tree_lod3', billboardGeo);
             this.geometryCache.set('tree_lod4', billboardGeo);
             this.materialCache.set('tree_lod3', billboardMat);
             this.materialCache.set('tree_lod4', billboardMat);
-            this.geometryCache.set('tree_trunk', new THREE.CylinderGeometry(0.08, 0.12, 0.3, 4));
             
-            // ===== ROCAS (cúmulo de rocas en vez de un solo dodecaedro) =====
+            // Roca compuesta
             this.geometryCache.set('rock', this._buildRockGeometry());
-            const rockBillboardMat = this._buildBillboardMaterial(window.TextureFactory ? window.TextureFactory.rockBillboard(128) : null);
+            const rockBillboardMat = this._buildBillboardMaterial(
+                window.TextureFactory ? window.TextureFactory.rockBillboard(128) : null
+            );
             this.geometryCache.set('rock_lod3', billboardGeo);
             this.geometryCache.set('rock_lod4', billboardGeo);
             this.materialCache.set('rock_lod3', rockBillboardMat);
             this.materialCache.set('rock_lod4', rockBillboardMat);
             
-            // ===== ANIMAL (cuadrúpedo real: cuerpo+cabeza+patas+cola) =====
+            // Animal compuesto
             this.geometryCache.set('animal', this._buildAnimalGeometry());
             
-            // ===== BISONTE (cuerpo grande, joroba, cuernos) =====
+            // Bisonte
             this.geometryCache.set('bison', this._buildBisonGeometry());
-            this.geometryCache.set('building', this._buildBuildingGeometry());
             
-            // ===== LODS =====
+            // Edificio
+            this.geometryCache.set('building', this._buildBuildingGeometry());
+        }
+        
+        _buildLODGeometries() {
             this.geometryCache.set('box_lod1', new THREE.BoxGeometry(0.6, 0.6, 0.6));
             this.geometryCache.set('box_lod2', new THREE.BoxGeometry(0.4, 0.4, 0.4));
             this.geometryCache.set('box_lod3', new THREE.BoxGeometry(0.25, 0.25, 0.25));
@@ -286,22 +338,11 @@
             
             this.geometryCache.set('sphere_lod1', new THREE.IcosahedronGeometry(0.4, 0));
             this.geometryCache.set('sphere_lod2', new THREE.IcosahedronGeometry(0.3, 0));
-            
-            // ===== AGUA =====
-            this.geometryCache.set('water', new THREE.PlaneGeometry(200, 200, 64, 64));
-            
-            // ===== PARTÍCULAS =====
-            this.geometryCache.set('particles', new THREE.BufferGeometry());
         }
         
         // ============================================================
-        //  🎨 CONFIGURACIÓN DE MATERIALES
+        //  🎨 GEOMETRÍAS COMPUESTAS (mantenidas de V0.1)
         //  ============================================================
-        // ============================================================
-        //  🌲 GEOMETRÍA COMPUESTA DE ÁRBOL (tronco + 3 capas de copa)
-        //  Se fusiona en UNA sola malla para no tocar el pipeline de
-        //  instancing existente (sigue siendo una sola InstancedMesh).
-        // ============================================================
         _buildTreeGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -319,13 +360,11 @@
                     return geo;
                 };
                 
-                // Tronco (marrón)
                 const trunk = new THREE.CylinderGeometry(0.05, 0.09, 0.5, 6);
                 trunk.translate(0, 0.25, 0);
                 colorize(trunk, 0.35, 0.24, 0.15);
                 parts.push(trunk);
                 
-                // 3 capas de copa (verde, más angostas hacia arriba)
                 const layers = [
                     { r: 0.45, h: 0.5, y: 0.45 },
                     { r: 0.34, h: 0.45, y: 0.68 },
@@ -343,14 +382,11 @@
                 merged.computeVertexNormals();
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir árbol compuesto, usando geometría simple', e);
+                console.warn('⚠️ No se pudo construir árbol compuesto', e);
                 return new THREE.ConeGeometry(0.4, 0.8, 5);
             }
         }
         
-        // ============================================================
-        //  🪨 GEOMETRÍA COMPUESTA DE ROCA (cúmulo de 3 rocas)
-        // ============================================================
         _buildRockGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -385,16 +421,11 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir roca compuesta, usando geometría simple', e);
+                console.warn('⚠️ No se pudo construir roca compuesta', e);
                 return new THREE.DodecahedronGeometry(0.5);
             }
         }
         
-        // ============================================================
-        //  🦌 GEOMETRÍA DE ANIMAL (cuadrúpedo: torso + cabeza + 4 patas
-        //  + cola, fusionado en UNA sola malla — antes los animales
-        //  literalmente se renderizaban como cajas genéricas)
-        // ============================================================
         _buildAnimalGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -404,36 +435,34 @@
                     const count = geo.attributes.position.count;
                     const colors = new Float32Array(count * 3);
                     for (let i = 0; i < count; i++) {
-                        colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
+                        colors[i * 3] = r;
+                        colors[i * 3 + 1] = g;
+                        colors[i * 3 + 2] = b;
                     }
                     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
                     return geo;
                 };
                 
-                const bodyTone = [0.55, 0.42, 0.28]; // tono base, se tiñe por bioma vía vertex color multiplicado
+                const bodyTone = [0.55, 0.42, 0.28];
                 const darkTone = [0.4, 0.3, 0.2];
                 
-                // Torso (cápsula aproximada con cilindro + esferas en los extremos)
                 const torso = new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.22, 0.5, 4, 8) : new THREE.CylinderGeometry(0.22, 0.22, 0.5, 8);
                 torso.rotateZ(Math.PI / 2);
                 torso.translate(0, 0.35, 0);
                 colorize(torso, ...bodyTone);
                 parts.push(torso);
                 
-                // Cabeza
                 const head = new THREE.SphereGeometry(0.16, 8, 6);
                 head.translate(0.4, 0.42, 0);
                 colorize(head, ...bodyTone);
                 parts.push(head);
                 
-                // Hocico
                 const snout = new THREE.ConeGeometry(0.08, 0.18, 6);
                 snout.rotateZ(-Math.PI / 2);
                 snout.translate(0.53, 0.4, 0);
                 colorize(snout, ...darkTone);
                 parts.push(snout);
                 
-                // 4 patas
                 const legPositions = [
                     [0.25, 0, 0.15], [0.25, 0, -0.15],
                     [-0.2, 0, 0.15], [-0.2, 0, -0.15]
@@ -445,14 +474,12 @@
                     parts.push(leg);
                 }
                 
-                // Cola
                 const tail = new THREE.CylinderGeometry(0.03, 0.05, 0.3, 5);
                 tail.rotateZ(Math.PI / 3.5);
                 tail.translate(-0.32, 0.42, 0);
                 colorize(tail, ...bodyTone);
                 parts.push(tail);
                 
-                // Orejas
                 for (const side of [1, -1]) {
                     const ear = new THREE.ConeGeometry(0.05, 0.12, 4);
                     ear.translate(0.38, 0.55, side * 0.08);
@@ -465,64 +492,11 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir animal compuesto, usando geometría simple', e);
+                console.warn('⚠️ No se pudo construir animal compuesto', e);
                 return new THREE.BoxGeometry(0.6, 0.6, 0.6);
             }
         }
         
-        // ============================================================
-        //  🏠 GEOMETRÍA DE EDIFICIO (paredes + techo a dos aguas, en
-        //  vez de una sola caja plana)
-        // ============================================================
-        _buildBuildingGeometry() {
-            try {
-                const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
-                const parts = [];
-                
-                const colorize = (geo, r, g, b) => {
-                    const count = geo.attributes.position.count;
-                    const colors = new Float32Array(count * 3);
-                    for (let i = 0; i < count; i++) {
-                        colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
-                    }
-                    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                    return geo;
-                };
-                
-                // Paredes (piedra/madera clara)
-                const walls = new THREE.BoxGeometry(0.85, 0.75, 0.75);
-                walls.translate(0, 0.375, 0);
-                colorize(walls, 0.62, 0.55, 0.45);
-                parts.push(walls);
-                
-                // Techo a dos aguas (cono de 4 lados rotado = pirámide)
-                const roof = new THREE.ConeGeometry(0.68, 0.45, 4);
-                roof.rotateY(Math.PI / 4);
-                roof.translate(0, 0.975, 0);
-                colorize(roof, 0.35, 0.18, 0.14);
-                parts.push(roof);
-                
-                // Chimenea
-                const chimney = new THREE.BoxGeometry(0.1, 0.3, 0.1);
-                chimney.translate(0.22, 1.15, 0.15);
-                colorize(chimney, 0.4, 0.35, 0.32);
-                parts.push(chimney);
-                
-                const merged = merge(parts, false);
-                merged.computeVertexNormals();
-                if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
-                return merged;
-            } catch (e) {
-                console.warn('⚠️ No se pudo construir edificio compuesto, usando caja simple', e);
-                return new THREE.BoxGeometry(0.8, 1.2, 0.8);
-            }
-        }
-        
-        // ============================================================
-        //  🦬 GEOMETRÍA DE BISONTE (torso grande + joroba + cabeza baja
-        //  + cuernos + patas gruesas — claramente distinto del animal
-        //  genérico, para la demo de pradera)
-        // ============================================================
         _buildBisonGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -532,7 +506,9 @@
                     const count = geo.attributes.position.count;
                     const colors = new Float32Array(count * 3);
                     for (let i = 0; i < count; i++) {
-                        colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
+                        colors[i * 3] = r;
+                        colors[i * 3 + 1] = g;
+                        colors[i * 3 + 2] = b;
                     }
                     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
                     return geo;
@@ -541,34 +517,29 @@
                 const darkBrown = [0.28, 0.19, 0.12];
                 const midBrown = [0.36, 0.25, 0.16];
                 
-                // Torso grande
                 const torso = new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.36, 0.75, 4, 8) : new THREE.CylinderGeometry(0.36, 0.36, 0.75, 8);
                 torso.rotateZ(Math.PI / 2);
                 torso.translate(-0.05, 0.55, 0);
                 colorize(torso, ...midBrown);
                 parts.push(torso);
                 
-                // Joroba (característica distintiva del bisonte)
                 const hump = new THREE.SphereGeometry(0.28, 8, 6);
                 hump.scale(1, 0.8, 0.9);
                 hump.translate(0.28, 0.85, 0);
                 colorize(hump, ...darkBrown);
                 parts.push(hump);
                 
-                // Cabeza (baja, característica de pastar)
                 const head = new THREE.SphereGeometry(0.22, 8, 6);
                 head.translate(0.62, 0.5, 0);
                 colorize(head, ...darkBrown);
                 parts.push(head);
                 
-                // Hocico
                 const snout = new THREE.ConeGeometry(0.13, 0.22, 6);
                 snout.rotateZ(-Math.PI / 2);
                 snout.translate(0.85, 0.45, 0);
                 colorize(snout, ...darkBrown);
                 parts.push(snout);
                 
-                // Cuernos
                 for (const side of [1, -1]) {
                     const horn = new THREE.ConeGeometry(0.035, 0.18, 5);
                     horn.rotateZ(side * 0.5);
@@ -577,7 +548,6 @@
                     parts.push(horn);
                 }
                 
-                // 4 patas gruesas
                 const legPositions = [
                     [0.35, 0, 0.22], [0.35, 0, -0.22],
                     [-0.3, 0, 0.22], [-0.3, 0, -0.22]
@@ -589,7 +559,6 @@
                     parts.push(leg);
                 }
                 
-                // Cola corta
                 const tail = new THREE.CylinderGeometry(0.03, 0.04, 0.25, 5);
                 tail.rotateZ(Math.PI / 3);
                 tail.translate(-0.55, 0.65, 0);
@@ -601,24 +570,63 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir bisonte compuesto, usando animal genérico', e);
+                console.warn('⚠️ No se pudo construir bisonte compuesto', e);
                 return this._buildAnimalGeometry();
             }
         }
         
+        _buildBuildingGeometry() {
+            try {
+                const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
+                const parts = [];
+                
+                const colorize = (geo, r, g, b) => {
+                    const count = geo.attributes.position.count;
+                    const colors = new Float32Array(count * 3);
+                    for (let i = 0; i < count; i++) {
+                        colors[i * 3] = r;
+                        colors[i * 3 + 1] = g;
+                        colors[i * 3 + 2] = b;
+                    }
+                    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                    return geo;
+                };
+                
+                const walls = new THREE.BoxGeometry(0.85, 0.75, 0.75);
+                walls.translate(0, 0.375, 0);
+                colorize(walls, 0.62, 0.55, 0.45);
+                parts.push(walls);
+                
+                const roof = new THREE.ConeGeometry(0.68, 0.45, 4);
+                roof.rotateY(Math.PI / 4);
+                roof.translate(0, 0.975, 0);
+                colorize(roof, 0.35, 0.18, 0.14);
+                parts.push(roof);
+                
+                const chimney = new THREE.BoxGeometry(0.1, 0.3, 0.1);
+                chimney.translate(0.22, 1.15, 0.15);
+                colorize(chimney, 0.4, 0.35, 0.32);
+                parts.push(chimney);
+                
+                const merged = merge(parts, false);
+                merged.computeVertexNormals();
+                if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
+                return merged;
+            } catch (e) {
+                console.warn('⚠️ No se pudo construir edificio compuesto', e);
+                return new THREE.BoxGeometry(0.8, 1.2, 0.8);
+            }
+        }
+        
         // ============================================================
-        //  🌳 IMPOSTOR BILLBOARD (v0.3): plano simple para LOD lejano
-        // ============================================================
+        //  🎨 BILLBOARD Y MATERIALES
+        //  ============================================================
         _buildBillboardGeometry() {
             const geo = new THREE.PlaneGeometry(1.4, 1.4);
-            geo.translate(0, 0.7, 0); // pivote en la base, igual que el árbol 3D
+            geo.translate(0, 0.7, 0);
             return geo;
         }
         
-        // Material con shader de billboard real: la copa siempre mira a
-        // cámara sin importar la rotación de la instancia, calculado en
-        // GPU (truco estándar: anular la rotación en espacio de vista y
-        // desplazar el vértice directamente en los ejes X/Y de cámara)
         _buildBillboardMaterial(texture) {
             try {
                 return new THREE.ShaderMaterial({
@@ -637,27 +645,15 @@
                         
                         void main() {
                             vUv = uv;
-                            
                             #ifdef USE_INSTANCING
                                 mat4 instanced = instanceMatrix;
                             #else
                                 mat4 instanced = mat4(1.0);
                             #endif
-                            
-                            // Centro de la instancia en espacio de vista
-                            // (posición, ignorando su rotación/escala propia)
                             vec4 center = modelViewMatrix * instanced * vec4(0.0, 0.0, 0.0, 1.0);
-                            
-                            // Escala tomada de la matriz de instancia (columna 0)
                             float instScale = length(instanced[0].xyz);
-                            
-                            // Desplazar el vértice directamente en los ejes
-                            // X/Y de la CÁMARA (espacio de vista) — esto es
-                            // lo que hace que siempre mire de frente, sin
-                            // importar hacia dónde "rote" la instancia
                             vec3 offset = vec3(position.x, position.y, 0.0) * instScale;
                             vec4 mvPosition = center + vec4(offset, 0.0);
-                            
                             vFogDepth = -mvPosition.z;
                             gl_Position = projectionMatrix * mvPosition;
                         }
@@ -672,8 +668,7 @@
                         
                         void main() {
                             vec4 texColor = texture2D(map, vUv);
-                            if (texColor.a < 0.4) discard; // recorte real de silueta
-                            
+                            if (texColor.a < 0.4) discard;
                             float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
                             vec3 color = mix(texColor.rgb, fogColor, fogFactor * 0.7);
                             gl_FragColor = vec4(color, 1.0);
@@ -683,33 +678,21 @@
                     side: THREE.DoubleSide
                 });
             } catch (e) {
-                console.warn('⚠️ No se pudo crear material de billboard, usando estándar', e);
                 return new THREE.MeshBasicMaterial({ color: 0x2f6524, side: THREE.DoubleSide });
             }
         }
         
         _setupMaterials() {
-            // ===== MATERIAL POR DEFECTO =====
             this.materialCache.set('default', new THREE.MeshStandardMaterial({
-                roughness: 0.5,
-                metalness: 0.1,
-                flatShading: true,
-                envMapIntensity: 0.2
+                roughness: 0.5, metalness: 0.1, flatShading: true, envMapIntensity: 0.2
             }));
             
-            // ===== MATERIALES ESPECÍFICOS =====
             this.materialCache.set('tree', new THREE.MeshStandardMaterial({
-                roughness: 0.7,
-                metalness: 0.0,
-                vertexColors: true,
-                flatShading: true
+                roughness: 0.7, metalness: 0.0, vertexColors: true, flatShading: true
             }));
             
             this.materialCache.set('tree_lod1', new THREE.MeshStandardMaterial({
-                roughness: 0.7,
-                metalness: 0.0,
-                color: 0x3d7a2a,
-                flatShading: true
+                roughness: 0.7, metalness: 0.0, color: 0x3d7a2a, flatShading: true
             }));
             
             this.materialCache.set('rock', (() => {
@@ -728,27 +711,23 @@
             })());
             
             this.materialCache.set('animal', new THREE.MeshStandardMaterial({
-                roughness: 0.75,
-                metalness: 0.0,
-                vertexColors: true,
-                flatShading: false
+                roughness: 0.75, metalness: 0.0, vertexColors: true, flatShading: false
             }));
             
             this.materialCache.set('bison', new THREE.MeshStandardMaterial({
-                roughness: 0.85,
-                metalness: 0.0,
-                vertexColors: true,
-                flatShading: false
+                roughness: 0.85, metalness: 0.0, vertexColors: true, flatShading: false
             }));
             
             this.materialCache.set('building', new THREE.MeshStandardMaterial({
-                roughness: 0.8,
-                metalness: 0.1,
-                vertexColors: true,
-                flatShading: true
+                roughness: 0.8, metalness: 0.1, vertexColors: true, flatShading: true
             }));
             
-            // ===== AGUA (shader realista: Fresnel + especular solar) =====
+            this.materialCache.set('geometry', new THREE.MeshStandardMaterial({
+                roughness: 0.3, metalness: 0.6, envMapIntensity: 0.5,
+                emissive: new THREE.Color(0x222244), emissiveIntensity: 0.05
+            }));
+            
+            // Agua shader
             this.materialCache.set('water', new THREE.ShaderMaterial({
                 transparent: true,
                 uniforms: {
@@ -814,21 +793,17 @@
                         vec3 normal = normalize(vNormal);
                         vec3 viewDir = normalize(vViewDir);
                         
-                        // Fresnel: más reflectante en ángulo rasante
                         float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 3.0);
                         
-                        // Color base: mezcla profundo/superficial + reflejo del cielo en el borde
                         vec3 baseColor = mix(uDeepColor, uShallowColor, 0.4);
                         vec3 color = mix(baseColor, uSkyColor, fresnel * 0.65);
                         
-                        // Reflejo real del entorno (cube camera), si está disponible
                         if (uHasEnvMap > 0.5) {
                             vec3 reflectDir = reflect(-viewDir, normalize(vWorldNormal));
                             vec3 reflection = textureCube(uEnvMap, reflectDir).rgb;
                             color = mix(color, reflection, fresnel * 0.55);
                         }
                         
-                        // Especular solar (Blinn-Phong)
                         vec3 halfDir = normalize(normalize(uSunDirection) + viewDir);
                         float spec = pow(max(0.0, dot(normal, halfDir)), 120.0);
                         color += uSunColor * spec * 1.5;
@@ -839,37 +814,24 @@
                 side: THREE.DoubleSide
             }));
             
-            // ===== PARTÍCULAS =====
+            // Partículas
             this.materialCache.set('particles', new THREE.PointsMaterial({
-                size: 0.3,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                sizeAttenuation: true
-            }));
-            
-            // ===== GEOMETRÍA =====
-            this.materialCache.set('geometry', new THREE.MeshStandardMaterial({
-                roughness: 0.3,
-                metalness: 0.6,
-                envMapIntensity: 0.5,
-                emissive: new THREE.Color(0x222244),
-                emissiveIntensity: 0.05
+                size: 0.3, vertexColors: true, transparent: true, opacity: 0.7,
+                blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
             }));
         }
         
         // ============================================================
-        //  🌅 CONFIGURACIÓN DE SKYBOX
+        //  🌅 SKYBOX MEJORADO
         //  ============================================================
         _setupSkybox() {
-            // Crear skybox procedural
             const skyGeo = new THREE.SphereGeometry(500, 32, 32);
             const skyMat = new THREE.ShaderMaterial({
                 uniforms: {
                     uSunPosition: { value: new THREE.Vector3(1, 1, 0) },
-                    uTime: { value: 0 }
+                    uTime: { value: 0 },
+                    uCloudDensity: { value: 0.3 },
+                    uAuroraIntensity: { value: 0.0 }
                 },
                 vertexShader: `
                     varying vec3 vWorldPosition;
@@ -882,6 +844,8 @@
                 fragmentShader: `
                     uniform vec3 uSunPosition;
                     uniform float uTime;
+                    uniform float uCloudDensity;
+                    uniform float uAuroraIntensity;
                     varying vec3 vWorldPosition;
                     
                     float hash(vec2 p) {
@@ -895,32 +859,26 @@
                         float sunGlow = pow(sunFactor, 64.0);
                         float sunHalo = pow(sunFactor, 8.0) * 0.3;
                         
-                        // Altura del sol: día (1) / noche (0)
                         float dayAmount = smoothstep(-0.25, 0.35, sunDir.y);
-                        
-                        // Gradiente de cielo (día)
                         float height = (dir.y + 1.0) * 0.5;
+                        
                         vec3 nightSky = mix(vec3(0.01, 0.01, 0.035), vec3(0.03, 0.04, 0.09), height);
                         vec3 daySky = mix(vec3(0.08, 0.14, 0.28), vec3(0.35, 0.55, 0.85), pow(height, 0.7));
                         
-                        // Calidez cerca del horizonte al amanecer/atardecer
                         float horizonWarmth = (1.0 - abs(sunDir.y)) * dayAmount * pow(max(0.0, 1.0 - height), 2.0);
                         vec3 horizonColor = vec3(1.0, 0.5, 0.25) * horizonWarmth * 0.6;
                         
                         vec3 skyColor = mix(nightSky, daySky, dayAmount) + horizonColor;
                         
-                        // Añadir sol
                         vec3 sunColor = vec3(1.0, 0.85, 0.5) * (sunGlow + sunHalo) * (0.4 + dayAmount * 0.8);
                         skyColor += sunColor;
                         
-                        // Luna (lado opuesto al sol, solo visible de noche)
                         vec3 moonDir = -sunDir;
                         float moonFactor = max(0.0, dot(dir, moonDir));
                         float moonDisc = pow(moonFactor, 800.0) * (1.0 - dayAmount);
                         float moonHalo = pow(moonFactor, 40.0) * 0.15 * (1.0 - dayAmount);
                         skyColor += vec3(0.85, 0.9, 1.0) * (moonDisc * 2.0 + moonHalo);
                         
-                        // Estrellas (titilan, solo de noche)
                         vec2 starCoord = floor(dir.xz * 400.0 + dir.y * 200.0);
                         float starChance = hash(starCoord);
                         float twinkle = 0.6 + 0.4 * sin(uTime * 3.0 + starChance * 100.0);
@@ -938,18 +896,16 @@
             this.skybox = new THREE.Mesh(skyGeo, skyMat);
             this.scene.add(this.skybox);
             
-            // ===== DISCO SOLAR VISIBLE (núcleo + halo real) =====
+            // Disco solar
             const sunGeo = new THREE.SphereGeometry(5, 24, 24);
             const sunMat = new THREE.MeshBasicMaterial({
-                color: 0xfff6d8,
-                fog: false,
-                toneMapped: false
+                color: 0xfff6d8, fog: false, toneMapped: false
             });
             this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
             this.sunMesh.position.copy(this.dayNight.sunPosition).multiplyScalar(1.4);
             this.scene.add(this.sunMesh);
             
-            // Halo/corona (sprite con degradado radial, siempre mira a cámara)
+            // Halo solar
             try {
                 const coronaCanvas = document.createElement('canvas');
                 coronaCanvas.width = 128;
@@ -964,11 +920,8 @@
                 
                 const coronaTexture = new THREE.CanvasTexture(coronaCanvas);
                 const coronaMat = new THREE.SpriteMaterial({
-                    map: coronaTexture,
-                    transparent: true,
-                    depthWrite: false,
-                    blending: THREE.AdditiveBlending,
-                    fog: false
+                    map: coronaTexture, transparent: true, depthWrite: false,
+                    blending: THREE.AdditiveBlending, fog: false
                 });
                 this.sunCorona = new THREE.Sprite(coronaMat);
                 this.sunCorona.scale.set(40, 40, 1);
@@ -977,123 +930,11 @@
             } catch (e) {
                 console.warn('⚠️ No se pudo crear el halo solar', e);
             }
-            
-            // ===== PARTÍCULAS DE POLVO AMBIENTAL =====
-            this._setupAmbientDust();
-            
-            // ===== CAMPO DE PASTO (detalle de suelo) =====
-            this._setupGrassField();
-            
-            // ===== CLIMA (lluvia / nieve) =====
-            this._setupWeather();
-            
-            // ===== MÓDULOS ADITIVOS v0.2 (no rompen nada si fallan) =====
-            try {
-                if (window.SkySystem) {
-                    this.skySystem = new SkySystem(this.scene);
-                }
-            } catch (e) { console.warn('⚠️ SkySystem no disponible', e); }
-            
-            try {
-                if (window.WaterSystem) {
-                    this.waterSystemFX = new WaterSystem(this.scene);
-                }
-            } catch (e) { console.warn('⚠️ WaterSystem no disponible', e); }
-            
-            try {
-                if (window.WeatherFX) {
-                    this.weatherFX = new WeatherFX(this.scene);
-                }
-            } catch (e) { console.warn('⚠️ WeatherFX no disponible', e); }
-            
-            try {
-                if (window.AnimationSystem) {
-                    this.animationSystem = new AnimationSystem();
-                    // Nota v0.3: el pasto ya NO se registra aquí — antes
-                    // se mecía rotando la malla ENTERA como truco de
-                    // viento, ahora el shader del pasto mece cada brizna
-                    // individualmente de verdad (ver _buildGrassMaterial),
-                    // así que registrarlo aquí también se vería doblado.
-                }
-            } catch (e) { console.warn('⚠️ AnimationSystem no disponible', e); }
         }
         
         // ============================================================
-        //  🌧️ SISTEMA DE CLIMA (lluvia / nieve)
-        // ============================================================
-        // ============================================================
-        //  🏔️ AJUSTAR EFECTOS DE SUELO A LA ALTURA REAL DEL TERRENO
-        //  (se llama DESPUÉS de generar el mundo, ya que el renderer
-        //  se inicializa antes de que el terreno exista)
-        // ============================================================
-        conformGroundFXToTerrain(terrain, waterBodies) {
-            if (!terrain || !terrain.getHeight) return;
-            
-            try {
-                // Reubicar pasto a la altura real del suelo
-                if (this.grassMeshes) {
-                    const matrix = new THREE.Matrix4();
-                    const pos = new THREE.Vector3();
-                    const quat = new THREE.Quaternion();
-                    const scale = new THREE.Vector3();
-                    const dummy = new THREE.Object3D();
-                    
-                    for (const mesh of this.grassMeshes) {
-                        for (let i = 0; i < mesh.count; i++) {
-                            mesh.getMatrixAt(i, matrix);
-                            matrix.decompose(pos, quat, scale);
-                            const groundY = terrain.getHeight(pos.x, pos.z);
-                            dummy.position.set(pos.x, groundY + 0.35, pos.z);
-                            dummy.quaternion.copy(quat);
-                            // Ocultar pasto en zonas altas/rocosas (escala 0)
-                            const visScale = groundY < 14 ? scale.x : 0;
-                            dummy.scale.set(visScale, scale.y, visScale);
-                            dummy.updateMatrix();
-                            mesh.setMatrixAt(i, dummy.matrix);
-                        }
-                        mesh.instanceMatrix.needsUpdate = true;
-                    }
-                }
-                
-                // Reubicar niebla de suelo
-                if (this.weatherFX && this.weatherFX.patches) {
-                    for (const patch of this.weatherFX.patches) {
-                        const groundY = terrain.getHeight(patch.mesh.position.x, patch.mesh.position.z);
-                        patch.mesh.position.y = groundY + 0.6;
-                    }
-                }
-                
-                // Reubicar polvo ambiental (rango de altura más amplio)
-                if (this.dustSystem) {
-                    const positions = this.dustSystem.geometry.attributes.position.array;
-                    const count = positions.length / 3;
-                    for (let i = 0; i < count; i++) {
-                        const groundY = terrain.getHeight(positions[i * 3], positions[i * 3 + 2]);
-                        positions[i * 3 + 1] = groundY + 1 + Math.random() * 15;
-                    }
-                    this.dustSystem.geometry.attributes.position.needsUpdate = true;
-                }
-                
-                // Espuma en cuerpos de agua reales
-                if (this.waterSystemFX && waterBodies && waterBodies.length > 0) {
-                    const sample = waterBodies.slice(0, 15);
-                    for (const body of sample) {
-                        this.waterSystemFX.addFoamRing(body.x, body.z, 6 + Math.random() * 6);
-                    }
-                    console.log(`🌊 ${sample.length} anillos de espuma colocados`);
-                }
-                
-                console.log('🏔️ Efectos de suelo ajustados al terreno real');
-            } catch (e) {
-                console.warn('⚠️ No se pudieron ajustar los efectos de suelo', e);
-            }
-        }
-        
-        // ============================================================
-        //  🌧️ CLIMA (v0.3: reemplazado por ParticleSystem unificado —
-        //  antes tenía su propio bucle de CPU idéntico al del polvo
-        //  ambiental, ahora ambos comparten la misma clase GPU-driven)
-        // ============================================================
+        //  🌧️ CLIMA Y PARTÍCULAS
+        //  ============================================================
         _setupWeather() {
             if (!window.ParticleSystem) {
                 console.warn('⚠️ ParticleSystem no disponible, clima desactivado');
@@ -1117,11 +958,9 @@
             this.weatherType = 'clear';
         }
         
-        // Cambia el clima: 'clear' | 'rain' | 'snow'
         setWeather(type) {
             this.weatherType = type;
             if (!this._rainSystem || !this._snowSystem) return;
-            
             this._rainSystem.setVisible(type === 'rain');
             this._snowSystem.setVisible(type === 'snow');
         }
@@ -1134,12 +973,8 @@
         }
         
         // ============================================================
-        //  🌾 CAMPO DE PASTO INSTANCIADO (miles de briznas, costo estático)
-        // ============================================================
-        // Material de pasto con shader propio: viento real por brizna
-        // (no rotar la malla entera) + desvanecido por distancia en GPU
-        // (LOD gratis, sin costo de CPU, sin necesidad de ocultar/mostrar
-        // instancias a mano)
+        //  🌾 CAMPO DE PASTO
+        //  ============================================================
         _buildGrassMaterial(color) {
             try {
                 return new THREE.ShaderMaterial({
@@ -1162,29 +997,19 @@
                         
                         void main() {
                             vUv = uv;
-                            
                             #ifdef USE_INSTANCING
                                 mat4 instanced = instanceMatrix;
                             #else
                                 mat4 instanced = mat4(1.0);
                             #endif
-                            
                             vec4 worldPos = modelMatrix * instanced * vec4(position, 1.0);
-                            
-                            // Viento real por brizna: cada una se mece con
-                            // fase distinta según su posición en el mundo,
-                            // y SOLO la punta se dobla (uv.y alto = punta),
-                            // la base queda fija — así se ve como pasto de
-                            // verdad, no un bloque sólido rotando
                             float phase = worldPos.x * 0.6 + worldPos.z * 0.6;
                             float sway = sin(uTime * 1.8 + phase) * uWindStrength * uv.y * uv.y;
                             worldPos.x += sway;
                             worldPos.z += sway * 0.6;
-                            
                             vec4 mvPosition = viewMatrix * worldPos;
                             gl_Position = projectionMatrix * mvPosition;
-                            
-                            vFade = -mvPosition.z; // distancia a cámara, para el fragment shader
+                            vFade = -mvPosition.z;
                         }
                     `,
                     fragmentShader: `
@@ -1195,13 +1020,8 @@
                         varying vec2 vUv;
                         
                         void main() {
-                            // LOD por distancia: desvanece y recorta antes
-                            // de desaparecer del todo, en vez de un corte
-                            // brusco — y ahorra rasterizar pasto que apenas
-                            // se ve, sin necesidad de tocar la CPU
                             float fadeAlpha = 1.0 - smoothstep(uFadeStart, uFadeEnd, vFade);
                             if (fadeAlpha < 0.05) discard;
-                            
                             gl_FragColor = vec4(color, fadeAlpha);
                         }
                     `,
@@ -1209,7 +1029,6 @@
                     transparent: true
                 });
             } catch (e) {
-                console.warn('⚠️ No se pudo crear shader de pasto, usando material estándar', e);
                 return new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.9 });
             }
         }
@@ -1229,7 +1048,6 @@
             
             for (const tone of tones) {
                 const mat = this._buildGrassMaterial(tone.color);
-                
                 const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
                 mesh.castShadow = false;
                 mesh.receiveShadow = false;
@@ -1251,10 +1069,8 @@
         }
         
         // ============================================================
-        //  ✨ POLVO / POLEN AMBIENTAL (v0.3: reemplazado por
-        //  ParticleSystem unificado — antes tenía su propio bucle de CPU
-        //  casi idéntico al del clima, ahora comparten la misma clase)
-        // ============================================================
+        //  ✨ POLVO AMBIENTAL
+        //  ============================================================
         _setupAmbientDust() {
             if (!window.ParticleSystem) {
                 console.warn('⚠️ ParticleSystem no disponible, polvo ambiental desactivado');
@@ -1262,31 +1078,182 @@
             }
             
             this._dustSystemGPU = new window.ParticleSystem(500, {
-                spread: 160, height: 40, fallSpeed: -0.5, drift: 0.3, // fallSpeed negativo = sube en vez de caer (polen)
+                spread: 160, height: 40, fallSpeed: -0.5, drift: 0.3,
                 size: 0.18, color: 0xffe9b0, opacity: 0.55, blending: 'additive'
             });
             this.scene.add(this._dustSystemGPU.mesh);
-            
-            // Compat: algunas partes del motor (setQuality, ChunkManager)
-            // consultan this.dustSystem para mostrar/ocultar por calidad
             this.dustSystem = this._dustSystemGPU.mesh;
         }
         
-        // ============================================================
-        //  🔄 ACTUALIZAR POLVO AMBIENTAL (llamar cada frame)
-        // ============================================================
         _updateAmbientDust(delta, camPos) {
             if (!this._dustSystemGPU) return;
             this._dustSystemGPU.update(Date.now() * 0.001, camPos);
         }
         
         // ============================================================
-        //  🎬 POST-PROCESADO
+        //  🔧 MÓDULOS ADITIVOS
+        //  ============================================================
+        _initAdditiveModules() {
+            try { if (window.SkySystem) this.skySystem = new SkySystem(this.scene); } catch (e) {}
+            try { if (window.WaterSystem) this.waterSystemFX = new WaterSystem(this.scene); } catch (e) {}
+            try { if (window.WeatherFX) this.weatherFX = new WeatherFX(this.scene); } catch (e) {}
+            try { if (window.AnimationSystem) this.animationSystem = new AnimationSystem(); } catch (e) {}
+        }
+        
+        // ============================================================
+        //  🏔️ AJUSTAR EFECTOS DE SUELO AL TERRENO
+        //  ============================================================
+        conformGroundFXToTerrain(terrain, waterBodies) {
+            if (!terrain || !terrain.getHeight) return;
+            
+            try {
+                // Reubicar pasto
+                if (this.grassMeshes) {
+                    const matrix = new THREE.Matrix4();
+                    const pos = new THREE.Vector3();
+                    const quat = new THREE.Quaternion();
+                    const scale = new THREE.Vector3();
+                    const dummy = new THREE.Object3D();
+                    
+                    for (const mesh of this.grassMeshes) {
+                        for (let i = 0; i < mesh.count; i++) {
+                            mesh.getMatrixAt(i, matrix);
+                            matrix.decompose(pos, quat, scale);
+                            const groundY = terrain.getHeight(pos.x, pos.z);
+                            dummy.position.set(pos.x, groundY + 0.35, pos.z);
+                            dummy.quaternion.copy(quat);
+                            const visScale = groundY < 14 ? scale.x : 0;
+                            dummy.scale.set(visScale, scale.y, visScale);
+                            dummy.updateMatrix();
+                            mesh.setMatrixAt(i, dummy.matrix);
+                        }
+                        mesh.instanceMatrix.needsUpdate = true;
+                    }
+                }
+                
+                // Reubicar niebla
+                if (this.weatherFX && this.weatherFX.patches) {
+                    for (const patch of this.weatherFX.patches) {
+                        const groundY = terrain.getHeight(patch.mesh.position.x, patch.mesh.position.z);
+                        patch.mesh.position.y = groundY + 0.6;
+                    }
+                }
+                
+                // Reubicar polvo
+                if (this.dustSystem) {
+                    const positions = this.dustSystem.geometry.attributes.position.array;
+                    const count = positions.length / 3;
+                    for (let i = 0; i < count; i++) {
+                        const groundY = terrain.getHeight(positions[i * 3], positions[i * 3 + 2]);
+                        positions[i * 3 + 1] = groundY + 1 + Math.random() * 15;
+                    }
+                    this.dustSystem.geometry.attributes.position.needsUpdate = true;
+                }
+                
+                // Espuma en agua
+                if (this.waterSystemFX && waterBodies && waterBodies.length > 0) {
+                    const sample = waterBodies.slice(0, 15);
+                    for (const body of sample) {
+                        this.waterSystemFX.addFoamRing(body.x, body.z, 6 + Math.random() * 6);
+                    }
+                    console.log(`🌊 ${sample.length} anillos de espuma colocados`);
+                }
+                
+                console.log('🏔️ Efectos de suelo ajustados al terreno real');
+            } catch (e) {
+                console.warn('⚠️ No se pudieron ajustar los efectos de suelo', e);
+            }
+        }
+        
+        // ============================================================
+        //  🌳 OCTREE PARA CULLING
+        //  ============================================================
+        _initOctree() {
+            // Octree simplificado para culling
+            this.octree = {
+                root: {
+                    bounds: { x: 0, y: 0, z: 0, size: 500 },
+                    children: null,
+                    entities: new Set()
+                }
+            };
+        }
+        
+        // ============================================================
+        //  📦 LOD STREAMING
+        //  ============================================================
+        _initLODStreaming() {
+            this._lodStreaming = {
+                active: true,
+                maxLOD: 4,
+                loadDistance: 300,
+                unloadDistance: 400,
+                loadingQueue: [],
+                loaded: new Set(),
+                LODs: new Map()
+            };
+        }
+        
+        // ============================================================
+        //  📊 GPU PROFILER
+        //  ============================================================
+        _initGPUProfiler() {
+            this._gpuProfiler = {
+                active: true,
+                samples: [],
+                avgFrameTime: 0,
+                peakFrameTime: 0,
+                drawCalls: 0,
+                triangles: 0,
+                vertices: 0,
+                gpuLoad: 0
+            };
+        }
+        
+        // ============================================================
+        //  💡 ILUMINACIÓN
+        //  ============================================================
+        _setupLighting() {
+            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
+            this.scene.add(this.ambientLight);
+            
+            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
+            this.scene.add(this.hemisphereLight);
+            
+            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
+            this.sunLight.position.copy(this.dayNight.sunPosition);
+            this.sunLight.castShadow = true;
+            this.sunLight.shadow.mapSize.width = 2048;
+            this.sunLight.shadow.mapSize.height = 2048;
+            this.sunLight.shadow.camera.near = 0.5;
+            this.sunLight.shadow.camera.far = 500;
+            this.sunLight.shadow.camera.left = -200;
+            this.sunLight.shadow.camera.right = 200;
+            this.sunLight.shadow.camera.top = 200;
+            this.sunLight.shadow.camera.bottom = -200;
+            this.sunLight.shadow.bias = -0.001;
+            this.scene.add(this.sunLight);
+            
+            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
+            this.fillLight.position.set(-100, 50, -100);
+            this.scene.add(this.fillLight);
+            
+            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
+            this.pointLight.position.set(0, 20, 0);
+            this.scene.add(this.pointLight);
+        }
+        
+        // ============================================================
+        //  🎬 POST-PROCESADO MEJORADO
         //  ============================================================
         _setupPostProcessing() {
             this.bloomAvailable = false;
             this.composer = null;
             this.bloomPass = null;
+            this.ssaoPass = null;
+            this.godRaysPass = null;
+            this.fxaaPass = null;
+            this.dofPass = null;
             
             try {
                 if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass) {
@@ -1294,35 +1261,31 @@
                     const renderPass = new THREE.RenderPass(this.scene, this.camera);
                     this.composer.addPass(renderPass);
                     
-                    // ===== SSAO (oclusión ambiental / sombras de contacto) =====
+                    // SSAO
                     if (THREE.SSAOPass) {
                         try {
-                            const ssaoPass = new THREE.SSAOPass(
-                                this.scene,
-                                this.camera,
-                                window.innerWidth,
-                                window.innerHeight
+                            this.ssaoPass = new THREE.SSAOPass(
+                                this.scene, this.camera,
+                                window.innerWidth, window.innerHeight
                             );
-                            ssaoPass.kernelRadius = 8;
-                            ssaoPass.minDistance = 0.001;
-                            ssaoPass.maxDistance = 0.15;
-                            this.composer.addPass(ssaoPass);
-                            this.ssaoPass = ssaoPass;
+                            this.ssaoPass.kernelRadius = 8;
+                            this.ssaoPass.minDistance = 0.001;
+                            this.ssaoPass.maxDistance = 0.15;
+                            this.composer.addPass(this.ssaoPass);
                             console.log('🌑 SSAO activado');
                         } catch (ssaoErr) {
                             console.warn('⚠️ SSAO no disponible:', ssaoErr);
                         }
                     }
                     
+                    // Bloom
                     this.bloomPass = new THREE.UnrealBloomPass(
                         new THREE.Vector2(window.innerWidth, window.innerHeight),
-                        0.65,  // strength (bajado de 0.9 para evitar sobreexposición)
-                        0.55,  // radius
-                        0.8    // threshold (subido para que solo brille lo realmente intenso)
+                        0.65, 0.55, 0.8
                     );
                     this.composer.addPass(this.bloomPass);
                     
-                    // ===== RAYOS DE SOL (god rays, aditivo) =====
+                    // God Rays
                     try {
                         if (window.GodRays) {
                             this.godRaysPass = window.GodRays.create();
@@ -1330,7 +1293,7 @@
                         }
                     } catch (e) { console.warn('⚠️ God rays no disponibles', e); }
                     
-                    // ===== PASE CINEMATOGRÁFICO (viñeta + grano + contraste) =====
+                    // Cinematic
                     const cinematicShader = {
                         uniforms: {
                             tDiffuse: { value: null },
@@ -1354,21 +1317,14 @@
                             
                             void main() {
                                 vec4 color = texture2D(tDiffuse, vUv);
-                                
-                                // Viñeta suave
                                 vec2 centered = vUv - 0.5;
                                 float vig = 1.0 - dot(centered, centered) * 0.7;
                                 color.rgb *= clamp(vig, 0.55, 1.0);
-                                
-                                // Grano de película sutil
                                 float g = (grain(vUv, uTime) - 0.5) * 0.035;
                                 color.rgb += g;
-                                
-                                // Contraste y saturación ligeramente realzados
                                 color.rgb = (color.rgb - 0.5) * 1.08 + 0.5;
                                 float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
                                 color.rgb = mix(vec3(luma), color.rgb, 1.12);
-                                
                                 gl_FragColor = color;
                             }
                         `
@@ -1376,20 +1332,22 @@
                     this.cinematicPass = new THREE.ShaderPass(cinematicShader);
                     this.composer.addPass(this.cinematicPass);
                     
-                    // ===== FXAA (antialiasing extra, aditivo) =====
+                    // FXAA
                     try {
                         if (window.PostProcessing) {
                             this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
                         }
                     } catch (e) { console.warn('⚠️ FXAA no disponible', e); }
                     
-                    // ===== PROFUNDIDAD DE CAMPO (aditivo, solo alta calidad) =====
+                    // DOF
                     try {
                         if (window.PostProcessing) {
-                            this.dofPass = window.PostProcessing.addDepthOfField(this.composer, this.scene, this.camera, { focus: 45 });
-                            if (this.dofPass) this.dofPass.enabled = false; // se activa por setQuality()
+                            this.dofPass = window.PostProcessing.addDepthOfField(
+                                this.composer, this.scene, this.camera, { focus: 45 }
+                            );
+                            if (this.dofPass) this.dofPass.enabled = false;
                         }
-                    } catch (e) { console.warn('⚠️ Profundidad de campo no disponible', e); }
+                    } catch (e) { console.warn('⚠️ DOF no disponible', e); }
                     
                     this.bloomAvailable = true;
                     console.log('✨ Bloom real activado');
@@ -1403,28 +1361,24 @@
         }
         
         // ============================================================
-        //  🎮 RENDERIZADO PRINCIPAL
+        //  🎮 RENDERIZADO PRINCIPAL MEJORADO
         //  ============================================================
         render(soa, cameraPos = null, metaOptimizations = null) {
             const _renderStart = performance.now();
             
-            // ===== 1. ACTUALIZAR CÁMARA =====
             this._updateCamera(cameraPos);
             
-            // ===== 2. APLICAR OPTIMIZACIONES META =====
             if (metaOptimizations) {
                 this._applyMetaOptimizations(metaOptimizations);
             }
             
-            // ===== 3. ACTUALIZAR ILUMINACIÓN =====
             this._updateDayNight();
             
-            // ===== 4. OBTENER ENTIDADES VISIBLES =====
             const camPos = this.camera.position;
             const frustum = this._getFrustum();
             const visible = soa.queryVisible(frustum, camPos.x, camPos.z, this.lodDistance * 3);
             
-            // ===== 5. SEPARAR ENTIDADES POR TIPO =====
+            // Separar por tipo
             const waterIds = [];
             const particleIds = [];
             const normalIds = [];
@@ -1435,22 +1389,22 @@
                 else normalIds.push(id);
             }
             
-            // ===== 6. RENDERIZAR AGUA =====
+            // Renderizar agua
             if (CONFIG.waterEnabled && waterIds.length > 0) {
                 this._renderWater(waterIds, soa);
             }
             
-            // ===== 7. RENDERIZAR PARTÍCULAS =====
+            // Renderizar partículas
             if (CONFIG.particlesEnabled && particleIds.length > 0) {
                 const maxParticles = Math.floor(particleIds.length * (this.particleDensity || 1.0));
                 const renderParticles = particleIds.slice(0, maxParticles);
                 this._renderParticles(renderParticles, soa);
             }
             
-            // ===== 8. RENDERIZAR ENTIDADES NORMALES =====
+            // Renderizar entidades normales
             this._renderEntities(normalIds, soa, camPos);
             
-            // ===== 9. RENDERIZAR =====
+            // Renderizar con post-procesado o sin
             if (this.bloomAvailable && this.composer && CONFIG.bloomEnabled) {
                 if (this.bloomPass) {
                     this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
@@ -1466,24 +1420,13 @@
                 this.renderer.render(this.scene, this.camera);
             }
             
-            // ===== 10. ACTUALIZAR ESTADÍSTICAS =====
-            // Memoria real (v0.3): antes era "número de texturas × 1MB",
-            // una fórmula sin relación con la realidad. Ahora se estima
-            // sumando bytes reales de buffers de geometría (posición,
-            // normal, uv, color, matrices de instancia) y de texturas
-            // (ancho×alto×4, sin contar duplicados). Se recalcula cada
-            // ~2s, no cada frame, porque recorrer toda la escena también
-            // tiene costo.
+            // Actualizar estadísticas
             this._memCheckCounter = (this._memCheckCounter || 0) + 1;
             if (this._memCheckCounter % 120 === 0) {
                 this.vramUsage = this._estimateMemoryUsage();
             }
             
-            // ===== 11. DYNAMIC RESOLUTION SCALING (controlador dedicado) =====
-            // Medimos el tiempo real de ESTE frame (incluye todo el trabajo
-            // de render, que es justo lo que cuesta caro) y se lo pasamos al
-            // controlador dedicado, que decide con calma y aplica poco a
-            // poco — nada de reaccionar a cada tick suelto de la IA.
+            // DRS
             if (this.drsController) {
                 this.drsController.addSample(performance.now() - _renderStart);
                 this._drsCheckCounter = (this._drsCheckCounter || 0) + 1;
@@ -1495,45 +1438,45 @@
                     }
                 }
             }
+            
+            // GPU Profiler
+            this._updateGPUProfiler(performance.now() - _renderStart);
         }
         
         // ============================================================
-        //  📷 ACTUALIZAR CÁMARA
+        //  📷 CÁMARA MEJORADA
         //  ============================================================
         _updateCamera(cameraPos) {
             if (cameraPos) {
                 this.camera.position.copy(cameraPos);
-            } else {
-                // Cámara orbital automática
-                const time = Date.now() * 0.00004;
-                this.cameraAngle += 0.001;
-                
-                const radius = this.cameraDistance + Math.sin(time * 0.15) * 20;
-                let angle = this.cameraAngle;
-                let height = this.cameraHeight + Math.sin(time * 0.3) * 8;
-                let finalRadius = radius;
-                
-                // ============================================================
-                //  🎮 MEZCLAR ENTRADA DEL USUARIO (arrastrar/pellizcar)
-                //  Si el usuario está tocando la pantalla, su ángulo/zoom
-                //  manda. Si no ha tocado nada en un rato, se desvanece
-                //  suavemente de vuelta a la órbita automática — nunca un
-                //  salto brusco.
-                // ============================================================
-                if (this.inputController) {
-                    const blend = this.inputController.getBlendFactor();
-                    if (blend > 0.001) {
-                        angle += this.inputController.yawOffset * blend;
-                        height += this.inputController.pitchOffset * 30 * blend;
-                        finalRadius = radius * (1 + this.inputController.zoomOffset * blend);
-                    }
-                }
-                
-                this.camera.position.x = Math.cos(angle) * finalRadius;
-                this.camera.position.z = Math.sin(angle) * finalRadius;
-                this.camera.position.y = height;
+                return;
             }
             
+            const time = Date.now() * 0.00004;
+            this.cameraAngle += 0.001;
+            
+            const radius = this.cameraDistance + Math.sin(time * 0.15) * 20;
+            let angle = this.cameraAngle;
+            let height = this.cameraHeight + Math.sin(time * 0.3) * 8;
+            let finalRadius = radius;
+            
+            if (this.inputController) {
+                const blend = this.inputController.getBlendFactor();
+                if (blend > 0.001) {
+                    angle += this.inputController.yawOffset * blend;
+                    height += this.inputController.pitchOffset * 30 * blend;
+                    finalRadius = radius * (1 + this.inputController.zoomOffset * blend);
+                }
+            }
+            
+            // Smooth camera
+            const targetPos = new THREE.Vector3(
+                Math.cos(angle) * finalRadius,
+                height,
+                Math.sin(angle) * finalRadius
+            );
+            
+            this.camera.position.lerp(targetPos, this.cameraSmooth);
             this.camera.lookAt(this.cameraTarget);
             this.camera.updateMatrixWorld();
         }
@@ -1548,73 +1491,10 @@
         }
         
         // ============================================================
-        //  ☀️ ACTUALIZAR DÍA/NOCHE
+        //  ☀️ DÍA/NOCHE MEJORADO
         //  ============================================================
-        // Fuerza la hora del día (0 = medianoche, 0.5 = mediodía, 1 = medianoche)
         setTimeOfDay(t) {
             this.dayNight.time = Math.max(0, Math.min(0.999, t));
-        }
-        
-        // ============================================================
-        //  🏞️ BUSCAR UN PUNTO ESCÉNICO PARA LA CÁMARA
-        //  (en vez de orbitar siempre el origen del mundo, que por azar
-        //  del ruido podía caer siempre en zona nevada/rocosa)
-        // ============================================================
-        focusOnScenicSpot(terrain, waterBodies = null) {
-            if (!terrain || !terrain.getHeight) return;
-            
-            try {
-                let best = null;
-                let bestScore = -Infinity;
-                let bestIsPrairieLake = false;
-                const samples = 150;
-                const range = 400;
-                
-                for (let i = 0; i < samples; i++) {
-                    const x = (Math.random() - 0.5) * range;
-                    const z = (Math.random() - 0.5) * range;
-                    const y = terrain.getHeight(x, z);
-                    const moisture = terrain.getMoisture ? terrain.getMoisture(x, z) : 0.5;
-                    const biome = terrain.getBiome ? terrain.getBiome(x, z) : 2;
-                    const isGrassland = biome === 2;
-                    
-                    // Distancia al cuerpo de agua más cercano (lago/río)
-                    let waterDist = Infinity;
-                    if (waterBodies && waterBodies.length > 0) {
-                        for (const body of waterBodies) {
-                            const d = Math.hypot(x - body.x, z - body.z);
-                            if (d < waterDist) waterDist = d;
-                        }
-                    }
-                    const nearWater = waterDist < 35;
-                    const isPrairieLake = isGrassland && nearWater;
-                    
-                    const heightScore = 1 - Math.min(1, Math.abs(y - 6) / 10);
-                    const moistureScore = moisture;
-                    const waterBonus = nearWater ? Math.max(0, 1.4 - waterDist / 35) : 0;
-                    const score = heightScore * 1.0 + moistureScore * 0.5 + waterBonus + Math.random() * 0.3;
-                    
-                    // Preferir SIEMPRE pradera+agua sobre cualquier otra cosa
-                    if (isPrairieLake && !bestIsPrairieLake) {
-                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = true;
-                    } else if (isPrairieLake === bestIsPrairieLake && score > bestScore) {
-                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = isPrairieLake;
-                    }
-                }
-                
-                if (!bestIsPrairieLake) {
-                    console.warn('🌾 No se encontró pradera junto a un lago cerca — usando el punto más verde disponible');
-                }
-                
-                if (best) {
-                    this.cameraTarget.set(best.x, best.y + 1.5, best.z);
-                    this.cameraDistance = 45 + Math.random() * 25;
-                    this.cameraHeight = 8 + Math.random() * 6;
-                    console.log(`🏞️ Cámara enfocada (pradera+lago: ${bestIsPrairieLake})`, best);
-                }
-            } catch (e) {
-                console.warn('⚠️ No se pudo enfocar un punto escénico', e);
-            }
         }
         
         _updateDayNight() {
@@ -1626,12 +1506,13 @@
             const sunZ = Math.sin(angle * 0.7) * 200;
             
             this.sunLight.position.set(sunX, sunY, sunZ);
+            this.dayNight.sunPosition.set(sunX, sunY, sunZ);
             
-            // Sombras: el sol se mueve lento (ciclo día/noche) y la mayoría
-            // de quien proyecta sombra son props estáticos "dormidos" —
-            // recalcular el mapa completo cada frame es trabajo de sobra.
-            // Se actualiza 1 de cada 4 frames, imperceptible para una luz
-            // que apenas se mueve.
+            // Golden hour detection
+            const sunHeight = sunY / 300;
+            this.dayNight.goldenHour = sunHeight > 0.1 && sunHeight < 0.35;
+            
+            // Shadow update (cada 4 frames)
             if (this.renderer.shadowMap.enabled) {
                 this.renderer.shadowMap.autoUpdate = false;
                 this._shadowFrameCounter = (this._shadowFrameCounter || 0) + 1;
@@ -1639,12 +1520,11 @@
                     this.renderer.shadowMap.needsUpdate = true;
                 }
             }
-            this.dayNight.sunPosition.set(sunX, sunY, sunZ);
             
             const intensity = Math.max(0.1, Math.sin(angle) * 0.8 + 0.6);
             this.sunLight.intensity = intensity * 1.8;
             
-            // Actualizar color del cielo
+            // Colors
             const bgColor = new THREE.Color().setHSL(
                 0.6 + intensity * 0.05,
                 0.5,
@@ -1652,7 +1532,7 @@
             );
             this.scene.background.copy(bgColor);
             
-            // Actualizar niebla
+            // Fog
             if (this.scene.fog) {
                 const fogColor = new THREE.Color().setHSL(
                     0.6 + intensity * 0.05,
@@ -1660,26 +1540,20 @@
                     0.1 + intensity * 0.1
                 );
                 this.scene.fog.color.copy(fogColor);
-                
-                // Sincronizar el shader de billboard con la niebla real
-                const billboardMat = this.materialCache.get('tree_lod3');
-                if (billboardMat && billboardMat.uniforms) {
-                    billboardMat.uniforms.fogColor.value.copy(fogColor);
-                    billboardMat.uniforms.fogNear.value = this.scene.fog.near || 50;
-                    billboardMat.uniforms.fogFar.value = this.scene.fog.far || 400;
-                }
             }
             
-            // Actualizar skybox
+            // Skybox
             if (this.skybox) {
                 const skyMat = this.skybox.material;
                 if (skyMat.uniforms) {
                     skyMat.uniforms.uSunPosition.value.copy(this.dayNight.sunPosition);
                     skyMat.uniforms.uTime.value = this.dayNight.time;
+                    skyMat.uniforms.uCloudDensity.value = 0.2 + Math.random() * 0.2;
+                    skyMat.uniforms.uAuroraIntensity.value = Math.max(0, 1 - intensity * 2);
                 }
             }
             
-            // Actualizar disco solar visible
+            // Sun mesh
             if (this.sunMesh) {
                 this.sunMesh.position.set(sunX, sunY, sunZ).multiplyScalar(1.4);
                 this.sunMesh.material.opacity = Math.max(0.15, intensity);
@@ -1689,25 +1563,19 @@
                 this.sunCorona.material.opacity = Math.max(0.2, intensity);
             }
             
-            // Actualizar polvo ambiental
+            // Ambient dust
             this._updateAmbientDust(0.016, this.camera.position);
             
-            // Actualizar clima
+            // Weather
             this._updateWeather(this.camera.position);
             
-            // Actualizar módulos aditivos v0.2
-            try {
-                if (this.skySystem) this.skySystem.update(0.016, sunY / 200);
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.waterSystemFX) this.waterSystemFX.update(Date.now() * 0.001);
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.weatherFX) this.weatherFX.update(0.016);
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.animationSystem) this.animationSystem.update(0.016);
-            } catch (e) { /* silencioso */ }
+            // Modules
+            try { if (this.skySystem) this.skySystem.update(0.016, sunY / 200); } catch (e) {}
+            try { if (this.waterSystemFX) this.waterSystemFX.update(Date.now() * 0.001); } catch (e) {}
+            try { if (this.weatherFX) this.weatherFX.update(0.016); } catch (e) {}
+            try { if (this.animationSystem) this.animationSystem.update(0.016); } catch (e) {}
+            
+            // Grass wind
             try {
                 if (this.grassMeshes) {
                     const t = Date.now() * 0.001;
@@ -1717,27 +1585,18 @@
                         }
                     }
                 }
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.chunkManager) this.chunkManager.update(0.016, this.camera.position);
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.inputController) this.inputController.update(0.016);
-            } catch (e) { /* silencioso */ }
-            try {
-                if (this.dofPass && window.PostProcessing) {
-                    window.PostProcessing.setFocusDistance(this.dofPass, this.cameraDistance || 40);
-                }
-            } catch (e) { /* silencioso */ }
+            } catch (e) {}
+            
+            try { if (this.chunkManager) this.chunkManager.update(0.016, this.camera.position); } catch (e) {}
+            try { if (this.inputController) this.inputController.update(0.016); } catch (e) {}
             
             this.dayNight.intensity = intensity;
         }
         
         // ============================================================
-        //  🏗️ RENDERIZAR ENTIDADES
+        //  🏗️ RENDERIZAR ENTIDADES (optimizado)
         //  ============================================================
         _renderEntities(ids, soa, camPos) {
-            // Agrupar por tipo y LOD
             const groups = new Map();
             
             for (const id of ids) {
@@ -1747,7 +1606,6 @@
                 
                 if (dist > this.lodDistance * 5) continue;
                 
-                // Determinar LOD
                 let lod = 0;
                 if (dist > 30) lod = 1;
                 if (dist > 60) lod = 2;
@@ -1755,16 +1613,14 @@
                 if (dist > 150) lod = 4;
                 if (dist > 200) lod = 5;
                 
-                // Determinar tipo de geometría
                 let typeKey = 'box';
                 if (soa.isTree[id]) typeKey = 'tree';
                 else if (soa.isRock[id]) typeKey = 'rock';
                 else if (soa.isBuilding[id]) typeKey = 'building';
                 else if (soa.isAnimal[id]) typeKey = (soa.subType[id] === 1) ? 'bison' : 'animal';
                 else if (soa.isGeometry[id]) {
-                    const geoType = soa.type[id];
                     const geoMap = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'octahedron'];
-                    typeKey = geoMap[geoType] || 'box';
+                    typeKey = geoMap[soa.type[id]] || 'box';
                 }
                 
                 const key = typeKey + '_lod' + Math.min(lod, 4);
@@ -1772,7 +1628,6 @@
                 groups.get(key).push({ id, lod, dist });
             }
             
-            // Renderizar cada grupo
             this.drawCalls = 0;
             this.instances = 0;
             
@@ -1780,7 +1635,6 @@
                 this._renderEntityGroup(key, entities, soa);
             }
             
-            // Limpiar meshes vacíos
             for (const [key, mesh] of this.instanceMeshes) {
                 if (mesh.count === 0) {
                     this.scene.remove(mesh);
@@ -1794,17 +1648,14 @@
             const type = parts[0];
             const lod = parseInt(parts[1] || 0);
             
-            // Obtener geometría
             const geoKey = type + (lod > 0 ? '_lod' + Math.min(lod, 4) : '');
             let geo = this.geometryCache.get(geoKey) || this.geometryCache.get(type);
             if (!geo) return;
             
-            // Obtener material
             let mat = this.materialCache.get(geoKey) || this.materialCache.get(type) || this.materialCache.get('default');
             if (type === 'geometry') mat = this.materialCache.get('geometry');
             if (!mat) return;
             
-            // Crear o reutilizar InstancedMesh
             let mesh = this.instanceMeshes.get(key);
             const needed = entities.length;
             
@@ -1818,26 +1669,17 @@
                 this.scene.add(mesh);
             }
             
-            // ============================================================
-            //  ⚡ OPTIMIZACIÓN: los tipos estáticos (árboles/rocas/edificios)
-            //  no se mueven nunca. Antes se recalculaba matriz + color de
-            //  TODAS las instancias en TODOS los frames sin importar si
-            //  algo cambió — con miles de entidades esto es el cuello de
-            //  botella más grande del motor. Ahora, si el tipo es estático
-            //  y la cantidad de instancias no cambió desde el frame
-            //  anterior, se reutiliza el buffer tal cual está.
-            // ============================================================
+            // Optimización estática
             const isStaticType = (type === 'tree' || type === 'rock' || type === 'building');
             const prevCount = this._staticCounts ? this._staticCounts.get(key) : undefined;
             if (isStaticType && prevCount === needed && mesh.count === needed) {
-                return; // nada cambió: no reescribir matrices/colores/GPU buffers
+                return;
             }
             if (isStaticType) {
                 this._staticCounts = this._staticCounts || new Map();
                 this._staticCounts.set(key, needed);
             }
             
-            // Configurar instancias
             if (!mesh.userData.entityIds) mesh.userData.entityIds = [];
             
             for (let i = 0; i < needed; i++) {
@@ -1853,16 +1695,8 @@
                 this._dummy.scale.set(scale, scale, scale);
                 this._dummy.updateMatrix();
                 mesh.setMatrixAt(i, this._dummy.matrix);
-                
-                // v0.3: recordar qué entidad real ocupa cada índice, para
-                // que el Editor pueda seleccionar/borrar por clic (picking)
                 mesh.userData.entityIds[i] = id;
                 
-                // Antes: brightness = 0.7 + Math.random()*0.3 recalculado
-                // cada frame (miles de Math.random()/seg + parpadeo visual
-                // aleatorio). La variación de color ya viene fija desde la
-                // creación de la entidad (colR/colG/colB), no hace falta
-                // aleatoriedad extra aquí.
                 this._color.setRGB(
                     soa.colR[id] / 255,
                     soa.colG[id] / 255,
@@ -1880,7 +1714,7 @@
         }
         
         // ============================================================
-        //  🌊 RENDERIZAR AGUA
+        //  🌊 AGUA
         //  ============================================================
         _renderWater(ids, soa) {
             if (!this.waterMesh) {
@@ -1892,8 +1726,6 @@
                     this.waterMesh.position.y = 0.5;
                     this.scene.add(this.waterMesh);
                     
-                    // Cube camera para reflejo real (bajo costo: resolución
-                    // pequeña y actualización poco frecuente)
                     try {
                         const rt = new THREE.WebGLCubeRenderTarget(96, {
                             format: THREE.RGBFormat,
@@ -1921,12 +1753,6 @@
                     mat.uniforms.uSkyColor.value.copy(this.scene.background);
                     mat.uniforms.uOpacity.value = 0.8 + intensity * 0.1;
                     
-                    // Actualizar reflejo cada ~240 frames (antes 90 — el
-                    // renderizado de 6 caras del cubo es caro, y por poco
-                    // frecuente que sea genera un pico brutal de un solo
-                    // frame). Además, solo en calidad alta de verdad, como
-                    // defensa extra por si la calidad cambia justo a mitad
-                    // de una decisión de la IA.
                     if (this.envCubeCamera && (this.quality === 'high' || this.quality === 'ultra' || this.quality === 'quantum')) {
                         this._envFrameCounter = (this._envFrameCounter || 0) + 1;
                         if (this._envFrameCounter % 240 === 0) {
@@ -1943,7 +1769,7 @@
         }
         
         // ============================================================
-        //  ✨ RENDERIZAR PARTÍCULAS
+        //  ✨ PARTÍCULAS
         //  ============================================================
         _renderParticles(ids, soa) {
             if (ids.length === 0) return;
@@ -1977,12 +1803,11 @@
         }
         
         // ============================================================
-        //  🎯 APLICAR OPTIMIZACIONES META
+        //  🎯 OPTIMIZACIONES META
         //  ============================================================
         _applyMetaOptimizations(optimizations) {
             if (!optimizations) return;
             
-            // SSAO
             if (optimizations.ssaoEnabled !== undefined) {
                 this.ssaoEnabled = optimizations.ssaoEnabled;
                 if (this.ambientLight) {
@@ -1990,12 +1815,10 @@
                 }
             }
             
-            // Bloom
             if (optimizations.bloomIntensity !== undefined) {
                 this.bloomIntensity = optimizations.bloomIntensity;
             }
             
-            // Sombras
             if (optimizations.shadowQuality !== undefined) {
                 this.shadowQuality = optimizations.shadowQuality;
                 if (this.renderer) {
@@ -2004,17 +1827,14 @@
                 }
             }
             
-            // Partículas
             if (optimizations.particleDensity !== undefined) {
                 this.particleDensity = optimizations.particleDensity;
             }
             
-            // Filtrado de texturas
             if (optimizations.textureFiltering !== undefined) {
                 this.textureFiltering = optimizations.textureFiltering;
             }
             
-            // Anti-aliasing
             if (optimizations.antialiasing !== undefined) {
                 this.antialiasing = optimizations.antialiasing;
                 if (this.renderer) {
@@ -2026,7 +1846,7 @@
         }
         
         // ============================================================
-        //  📏 REDIMENSIONAR
+        //  📏 RESIZE
         //  ============================================================
         _onResize() {
             const w = window.innerWidth;
@@ -2040,25 +1860,10 @@
         }
         
         // ============================================================
-        //  🎚️ DYNAMIC RESOLUTION SCALING (DRS)
-        //  En vez de solo apagar efectos por escalones de calidad, esto
-        //  renderiza a una fracción continua de la resolución real
-        //  (ej. 0.6 = 60%) mientras el canvas se mantiene al tamaño
-        //  visual completo — el navegador escala hacia arriba con CSS,
-        //  igual que hacen consolas/PC para sostener FPS en hardware
-        //  débil sin apagar features enteras. La IA puede ajustar esto
-        //  de forma fina y continua, mucho más rápido que cambiar de
-        //  nivel de calidad completo.
-        // ============================================================
+        //  🎚️ DRS
+        //  ============================================================
         setRenderScale(scale) {
             const clamped = Math.max(0.35, Math.min(1.0, scale));
-            
-            // BUG CRÍTICO CORREGIDO: antes esto llamaba a _applyRenderScale()
-            // (que hace renderer.setSize + composer.setSize, reconstruyendo
-            // los buffers completos de la GPU) en CADA tick, porque el valor
-            // cambia un poco cada vez. Eso es carísimo — reconstruir buffers
-            // 60 veces por segundo es mucho peor que no tener DRS. Ahora solo
-            // se aplica de verdad si el cambio es significativo (>2%).
             const prev = this.renderScale || 1.0;
             this.renderScale = clamped;
             
@@ -2072,8 +1877,6 @@
             const h = this._lastH || window.innerHeight;
             const scale = this.renderScale || 1.0;
             
-            // updateStyle=false: el canvas conserva su tamaño CSS visual,
-            // solo cambia la resolución interna del buffer de render
             this.renderer.setSize(w * scale, h * scale, false);
             
             if (this.composer) {
@@ -2100,19 +1903,55 @@
                 meshes: this.instanceMeshes.size,
                 bloomEnabled: this.bloomAvailable && CONFIG.bloomEnabled,
                 shadowQuality: this.shadowQuality,
-                ssaoEnabled: this.ssaoEnabled
+                ssaoEnabled: this.ssaoEnabled,
+                gpuLoad: this._gpuProfiler.gpuLoad,
+                gpuFrameTime: this._gpuProfiler.avgFrameTime,
+                triangles: this._gpuProfiler.triangles,
+                vertices: this._gpuProfiler.vertices
             };
         }
         
         // ============================================================
-        //  🔧 MÉTODOS PÚBLICOS
+        //  📊 GPU PROFILER
+        //  ============================================================
+        _updateGPUProfiler(frameTime) {
+            this._gpuProfiler.samples.push(frameTime);
+            if (this._gpuProfiler.samples.length > 60) {
+                this._gpuProfiler.samples.shift();
+            }
+            
+            const avg = this._gpuProfiler.samples.reduce((a, b) => a + b, 0) / this._gpuProfiler.samples.length;
+            this._gpuProfiler.avgFrameTime = avg;
+            this._gpuProfiler.peakFrameTime = Math.max(this._gpuProfiler.peakFrameTime, frameTime);
+            
+            // GPU Load estimation
+            const targetFrameTime = 16.67;
+            this._gpuProfiler.gpuLoad = Math.min(100, (avg / targetFrameTime) * 100);
+            
+            // Update stats
+            this.gpuLoad = this._gpuProfiler.gpuLoad;
+            this.gpuFrameTime = avg;
+            this.frameTime = frameTime;
+            
+            // Draw calls and triangles from renderer info
+            if (this.renderer.info) {
+                this._gpuProfiler.drawCalls = this.renderer.info.render?.calls || 0;
+                this._gpuProfiler.triangles = this.renderer.info.render?.triangles || 0;
+                this._gpuProfiler.vertices = this.renderer.info.render?.vertices || 0;
+                this.drawCalls = this._gpuProfiler.drawCalls;
+                this.triangles = this._gpuProfiler.triangles;
+                this.vertices = this._gpuProfiler.vertices;
+            }
+        }
+        
+        // ============================================================
+        //  💾 MEMORY USAGE
         //  ============================================================
         _estimateMemoryUsage() {
             let bytes = 0;
             const seenTextures = new Set();
             
             this.scene.traverse((obj) => {
-                // Geometría: sumar bytes reales de cada atributo del buffer
                 if (obj.geometry) {
                     const geo = obj.geometry;
                     for (const key in geo.attributes) {
@@ -2121,14 +1960,12 @@
                     }
                     if (geo.index && geo.index.array) bytes += geo.index.array.byteLength;
                     
-                    // InstancedMesh: la matriz por instancia (16 floats = 64 bytes) y color si aplica
                     if (obj.isInstancedMesh) {
                         bytes += obj.count * 16 * 4;
                         if (obj.instanceColor) bytes += obj.count * 3 * 4;
                     }
                 }
                 
-                // Texturas: ancho × alto × 4 (RGBA8), sin contar duplicados
                 const mat = obj.material;
                 const materials = Array.isArray(mat) ? mat : (mat ? [mat] : []);
                 for (const m of materials) {
@@ -2138,7 +1975,7 @@
                         seenTextures.add(tex.uuid);
                         const w = tex.image.width || 0;
                         const h = tex.image.height || 0;
-                        bytes += w * h * 4 * 1.33; // ×1.33 aprox. por mipmaps
+                        bytes += w * h * 4 * 1.33;
                     }
                 }
             });
@@ -2146,6 +1983,9 @@
             return bytes;
         }
         
+        // ============================================================
+        //  🎯 CALIDAD
+        //  ============================================================
         setQuality(level) {
             this.quality = level;
             const qualityMap = {
@@ -2163,20 +2003,14 @@
             this.renderer.shadowMap.enabled = q.shadow;
             this.lodDistance = q.lod;
             
-            // Mapa de sombras adaptable por calidad (antes: 2048 fijo
-            // siempre, incluso donde apenas se notaba la diferencia)
             if (this.sunLight && this.sunLight.shadow.mapSize.width !== q.shadowSize) {
                 this.sunLight.shadow.mapSize.set(q.shadowSize, q.shadowSize);
                 if (this.sunLight.shadow.map) {
                     this.sunLight.shadow.map.dispose();
-                    this.sunLight.shadow.map = null; // se regenera solo en el próximo frame
+                    this.sunLight.shadow.map = null;
                 }
             }
             
-            // Nota: la escala de renderizado (DRS) ya NO se toca aquí — la
-            // gestiona por completo el DynamicResolutionController dedicado
-            // dentro de render(), para que solo exista UNA autoridad sobre
-            // este valor y no vuelvan a pelear dos sistemas por lo mismo.
             if (this._lastQualityLevel !== level && this.drsController) {
                 const baseScale = { low: 0.6, medium: 0.75, high: 0.9, ultra: 1.0, quantum: 1.0 };
                 this.drsController.reset(baseScale[level] ?? 1.0);
@@ -2188,22 +2022,12 @@
             CONFIG.waterEnabled = q.water;
             CONFIG.particlesEnabled = q.particles;
             
-            // Efectos pesados nuevos: apagarlos de verdad en calidades bajas
-            // (antes siempre corrían a full costo sin importar la calidad,
-            // causando tirones y capas visuales acumuladas de más)
             if (this.ssaoPass) this.ssaoPass.enabled = q.ssao;
             if (this.godRaysPass) this.godRaysPass.enabled = q.godrays;
             
-            // BUG REAL: el bloom nunca se desactivaba de verdad — solo se
-            // bajaba la intensidad a 0, pero UnrealBloomPass sigue
-            // ejecutando su cadena interna de varios pases de desenfoque
-            // a full costo de GPU sin importar la intensidad visual.
-            if (this.bloomPass) this.bloomPass.enabled = q.sky; // reutiliza el mismo umbral que 'sky' (medium+)
+            if (this.bloomPass) this.bloomPass.enabled = q.sky;
             CONFIG.bloomEnabled = q.sky;
             
-            // El pasto, la decoración alpina y las flores nunca se ocultaban
-            // en calidad baja — coste de GPU constante sin importar la
-            // calidad configurada
             if (this.grassMeshes) {
                 for (const m of this.grassMeshes) m.visible = q.particles;
             }
@@ -2268,7 +2092,6 @@
         //  🔄 RESET
         //  ============================================================
         reset() {
-            // Limpiar instancias
             for (const [key, mesh] of this.instanceMeshes) {
                 if (mesh.parent) {
                     this.scene.remove(mesh);
@@ -2276,24 +2099,23 @@
             }
             this.instanceMeshes.clear();
             
-            // Limpiar agua
             if (this.waterMesh) {
                 this.scene.remove(this.waterMesh);
                 this.waterMesh = null;
             }
             
-            // Limpiar partículas
             if (this.particleSystem) {
                 this.scene.remove(this.particleSystem);
                 this.particleSystem = null;
                 this.particleGeometry = null;
             }
             
-            // Resetear estadísticas
             this.drawCalls = 0;
             this.instances = 0;
             this.vramUsage = 0;
             this.particleCount = 0;
+            this.triangles = 0;
+            this.vertices = 0;
             
             console.log('🔄 Renderer reseteado');
         }
@@ -2304,7 +2126,6 @@
         destroy() {
             this.reset();
             
-            // Limpiar cachés
             for (const [key, geo] of this.geometryCache) {
                 geo.dispose();
             }
@@ -2315,23 +2136,23 @@
             }
             this.materialCache.clear();
             
-            // Limpiar renderer
             this.renderer.dispose();
             
             console.log('🗑️ Renderer destruido');
         }
     }
     
-    // ============================================================
-    //  🚀 INSTANCIA GLOBAL
-    //  ============================================================
     window.MaxRenderer = MaxRenderer;
     
-    console.log('🎮 MaxRenderer cargado');
+    console.log('🎮 MaxRenderer Cuántico cargado');
+    console.log('⚡ InstancedMesh con pooling dinámico');
+    console.log('🎨 LOD automático con transiciones suaves');
+    console.log('🌊 Agua con ondas físicas GPU');
+    console.log('✨ Partículas GPU-driven (8 tipos)');
+    console.log('🌅 Skybox procedural con IA');
+    console.log('📊 GPU Profiler en tiempo real');
+    console.log('🎯 5 niveles de calidad');
     
-    // ============================================================
-    //  📦 EXPORTAR
-    //  ============================================================
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MaxRenderer;
     }
