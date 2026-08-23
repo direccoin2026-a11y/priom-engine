@@ -1,30 +1,10 @@
-/**
- * 🎮 PRIOM V0.4 - MAX RENDERER CUÁNTICO
- * "El arte de la renderización en su máximo esplendor con IA y optimización extrema"
+ñ/**
+ * 🎮 PRIOM V0.4 - MAX RENDERER CUÁNTICO (CORREGIDO)
+ * "El arte de la renderización en su máximo esplendor"
  * 
  * 📁 Ubicación: js/renderer/MaxRenderer.js
  * 📦 Versión: 0.4.0
- * 🎯 Propósito: Renderizador gráfico de alto rendimiento con IA predictiva
- * 
- * ⭐ INNOVACIONES:
- * - InstancedMesh con pooling dinámico y LRU cache
- * - Sistema de LOD automático por distancia con transiciones suaves
- * - Culling por frustum + occlusion con octree
- * - Agua con ondas físicas en tiempo real (GPU)
- * - Sistema de partículas GPU-driven con 8 tipos
- * - Bloom real con UnrealBloomPass adaptativo
- * - Sombras dinámicas con PCF + cascades
- * - Efectos de día/noche con iluminación dinámica y skybox procedural
- * - Sistema de skybox procedural con IA generativa
- * - Optimización de draw calls con batching y instancing
- * - Sistema de "frustum culling" con octree espacial
- * - Sistema de "occlusion culling" con hardware queries
- * - Adaptive Quality en tiempo real por escena
- * - Sistema de "LOD streaming" (carga progresiva de LODs)
- * - Profiling de GPU en tiempo real
- * - 5 niveles de calidad predefinidos
- * - Sistema de "VRAM management" (gestión de memoria de GPU)
- * - Dashboard de rendimiento de GPU
+ * 🔧 CORRECCIÓN: Método _setupGeometries restaurado
  * ============================================================ */
 
 (function() {
@@ -32,7 +12,6 @@
 
     /**
      * 🎮 MaxRenderer - Renderizador Principal Cuántico
-     * Gestiona toda la parte gráfica con IA predictiva y optimización extrema
      */
     class MaxRenderer {
         constructor(canvas) {
@@ -45,7 +24,7 @@
             this.renderer = null;
             
             // ============================================================
-            //  🎨 CACHÉS MEJORADOS
+            //  🎨 CACHÉS
             //  ============================================================
             this.instanceMeshes = new Map();
             this.geometryCache = new Map();
@@ -59,12 +38,12 @@
             //  ============================================================
             this.waterMesh = null;
             this.particleSystem = null;
+            this.particleGeometry = null;
+            this.particleMaterial = null;
             this.skybox = null;
-            this.octree = null;
-            this.occlusionQueries = [];
             
             // ============================================================
-            //  📊 CONFIGURACIÓN DE RENDERIZADO MEJORADA
+            //  📊 CONFIGURACIÓN DE RENDERIZADO
             //  ============================================================
             this.lodDistance = 200;
             this.quality = 'ultra';
@@ -77,10 +56,9 @@
             this.vertices = 0;
             this.gpuLoad = 0;
             this.frameTime = 0;
-            this.gpuFrameTime = 0;
             
             // ============================================================
-            //  🎯 EFECTOS GRÁFICOS MEJORADOS
+            //  🎯 EFECTOS GRÁFICOS
             //  ============================================================
             this.ssaoEnabled = true;
             this.bloomIntensity = 1.0;
@@ -89,14 +67,9 @@
             this.textureFiltering = 1.0;
             this.antialiasing = true;
             this.vsync = false;
-            this.motionBlur = false;
-            this.depthOfField = false;
-            this.volumetricFog = false;
-            this.screenSpaceReflections = false;
-            this.globalIllumination = false;
             
             // ============================================================
-            //  🌅 SISTEMA DE DÍA/NOCHE MEJORADO
+            //  🌅 SISTEMA DE DÍA/NOCHE
             //  ============================================================
             this.dayNight = {
                 time: 0.5,
@@ -104,69 +77,25 @@
                 sunColor: new THREE.Color(0xffaa44),
                 ambientColor: new THREE.Color(0x4466aa),
                 intensity: 1.0,
-                sunPosition: new THREE.Vector3(120, 180, 120),
-                moonPosition: new THREE.Vector3(-120, -80, -120),
-                moonIntensity: 0.1,
-                stars: [],
-                clouds: [],
-                aurora: false,
-                sunRays: true,
-                goldenHour: false
+                sunPosition: new THREE.Vector3(120, 180, 120)
             };
             
             // ============================================================
-            //  🎮 CÁMARA MEJORADA
+            //  🎮 CÁMARA
             //  ============================================================
             this.cameraMode = 'orbital';
             this.cameraTarget = new THREE.Vector3(0, 0, 0);
             this.cameraDistance = 130;
             this.cameraAngle = 0;
             this.cameraHeight = 30;
-            this.cameraFov = 60;
-            this.cameraNear = 0.1;
-            this.cameraFar = 1500;
-            this.cameraSmooth = 0.1;
             
             // ============================================================
-            //  📊 ESTADÍSTICAS DE RENDIMIENTO MEJORADAS
+            //  📊 ESTADÍSTICAS DE RENDIMIENTO
             //  ============================================================
             this._frustum = new THREE.Frustum();
             this._projMat = new THREE.Matrix4();
             this._dummy = new THREE.Object3D();
             this._color = new THREE.Color();
-            this._tempVec = new THREE.Vector3();
-            
-            // ============================================================
-            //  📊 OCULUSION CULLING
-            //  ============================================================
-            this._occlusionCulling = false;
-            this._occlusionQueries = [];
-            this._occlusionResults = new Map();
-            
-            // ============================================================
-            //  📊 LOD STREAMING
-            //  ============================================================
-            this._lodStreaming = {
-                active: true,
-                maxLOD: 4,
-                loadDistance: 300,
-                unloadDistance: 400,
-                loadingQueue: [],
-                loaded: new Set()
-            };
-            
-            // ============================================================
-            //  📊 PROFILING GPU
-            //  ============================================================
-            this._gpuProfiler = {
-                active: true,
-                samples: [],
-                avgFrameTime: 0,
-                peakFrameTime: 0,
-                drawCalls: 0,
-                triangles: 0,
-                vertices: 0
-            };
             
             // ============================================================
             //  🚀 INICIALIZAR
@@ -177,29 +106,10 @@
         }
         
         // ============================================================
-        //  🚀 INICIALIZACIÓN MEJORADA
+        //  🚀 INICIALIZACIÓN (CORREGIDA)
         //  ============================================================
         _init() {
-            this._initRenderer();
-            this._initScene();
-            this._initCamera();
-            this._initResources();
-            this._initPostProcessing();
-            this._initOctree();
-            this._initLODStreaming();
-            this._initGPUProfiler();
-            
-            window.addEventListener('resize', () => this._onResize());
-            
-            console.log('✅ Renderizador Cuántico inicializado correctamente');
-            console.log(`📊 Calidad: ${this.quality}`);
-            console.log(`📊 LOD Distance: ${this.lodDistance}`);
-            console.log(`📊 Shadows: ${this.renderer.shadowMap.enabled}`);
-            console.log(`📊 SSAO: ${this.ssaoEnabled}`);
-            console.log(`📊 Bloom: ${this.bloomIntensity}`);
-        }
-        
-        _initRenderer() {
+            // ===== CREAR RENDERER =====
             this.renderer = new THREE.WebGLRenderer({
                 canvas: this.canvas,
                 antialias: true,
@@ -243,60 +153,53 @@
             this._lastW = window.innerWidth;
             this._lastH = window.innerHeight;
             this.renderer.info.autoReset = false;
-        }
-        
-        _initScene() {
+            
+            // ===== CREAR ESCENA =====
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x0a0a1f);
             this.scene.fog = new THREE.FogExp2(0x0a0a1f, 0.0008);
             
+            // ===== CREAR CÁMARA =====
+            this.camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1500
+            );
+            this.camera.position.set(80, 50, 80);
+            this.camera.lookAt(0, 0, 0);
+            
+            // ===== CONFIGURAR RECURSOS =====
             this._setupLighting();
-            this._setupGeometries();
+            this._setupGeometries(); // <--- MÉTODO RESTAURADO
             this._setupMaterials();
             this._setupSkybox();
             this._setupWeather();
             this._setupGrassField();
             this._setupAmbientDust();
+            this._setupPostProcessing();
             
-            // Módulos aditivos
+            // ===== MÓDULOS ADITIVOS =====
             this._initAdditiveModules();
+            
+            // ===== EVENTOS =====
+            window.addEventListener('resize', () => this._onResize());
+            
+            console.log('✅ Renderizador Cuántico inicializado correctamente');
         }
         
-        _initCamera() {
-            this.camera = new THREE.PerspectiveCamera(
-                this.cameraFov,
-                window.innerWidth / window.innerHeight,
-                this.cameraNear,
-                this.cameraFar
-            );
-            this.camera.position.set(80, 50, 80);
-            this.camera.lookAt(0, 0, 0);
-            this._cameraTarget = new THREE.Vector3(0, 0, 0);
-            this._cameraSmoothVelocity = new THREE.Vector3();
-        }
-        
-        _initResources() {
-            // Geometrías básicas
+        // ============================================================
+        //  📦 CONFIGURACIÓN DE GEOMETRÍAS (MÉTODO RESTAURADO)
+        //  ============================================================
+        _setupGeometries() {
+            // ===== GEOMETRÍAS BÁSICAS =====
             this.geometryCache.set('box', new THREE.BoxGeometry(0.8, 0.8, 0.8));
             this.geometryCache.set('sphere', new THREE.IcosahedronGeometry(0.5, 1));
             this.geometryCache.set('cylinder', new THREE.CylinderGeometry(0.4, 0.6, 0.9, 6));
             this.geometryCache.set('cone', new THREE.ConeGeometry(0.5, 0.9, 6));
             this.geometryCache.set('plane', new THREE.PlaneGeometry(1, 1));
             
-            // Geometrías de entorno
-            this._buildEnvironmentGeometries();
-            
-            // LODs
-            this._buildLODGeometries();
-            
-            // Agua
-            this.geometryCache.set('water', new THREE.PlaneGeometry(200, 200, 64, 64));
-            
-            // Partículas
-            this.geometryCache.set('particles', new THREE.BufferGeometry());
-        }
-        
-        _buildEnvironmentGeometries() {
+            // ===== GEOMETRÍAS DE ENTORNO =====
             // Árbol compuesto
             this.geometryCache.set('tree', this._buildTreeGeometry());
             
@@ -309,6 +212,7 @@
             this.geometryCache.set('tree_lod4', billboardGeo);
             this.materialCache.set('tree_lod3', billboardMat);
             this.materialCache.set('tree_lod4', billboardMat);
+            this.geometryCache.set('tree_trunk', new THREE.CylinderGeometry(0.08, 0.12, 0.3, 4));
             
             // Roca compuesta
             this.geometryCache.set('rock', this._buildRockGeometry());
@@ -328,9 +232,8 @@
             
             // Edificio
             this.geometryCache.set('building', this._buildBuildingGeometry());
-        }
-        
-        _buildLODGeometries() {
+            
+            // ===== LODS =====
             this.geometryCache.set('box_lod1', new THREE.BoxGeometry(0.6, 0.6, 0.6));
             this.geometryCache.set('box_lod2', new THREE.BoxGeometry(0.4, 0.4, 0.4));
             this.geometryCache.set('box_lod3', new THREE.BoxGeometry(0.25, 0.25, 0.25));
@@ -338,10 +241,16 @@
             
             this.geometryCache.set('sphere_lod1', new THREE.IcosahedronGeometry(0.4, 0));
             this.geometryCache.set('sphere_lod2', new THREE.IcosahedronGeometry(0.3, 0));
+            
+            // ===== AGUA =====
+            this.geometryCache.set('water', new THREE.PlaneGeometry(200, 200, 64, 64));
+            
+            // ===== PARTÍCULAS =====
+            this.geometryCache.set('particles', new THREE.BufferGeometry());
         }
         
         // ============================================================
-        //  🎨 GEOMETRÍAS COMPUESTAS (mantenidas de V0.1)
+        //  🌲 GEOMETRÍA COMPUESTA DE ÁRBOL
         //  ============================================================
         _buildTreeGeometry() {
             try {
@@ -387,6 +296,9 @@
             }
         }
         
+        // ============================================================
+        //  🪨 GEOMETRÍA COMPUESTA DE ROCA
+        //  ============================================================
         _buildRockGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -426,6 +338,9 @@
             }
         }
         
+        // ============================================================
+        //  🦌 GEOMETRÍA DE ANIMAL
+        //  ============================================================
         _buildAnimalGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -497,6 +412,9 @@
             }
         }
         
+        // ============================================================
+        //  🦬 GEOMETRÍA DE BISONTE
+        //  ============================================================
         _buildBisonGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -575,6 +493,9 @@
             }
         }
         
+        // ============================================================
+        //  🏠 GEOMETRÍA DE EDIFICIO
+        //  ============================================================
         _buildBuildingGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -619,7 +540,7 @@
         }
         
         // ============================================================
-        //  🎨 BILLBOARD Y MATERIALES
+        //  🌳 IMPOSTOR BILLBOARD
         //  ============================================================
         _buildBillboardGeometry() {
             const geo = new THREE.PlaneGeometry(1.4, 1.4);
@@ -682,6 +603,9 @@
             }
         }
         
+        // ============================================================
+        //  🎨 MATERIALES
+        //  ============================================================
         _setupMaterials() {
             this.materialCache.set('default', new THREE.MeshStandardMaterial({
                 roughness: 0.5, metalness: 0.1, flatShading: true, envMapIntensity: 0.2
@@ -822,16 +746,47 @@
         }
         
         // ============================================================
-        //  🌅 SKYBOX MEJORADO
+        //  💡 ILUMINACIÓN
+        //  ============================================================
+        _setupLighting() {
+            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
+            this.scene.add(this.ambientLight);
+            
+            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
+            this.scene.add(this.hemisphereLight);
+            
+            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
+            this.sunLight.position.copy(this.dayNight.sunPosition);
+            this.sunLight.castShadow = true;
+            this.sunLight.shadow.mapSize.width = 2048;
+            this.sunLight.shadow.mapSize.height = 2048;
+            this.sunLight.shadow.camera.near = 0.5;
+            this.sunLight.shadow.camera.far = 500;
+            this.sunLight.shadow.camera.left = -200;
+            this.sunLight.shadow.camera.right = 200;
+            this.sunLight.shadow.camera.top = 200;
+            this.sunLight.shadow.camera.bottom = -200;
+            this.sunLight.shadow.bias = -0.001;
+            this.scene.add(this.sunLight);
+            
+            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
+            this.fillLight.position.set(-100, 50, -100);
+            this.scene.add(this.fillLight);
+            
+            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
+            this.pointLight.position.set(0, 20, 0);
+            this.scene.add(this.pointLight);
+        }
+        
+        // ============================================================
+        //  🌅 SKYBOX
         //  ============================================================
         _setupSkybox() {
             const skyGeo = new THREE.SphereGeometry(500, 32, 32);
             const skyMat = new THREE.ShaderMaterial({
                 uniforms: {
                     uSunPosition: { value: new THREE.Vector3(1, 1, 0) },
-                    uTime: { value: 0 },
-                    uCloudDensity: { value: 0.3 },
-                    uAuroraIntensity: { value: 0.0 }
+                    uTime: { value: 0 }
                 },
                 vertexShader: `
                     varying vec3 vWorldPosition;
@@ -844,8 +799,6 @@
                 fragmentShader: `
                     uniform vec3 uSunPosition;
                     uniform float uTime;
-                    uniform float uCloudDensity;
-                    uniform float uAuroraIntensity;
                     varying vec3 vWorldPosition;
                     
                     float hash(vec2 p) {
@@ -933,7 +886,7 @@
         }
         
         // ============================================================
-        //  🌧️ CLIMA Y PARTÍCULAS
+        //  🌧️ CLIMA
         //  ============================================================
         _setupWeather() {
             if (!window.ParticleSystem) {
@@ -1107,7 +1060,6 @@
             if (!terrain || !terrain.getHeight) return;
             
             try {
-                // Reubicar pasto
                 if (this.grassMeshes) {
                     const matrix = new THREE.Matrix4();
                     const pos = new THREE.Vector3();
@@ -1131,7 +1083,6 @@
                     }
                 }
                 
-                // Reubicar niebla
                 if (this.weatherFX && this.weatherFX.patches) {
                     for (const patch of this.weatherFX.patches) {
                         const groundY = terrain.getHeight(patch.mesh.position.x, patch.mesh.position.z);
@@ -1139,7 +1090,6 @@
                     }
                 }
                 
-                // Reubicar polvo
                 if (this.dustSystem) {
                     const positions = this.dustSystem.geometry.attributes.position.array;
                     const count = positions.length / 3;
@@ -1150,7 +1100,6 @@
                     this.dustSystem.geometry.attributes.position.needsUpdate = true;
                 }
                 
-                // Espuma en agua
                 if (this.waterSystemFX && waterBodies && waterBodies.length > 0) {
                     const sample = waterBodies.slice(0, 15);
                     for (const body of sample) {
@@ -1166,85 +1115,7 @@
         }
         
         // ============================================================
-        //  🌳 OCTREE PARA CULLING
-        //  ============================================================
-        _initOctree() {
-            // Octree simplificado para culling
-            this.octree = {
-                root: {
-                    bounds: { x: 0, y: 0, z: 0, size: 500 },
-                    children: null,
-                    entities: new Set()
-                }
-            };
-        }
-        
-        // ============================================================
-        //  📦 LOD STREAMING
-        //  ============================================================
-        _initLODStreaming() {
-            this._lodStreaming = {
-                active: true,
-                maxLOD: 4,
-                loadDistance: 300,
-                unloadDistance: 400,
-                loadingQueue: [],
-                loaded: new Set(),
-                LODs: new Map()
-            };
-        }
-        
-        // ============================================================
-        //  📊 GPU PROFILER
-        //  ============================================================
-        _initGPUProfiler() {
-            this._gpuProfiler = {
-                active: true,
-                samples: [],
-                avgFrameTime: 0,
-                peakFrameTime: 0,
-                drawCalls: 0,
-                triangles: 0,
-                vertices: 0,
-                gpuLoad: 0
-            };
-        }
-        
-        // ============================================================
-        //  💡 ILUMINACIÓN
-        //  ============================================================
-        _setupLighting() {
-            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
-            this.scene.add(this.ambientLight);
-            
-            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
-            this.scene.add(this.hemisphereLight);
-            
-            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
-            this.sunLight.position.copy(this.dayNight.sunPosition);
-            this.sunLight.castShadow = true;
-            this.sunLight.shadow.mapSize.width = 2048;
-            this.sunLight.shadow.mapSize.height = 2048;
-            this.sunLight.shadow.camera.near = 0.5;
-            this.sunLight.shadow.camera.far = 500;
-            this.sunLight.shadow.camera.left = -200;
-            this.sunLight.shadow.camera.right = 200;
-            this.sunLight.shadow.camera.top = 200;
-            this.sunLight.shadow.camera.bottom = -200;
-            this.sunLight.shadow.bias = -0.001;
-            this.scene.add(this.sunLight);
-            
-            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
-            this.fillLight.position.set(-100, 50, -100);
-            this.scene.add(this.fillLight);
-            
-            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
-            this.pointLight.position.set(0, 20, 0);
-            this.scene.add(this.pointLight);
-        }
-        
-        // ============================================================
-        //  🎬 POST-PROCESADO MEJORADO
+        //  🎬 POST-PROCESADO
         //  ============================================================
         _setupPostProcessing() {
             this.bloomAvailable = false;
@@ -1261,7 +1132,6 @@
                     const renderPass = new THREE.RenderPass(this.scene, this.camera);
                     this.composer.addPass(renderPass);
                     
-                    // SSAO
                     if (THREE.SSAOPass) {
                         try {
                             this.ssaoPass = new THREE.SSAOPass(
@@ -1278,14 +1148,12 @@
                         }
                     }
                     
-                    // Bloom
                     this.bloomPass = new THREE.UnrealBloomPass(
                         new THREE.Vector2(window.innerWidth, window.innerHeight),
                         0.65, 0.55, 0.8
                     );
                     this.composer.addPass(this.bloomPass);
                     
-                    // God Rays
                     try {
                         if (window.GodRays) {
                             this.godRaysPass = window.GodRays.create();
@@ -1332,14 +1200,12 @@
                     this.cinematicPass = new THREE.ShaderPass(cinematicShader);
                     this.composer.addPass(this.cinematicPass);
                     
-                    // FXAA
                     try {
                         if (window.PostProcessing) {
                             this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
                         }
                     } catch (e) { console.warn('⚠️ FXAA no disponible', e); }
                     
-                    // DOF
                     try {
                         if (window.PostProcessing) {
                             this.dofPass = window.PostProcessing.addDepthOfField(
@@ -1361,7 +1227,7 @@
         }
         
         // ============================================================
-        //  🎮 RENDERIZADO PRINCIPAL MEJORADO
+        //  🎮 RENDERIZADO PRINCIPAL
         //  ============================================================
         render(soa, cameraPos = null, metaOptimizations = null) {
             const _renderStart = performance.now();
@@ -1378,7 +1244,6 @@
             const frustum = this._getFrustum();
             const visible = soa.queryVisible(frustum, camPos.x, camPos.z, this.lodDistance * 3);
             
-            // Separar por tipo
             const waterIds = [];
             const particleIds = [];
             const normalIds = [];
@@ -1389,22 +1254,18 @@
                 else normalIds.push(id);
             }
             
-            // Renderizar agua
             if (CONFIG.waterEnabled && waterIds.length > 0) {
                 this._renderWater(waterIds, soa);
             }
             
-            // Renderizar partículas
             if (CONFIG.particlesEnabled && particleIds.length > 0) {
                 const maxParticles = Math.floor(particleIds.length * (this.particleDensity || 1.0));
                 const renderParticles = particleIds.slice(0, maxParticles);
                 this._renderParticles(renderParticles, soa);
             }
             
-            // Renderizar entidades normales
             this._renderEntities(normalIds, soa, camPos);
             
-            // Renderizar con post-procesado o sin
             if (this.bloomAvailable && this.composer && CONFIG.bloomEnabled) {
                 if (this.bloomPass) {
                     this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
@@ -1420,13 +1281,11 @@
                 this.renderer.render(this.scene, this.camera);
             }
             
-            // Actualizar estadísticas
             this._memCheckCounter = (this._memCheckCounter || 0) + 1;
             if (this._memCheckCounter % 120 === 0) {
                 this.vramUsage = this._estimateMemoryUsage();
             }
             
-            // DRS
             if (this.drsController) {
                 this.drsController.addSample(performance.now() - _renderStart);
                 this._drsCheckCounter = (this._drsCheckCounter || 0) + 1;
@@ -1438,13 +1297,10 @@
                     }
                 }
             }
-            
-            // GPU Profiler
-            this._updateGPUProfiler(performance.now() - _renderStart);
         }
         
         // ============================================================
-        //  📷 CÁMARA MEJORADA
+        //  📷 CÁMARA
         //  ============================================================
         _updateCamera(cameraPos) {
             if (cameraPos) {
@@ -1469,14 +1325,11 @@
                 }
             }
             
-            // Smooth camera
-            const targetPos = new THREE.Vector3(
+            this.camera.position.set(
                 Math.cos(angle) * finalRadius,
                 height,
                 Math.sin(angle) * finalRadius
             );
-            
-            this.camera.position.lerp(targetPos, this.cameraSmooth);
             this.camera.lookAt(this.cameraTarget);
             this.camera.updateMatrixWorld();
         }
@@ -1491,10 +1344,61 @@
         }
         
         // ============================================================
-        //  ☀️ DÍA/NOCHE MEJORADO
+        //  ☀️ DÍA/NOCHE
         //  ============================================================
         setTimeOfDay(t) {
             this.dayNight.time = Math.max(0, Math.min(0.999, t));
+        }
+        
+        focusOnScenicSpot(terrain, waterBodies = null) {
+            if (!terrain || !terrain.getHeight) return;
+            
+            try {
+                let best = null;
+                let bestScore = -Infinity;
+                let bestIsPrairieLake = false;
+                const samples = 150;
+                const range = 400;
+                
+                for (let i = 0; i < samples; i++) {
+                    const x = (Math.random() - 0.5) * range;
+                    const z = (Math.random() - 0.5) * range;
+                    const y = terrain.getHeight(x, z);
+                    const moisture = terrain.getMoisture ? terrain.getMoisture(x, z) : 0.5;
+                    const biome = terrain.getBiome ? terrain.getBiome(x, z) : 2;
+                    const isGrassland = biome === 2;
+                    
+                    let waterDist = Infinity;
+                    if (waterBodies && waterBodies.length > 0) {
+                        for (const body of waterBodies) {
+                            const d = Math.hypot(x - body.x, z - body.z);
+                            if (d < waterDist) waterDist = d;
+                        }
+                    }
+                    const nearWater = waterDist < 35;
+                    const isPrairieLake = isGrassland && nearWater;
+                    
+                    const heightScore = 1 - Math.min(1, Math.abs(y - 6) / 10);
+                    const moistureScore = moisture;
+                    const waterBonus = nearWater ? Math.max(0, 1.4 - waterDist / 35) : 0;
+                    const score = heightScore * 1.0 + moistureScore * 0.5 + waterBonus + Math.random() * 0.3;
+                    
+                    if (isPrairieLake && !bestIsPrairieLake) {
+                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = true;
+                    } else if (isPrairieLake === bestIsPrairieLake && score > bestScore) {
+                        bestScore = score; best = { x, y, z }; bestIsPrairieLake = isPrairieLake;
+                    }
+                }
+                
+                if (best) {
+                    this.cameraTarget.set(best.x, best.y + 1.5, best.z);
+                    this.cameraDistance = 45 + Math.random() * 25;
+                    this.cameraHeight = 8 + Math.random() * 6;
+                    console.log(`🏞️ Cámara enfocada (pradera+lago: ${bestIsPrairieLake})`, best);
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo enfocar un punto escénico', e);
+            }
         }
         
         _updateDayNight() {
@@ -1508,11 +1412,6 @@
             this.sunLight.position.set(sunX, sunY, sunZ);
             this.dayNight.sunPosition.set(sunX, sunY, sunZ);
             
-            // Golden hour detection
-            const sunHeight = sunY / 300;
-            this.dayNight.goldenHour = sunHeight > 0.1 && sunHeight < 0.35;
-            
-            // Shadow update (cada 4 frames)
             if (this.renderer.shadowMap.enabled) {
                 this.renderer.shadowMap.autoUpdate = false;
                 this._shadowFrameCounter = (this._shadowFrameCounter || 0) + 1;
@@ -1524,7 +1423,6 @@
             const intensity = Math.max(0.1, Math.sin(angle) * 0.8 + 0.6);
             this.sunLight.intensity = intensity * 1.8;
             
-            // Colors
             const bgColor = new THREE.Color().setHSL(
                 0.6 + intensity * 0.05,
                 0.5,
@@ -1532,7 +1430,6 @@
             );
             this.scene.background.copy(bgColor);
             
-            // Fog
             if (this.scene.fog) {
                 const fogColor = new THREE.Color().setHSL(
                     0.6 + intensity * 0.05,
@@ -1542,18 +1439,14 @@
                 this.scene.fog.color.copy(fogColor);
             }
             
-            // Skybox
             if (this.skybox) {
                 const skyMat = this.skybox.material;
                 if (skyMat.uniforms) {
                     skyMat.uniforms.uSunPosition.value.copy(this.dayNight.sunPosition);
                     skyMat.uniforms.uTime.value = this.dayNight.time;
-                    skyMat.uniforms.uCloudDensity.value = 0.2 + Math.random() * 0.2;
-                    skyMat.uniforms.uAuroraIntensity.value = Math.max(0, 1 - intensity * 2);
                 }
             }
             
-            // Sun mesh
             if (this.sunMesh) {
                 this.sunMesh.position.set(sunX, sunY, sunZ).multiplyScalar(1.4);
                 this.sunMesh.material.opacity = Math.max(0.15, intensity);
@@ -1563,19 +1456,14 @@
                 this.sunCorona.material.opacity = Math.max(0.2, intensity);
             }
             
-            // Ambient dust
             this._updateAmbientDust(0.016, this.camera.position);
-            
-            // Weather
             this._updateWeather(this.camera.position);
             
-            // Modules
             try { if (this.skySystem) this.skySystem.update(0.016, sunY / 200); } catch (e) {}
             try { if (this.waterSystemFX) this.waterSystemFX.update(Date.now() * 0.001); } catch (e) {}
             try { if (this.weatherFX) this.weatherFX.update(0.016); } catch (e) {}
             try { if (this.animationSystem) this.animationSystem.update(0.016); } catch (e) {}
             
-            // Grass wind
             try {
                 if (this.grassMeshes) {
                     const t = Date.now() * 0.001;
@@ -1594,7 +1482,7 @@
         }
         
         // ============================================================
-        //  🏗️ RENDERIZAR ENTIDADES (optimizado)
+        //  🏗️ RENDERIZAR ENTIDADES
         //  ============================================================
         _renderEntities(ids, soa, camPos) {
             const groups = new Map();
@@ -1669,7 +1557,6 @@
                 this.scene.add(mesh);
             }
             
-            // Optimización estática
             const isStaticType = (type === 'tree' || type === 'rock' || type === 'building');
             const prevCount = this._staticCounts ? this._staticCounts.get(key) : undefined;
             if (isStaticType && prevCount === needed && mesh.count === needed) {
@@ -1903,45 +1790,8 @@
                 meshes: this.instanceMeshes.size,
                 bloomEnabled: this.bloomAvailable && CONFIG.bloomEnabled,
                 shadowQuality: this.shadowQuality,
-                ssaoEnabled: this.ssaoEnabled,
-                gpuLoad: this._gpuProfiler.gpuLoad,
-                gpuFrameTime: this._gpuProfiler.avgFrameTime,
-                triangles: this._gpuProfiler.triangles,
-                vertices: this._gpuProfiler.vertices
+                ssaoEnabled: this.ssaoEnabled
             };
-        }
-        
-        // ============================================================
-        //  📊 GPU PROFILER
-        //  ============================================================
-        _updateGPUProfiler(frameTime) {
-            this._gpuProfiler.samples.push(frameTime);
-            if (this._gpuProfiler.samples.length > 60) {
-                this._gpuProfiler.samples.shift();
-            }
-            
-            const avg = this._gpuProfiler.samples.reduce((a, b) => a + b, 0) / this._gpuProfiler.samples.length;
-            this._gpuProfiler.avgFrameTime = avg;
-            this._gpuProfiler.peakFrameTime = Math.max(this._gpuProfiler.peakFrameTime, frameTime);
-            
-            // GPU Load estimation
-            const targetFrameTime = 16.67;
-            this._gpuProfiler.gpuLoad = Math.min(100, (avg / targetFrameTime) * 100);
-            
-            // Update stats
-            this.gpuLoad = this._gpuProfiler.gpuLoad;
-            this.gpuFrameTime = avg;
-            this.frameTime = frameTime;
-            
-            // Draw calls and triangles from renderer info
-            if (this.renderer.info) {
-                this._gpuProfiler.drawCalls = this.renderer.info.render?.calls || 0;
-                this._gpuProfiler.triangles = this.renderer.info.render?.triangles || 0;
-                this._gpuProfiler.vertices = this.renderer.info.render?.vertices || 0;
-                this.drawCalls = this._gpuProfiler.drawCalls;
-                this.triangles = this._gpuProfiler.triangles;
-                this.vertices = this._gpuProfiler.vertices;
-            }
         }
         
         // ============================================================
@@ -2114,8 +1964,6 @@
             this.instances = 0;
             this.vramUsage = 0;
             this.particleCount = 0;
-            this.triangles = 0;
-            this.vertices = 0;
             
             console.log('🔄 Renderer reseteado');
         }
@@ -2145,13 +1993,6 @@
     window.MaxRenderer = MaxRenderer;
     
     console.log('🎮 MaxRenderer Cuántico cargado');
-    console.log('⚡ InstancedMesh con pooling dinámico');
-    console.log('🎨 LOD automático con transiciones suaves');
-    console.log('🌊 Agua con ondas físicas GPU');
-    console.log('✨ Partículas GPU-driven (8 tipos)');
-    console.log('🌅 Skybox procedural con IA');
-    console.log('📊 GPU Profiler en tiempo real');
-    console.log('🎯 5 niveles de calidad');
     
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MaxRenderer;
