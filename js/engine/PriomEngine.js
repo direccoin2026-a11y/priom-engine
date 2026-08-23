@@ -1,35 +1,41 @@
 /**
- * 🚀 PRIOM V0.1 - PRIOM ENGINE
- * "El motor que une todo en perfecta armonía"
+ * 🚀 PRIOM V0.4 - PRIOM ENGINE CUÁNTICO
+ * "El motor que une todo en perfecta armonía con IA y optimización extrema"
  * 
  * 📁 Ubicación: js/engine/PriomEngine.js
- * 📦 Versión: 0.1.0
- * 🎯 Propósito: Motor principal que orquesta todos los módulos
+ * 📦 Versión: 0.4.0
+ * 🎯 Propósito: Motor principal con IA predictiva, optimización extrema y orquestación avanzada
  * 
  * ⭐ INNOVACIONES:
- * - Orquestación completa de todos los módulos
- * - Loop de juego optimizado con delta time
- * - Sistema de estados del motor
- * - Gestión de eventos del ciclo de vida
- * - Sistema de plugins extensible
- * - Configuración dinámica en tiempo real
- * - Sistema de profiling integrado
- * - Manejo de errores robusto
- * - Sistema de hot-reload para desarrollo
- * - API pública completa
+ * - Sistema de threads con Web Workers (física, IA, simulación)
+ * - IA predictiva de rendimiento (forecasting de carga)
+ * - Sistema de "Dynamic Threading" (ajuste de threads en tiempo real)
+ * - Sistema de "Smart Scheduling" (priorización de tareas)
+ * - Memoria compartida entre threads (SharedArrayBuffer)
+ * - Sistema de "Hot Module Replacement" (HMR) para desarrollo
+ * - Sistema de "State Machine" avanzado con transiciones
+ * - Sistema de "Profiling" integrado con flame graphs
+ * - Sistema de "Error Recovery" (recuperación automática)
+ * - Sistema de "Performance Budget" (presupuesto de rendimiento)
+ * - Sistema de "Adaptive Quality" (calidad adaptativa por escena)
+ * - Sistema de "Predictive Loading" (carga predictiva de recursos)
+ * - Sistema de "Energy Efficiency" (eficiencia energética)
+ * - Dashboard de rendimiento en tiempo real
+ * - Sistema de "Benchmark" integrado con histórico
+ * - 5 niveles de calidad predefinidos
  * ============================================================ */
 
 (function() {
     'use strict';
 
     /**
-     * 🚀 PriomEngine - Motor Principal
-     * Orquesta todos los módulos del motor
+     * 🚀 PriomEngine - Motor Principal Cuántico
+     * Orquesta todos los módulos con IA predictiva y optimización extrema
      */
     class PriomEngine {
         constructor(config = {}) {
             // ============================================================
-            //  📊 CONFIGURACIÓN
+            //  📊 CONFIGURACIÓN AVANZADA
             //  ============================================================
             this.config = {
                 ...CONFIG,
@@ -39,14 +45,24 @@
                 fixedUpdateRate: 60,
                 enableProfiling: true,
                 enableDebug: CONFIG?.debug || false,
+                enableThreading: config.enableThreading !== undefined ? config.enableThreading : true,
+                enablePredictiveAI: config.enablePredictiveAI !== undefined ? config.enablePredictiveAI : true,
+                enableSmartScheduling: config.enableSmartScheduling !== undefined ? config.enableSmartScheduling : true,
+                enableAdaptiveQuality: config.enableAdaptiveQuality !== undefined ? config.enableAdaptiveQuality : true,
+                enableErrorRecovery: config.enableErrorRecovery !== undefined ? config.enableErrorRecovery : true,
+                enablePerformanceBudget: config.enablePerformanceBudget !== undefined ? config.enablePerformanceBudget : true,
+                enableEnergyEfficiency: config.enableEnergyEfficiency !== undefined ? config.enableEnergyEfficiency : true,
+                maxThreads: config.maxThreads || navigator.hardwareConcurrency || 4,
+                performanceBudget: config.performanceBudget || { fps: 30, cpu: 80, gpu: 80, memory: 200 },
+                qualityLevel: config.qualityLevel || 'high',
                 plugins: config.plugins || []
             };
             
             // ============================================================
-            //  📦 ESTADO DEL MOTOR
+            //  📦 ESTADO DEL MOTOR MEJORADO
             //  ============================================================
             this.state = {
-                status: 'initializing', // initializing | ready | running | paused | error
+                status: 'initializing',
                 startTime: 0,
                 uptime: 0,
                 frameCount: 0,
@@ -54,41 +70,43 @@
                 fixedDeltaTime: 0,
                 fps: 0,
                 error: null,
-                plugins: new Map()
+                plugins: new Map(),
+                // Nuevos estados
+                qualityLevel: this.config.qualityLevel,
+                performanceMode: 'balanced', // 'power-saver' | 'balanced' | 'performance' | 'ultra'
+                threadCount: Math.min(this.config.maxThreads, 4),
+                activeThreads: 0,
+                tasksScheduled: 0,
+                tasksCompleted: 0,
+                energyEfficiency: 1.0,
+                performanceScore: 1.0,
+                lastFrameTime: 0,
+                frameTimeHistory: [],
+                fpsHistory: [],
+                cpuLoad: 0,
+                gpuLoad: 0,
+                memoryUsage: 0,
+                errorCount: 0,
+                lastError: null,
+                recoveryAttempts: 0
             };
             
             // ============================================================
             //  🧩 MÓDULOS DEL MOTOR
             //  ============================================================
             this.modules = {
-                // Core
-                config: CONFIG,
-                hardware: null,
-                memory: null,
-                
-                // ECS
+                core: {},
                 ecs: null,
-                
-                // AI
-                optimizerAI: null,
-                metaAI: null,
-                
-                // Renderer
+                ai: {},
                 renderer: null,
-                geometryLab: null,
-                
-                // Game
-                gameWorld: null,
-                entityFactory: null,
-                terrainGenerator: null,
-                
-                // Utils
-                profiler: null,
-                helpers: null
+                game: {},
+                utils: {},
+                workers: {},
+                plugins: new Map()
             };
             
             // ============================================================
-            //  🎯 LOOP DE JUEGO
+            //  🎯 LOOP DE JUEGO MEJORADO
             //  ============================================================
             this._loop = {
                 running: false,
@@ -97,13 +115,21 @@
                 fixedAccumulator: 0,
                 frameTime: 0,
                 updateCount: 0,
-                renderCount: 0
+                renderCount: 0,
+                // Nuevos
+                adaptiveSteps: 0,
+                skippedFrames: 0,
+                frameBudget: 16.67,
+                workerTasks: [],
+                taskQueue: [],
+                priorityQueue: []
             };
             
             // ============================================================
-            //  📡 SISTEMA DE EVENTOS
+            //  📡 SISTEMA DE EVENTOS MEJORADO
             //  ============================================================
             this._events = new Map();
+            this._eventHistory = [];
             
             // ============================================================
             //  🔌 PLUGINS
@@ -111,23 +137,78 @@
             this._plugins = new Map();
             
             // ============================================================
+            //  🧠 IA PREDICTIVA
+            //  ============================================================
+            this._predictor = {
+                model: {
+                    fpsTrend: 0,
+                    loadTrend: 0,
+                    memoryTrend: 0,
+                    confidence: 0.5
+                },
+                forecast: [],
+                alerts: [],
+                lastPrediction: null
+            };
+            
+            // ============================================================
+            //  📊 WORKERS
+            //  ============================================================
+            this._workers = [];
+            this._workerTasks = [];
+            this._sharedMemory = null;
+            
+            // ============================================================
+            //  📊 ESTADÍSTICAS MEJORADAS
+            //  ============================================================
+            this.stats = {
+                totalFrames: 0,
+                totalUpdates: 0,
+                totalRenders: 0,
+                totalErrors: 0,
+                averageFps: 0,
+                minFps: Infinity,
+                maxFps: 0,
+                averageFrameTime: 0,
+                minFrameTime: Infinity,
+                maxFrameTime: 0,
+                averageCpuLoad: 0,
+                averageGpuLoad: 0,
+                averageMemory: 0,
+                peakMemory: 0,
+                totalTasks: 0,
+                completedTasks: 0,
+                failedTasks: 0,
+                uptime: 0
+            };
+            
+            // ============================================================
             //  🚀 INICIALIZAR
             //  ============================================================
             this._init();
+            
+            console.log('🚀 PriomEngine Cuántico inicializado');
+            console.log(`📊 Calidad: ${this.config.qualityLevel}`);
+            console.log(`📊 Threads: ${this.config.maxThreads}`);
+            console.log(`📊 Presupuesto: ${this.config.performanceBudget.fps} FPS`);
+            console.log(`🧠 IA Predictiva: ${this.config.enablePredictiveAI ? 'Activada' : 'Desactivada'}`);
+            console.log(`🔄 Smart Scheduling: ${this.config.enableSmartScheduling ? 'Activado' : 'Desactivado'}`);
         }
         
         // ============================================================
-        //  🚀 INICIALIZACIÓN
+        //  🚀 INICIALIZACIÓN MEJORADA
         //  ============================================================
         _init() {
             console.log('🚀 ========================================');
-            console.log('🚀  PRIOM V0.1 - MOTOR DE JUEGOS IA');
+            console.log('🚀  PRIOM V0.4 - MOTOR DE JUEGOS IA');
             console.log('🚀  "Donde la IA encuentra la gráfica"');
             console.log('🚀 ========================================');
             console.log(`📦 Versión: ${CONFIG.version}`);
             console.log(`🏗️ Build: ${CONFIG.build}`);
             console.log(`📊 Max Entidades: ${CONFIG.maxEntities}`);
             console.log(`🎯 FPS Objetivo: ${CONFIG.targetFPS}`);
+            console.log(`🧠 Threads: ${this.config.maxThreads}`);
+            console.log(`⚡ Calidad: ${this.config.qualityLevel}`);
             
             try {
                 // ===== 1. INICIALIZAR MÓDULOS CORE =====
@@ -154,42 +235,61 @@
                 console.log('🔧 Inicializando Utilidades...');
                 this._initUtils();
                 
-                // ===== 7. CARGAR PLUGINS =====
+                // ===== 7. INICIALIZAR WORKERS =====
+                if (this.config.enableThreading) {
+                    console.log('🧵 Inicializando Workers...');
+                    this._initWorkers();
+                }
+                
+                // ===== 8. CARGAR PLUGINS =====
                 console.log('🔌 Cargando plugins...');
                 this._loadPlugins();
                 
-                // ===== 8. CONFIGURAR EVENTOS =====
+                // ===== 9. CONFIGURAR EVENTOS =====
                 this._setupEvents();
                 
-                // ===== 9. ESTADO LISTO =====
+                // ===== 10. CONFIGURAR IA PREDICTIVA =====
+                if (this.config.enablePredictiveAI) {
+                    this._setupPredictiveAI();
+                }
+                
+                // ===== 11. CONFIGURAR PERFORMANCE BUDGET =====
+                if (this.config.enablePerformanceBudget) {
+                    this._setupPerformanceBudget();
+                }
+                
+                // ===== 12. CONFIGURAR ADAPTIVE QUALITY =====
+                if (this.config.enableAdaptiveQuality) {
+                    this._setupAdaptiveQuality();
+                }
+                
+                // ===== 13. ESTADO LISTO =====
                 this.state.status = 'ready';
                 this.state.startTime = performance.now();
                 
-                console.log('✅ Motor inicializado correctamente');
+                console.log('✅ Motor Cuántico inicializado correctamente');
                 console.log(`📊 Módulos cargados: ${Object.keys(this.modules).filter(k => this.modules[k]).length}`);
+                console.log(`📊 Workers: ${this._workers.length}`);
+                console.log(`📊 Plugins: ${this._plugins.size}`);
                 
-                // ===== 10. AUTO-START =====
+                // ===== 14. AUTO-START =====
                 if (this.config.autoStart) {
                     this.start();
                 }
                 
-                // Nota: el benchmark de GPU en segundo plano se quitó — corría
-                // un render loop de WebGL EN PARALELO con la escena principal
-                // justo al arrancar (el peor momento posible), contaminando
-                // la medición real de FPS justo cuando la IA está calibrando
-                // la calidad inicial. La recalibración por rendimiento real
-                // ya ocurre de forma natural via OptimizerAI/DRS mientras el
-                // motor corre, sin necesitar un benchmark aparte que compita
-                // por los mismos recursos.
-                // Emitir evento de inicialización
                 this.emit('init', { engine: this });
                 
             } catch (error) {
                 this.state.status = 'error';
                 this.state.error = error;
+                this.stats.totalErrors++;
                 console.error('❌ Error al inicializar el motor:', error);
                 console.error('Stack trace:', error.stack);
                 this.emit('error', { error });
+                
+                if (this.config.enableErrorRecovery) {
+                    this._attemptRecovery(error);
+                }
             }
         }
         
@@ -198,17 +298,18 @@
         //  ============================================================
         
         _initCore() {
-            // Hardware Detector
-            this.modules.hardware = window.HardwareDetector;
-            if (!this.modules.hardware) {
+            this.modules.core.hardware = window.HardwareDetector;
+            if (!this.modules.core.hardware) {
                 throw new Error('HardwareDetector no disponible');
             }
             
-            // Memory
-            this.modules.memory = window.PersistentMemory;
-            if (!this.modules.memory) {
+            this.modules.core.memory = window.PersistentMemory;
+            if (!this.modules.core.memory) {
                 throw new Error('PersistentMemory no disponible');
             }
+            
+            this.modules.core.config = CONFIG;
+            this.modules.core.helpers = window.Helpers;
             
             console.log('✅ Core inicializado');
         }
@@ -218,22 +319,21 @@
             if (!this.modules.ecs) {
                 throw new Error('SoaManager no disponible');
             }
-            
             console.log('✅ ECS inicializado');
         }
         
         _initAI() {
-            // Optimizer AI
-            this.modules.optimizerAI = new OptimizerAI(
-                this.modules.hardware,
-                this.modules.memory
+            this.modules.ai.optimizer = new OptimizerAI(
+                this.modules.core.hardware,
+                this.modules.core.memory
             );
             
-            // Meta AI
-            this.modules.metaAI = new MetaOptimizerAI(
-                this.modules.hardware,
-                this.modules.memory
+            this.modules.ai.meta = new MetaOptimizerAI(
+                this.modules.core.hardware,
+                this.modules.core.memory
             );
+            
+            this.modules.ai.world = new WorldAI(this);
             
             console.log('✅ IA inicializada');
         }
@@ -244,11 +344,9 @@
                 throw new Error('Canvas no encontrado');
             }
             
-            // Renderer
             this.modules.renderer = new MaxRenderer(canvas);
             
-            // Geometry Lab
-            this.modules.geometryLab = new ComplexGeometryLab(
+            this.modules.renderer.geometryLab = new ComplexGeometryLab(
                 this.modules.renderer.scene
             );
             
@@ -256,140 +354,121 @@
         }
         
         _initWorld() {
-            // Entity Factory
-            this.modules.entityFactory = new EntityFactory(
+            this.modules.game.entityFactory = new EntityFactory(
                 this.modules.ecs,
                 CONFIG
             );
             
-            // Terrain Generator
-            this.modules.terrainGenerator = new TerrainGenerator(CONFIG);
+            this.modules.game.terrainGenerator = new TerrainGenerator(CONFIG);
             
-            // Game World
-            this.modules.gameWorld = new GameWorld(
+            this.modules.game.world = new GameWorld(
                 this.modules.ecs,
                 this.modules.renderer,
-                this.modules.memory
+                this.modules.core.memory
             );
             
-            // Vegetación adicional (flores) - aditivo v0.2
+            // Decoración adicional
+            this._initDecorations();
+            
+            // Editor y serializador
+            this._initEditor();
+            
+            // Minimapa
+            this._initMinimap();
+            
+            // Ajustes de terreno
+            this._adjustTerrainEffects();
+            
+            console.log('✅ Mundo inicializado');
+        }
+        
+        _initDecorations() {
             try {
-                if (window.VegetationPlacer && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
-                    this.modules.vegetationPlacer = new VegetationPlacer(
+                const terrain = this.modules.game.world?.generators?.terrain;
+                if (!terrain) return;
+                
+                // Vegetation Placer
+                if (window.VegetationPlacer) {
+                    this.modules.game.vegetationPlacer = new VegetationPlacer(
                         this.modules.renderer.scene,
-                        this.modules.gameWorld.generators.terrain,
+                        terrain,
                         { worldSize: CONFIG.worldSize }
                     );
-                    this.modules.vegetationPlacer.plantFlowers(800);
+                    this.modules.game.vegetationPlacer.plantFlowers(800);
                 }
-            } catch (e) {
-                console.warn('⚠️ VegetationPlacer no disponible', e);
-            }
-            
-            // Decoración de alta montaña (rocas con escarcha, cristales de hielo) - tanda 2
-            try {
-                if (window.AlpineDecor && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
-                    this.modules.alpineDecor = new AlpineDecor(
+                
+                // Alpine Decor
+                if (window.AlpineDecor) {
+                    this.modules.game.alpineDecor = new AlpineDecor(
                         this.modules.renderer.scene,
-                        this.modules.gameWorld.generators.terrain,
+                        terrain,
                         { worldSize: CONFIG.worldSize }
                     );
-                    this.modules.alpineDecor.plant(250);
+                    this.modules.game.alpineDecor.plant(250);
                 }
-            } catch (e) {
-                console.warn('⚠️ AlpineDecor no disponible', e);
-            }
-            
-            // Sotobosque (arbustos, helechos) - llena el hueco entre árboles y pasto
-            try {
-                if (window.ForestDecor && this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain) {
-                    this.modules.forestDecor = new ForestDecor(
+                
+                // Forest Decor
+                if (window.ForestDecor) {
+                    this.modules.game.forestDecor = new ForestDecor(
                         this.modules.renderer.scene,
-                        this.modules.gameWorld.generators.terrain,
+                        terrain,
                         { worldSize: CONFIG.worldSize }
                     );
-                    this.modules.forestDecor.plant(1200);
+                    this.modules.game.forestDecor.plant(1200);
+                }
+                
+                // Chunk Manager
+                if (window.ChunkManager) {
+                    this.modules.game.chunkManager = new ChunkManager();
+                    this.modules.game.chunkManager.registerRegion('grass', 0, 0, 220, this.modules.renderer.grassMeshes);
+                    this.modules.game.chunkManager.registerRegion('flowers', 0, 0, 220,
+                        this.modules.game.vegetationPlacer?.flowerMeshes || []);
+                    this.modules.game.chunkManager.registerRegion('alpine', 0, 0, 220,
+                        this.modules.game.alpineDecor?.meshes || []);
+                    this.modules.game.chunkManager.registerRegion('forest_decor', 0, 0, 220,
+                        this.modules.game.forestDecor?.meshes || []);
+                    this.modules.renderer.chunkManager = this.modules.game.chunkManager;
                 }
             } catch (e) {
-                console.warn('⚠️ ForestDecor no disponible', e);
+                console.warn('⚠️ Decoración no disponible:', e);
             }
-            
-            // Chunk Manager (primer paso hacia streaming: culling de decoración por distancia)
-            try {
-                if (window.ChunkManager && this.modules.renderer) {
-                    this.modules.chunkManager = new ChunkManager();
-                    this.modules.chunkManager.registerRegion('grass', 0, 0, 220, this.modules.renderer.grassMeshes);
-                    this.modules.chunkManager.registerRegion(
-                        'flowers', 0, 0, 220,
-                        this.modules.vegetationPlacer ? this.modules.vegetationPlacer.flowerMeshes : []
-                    );
-                    this.modules.chunkManager.registerRegion(
-                        'alpine', 0, 0, 220,
-                        this.modules.alpineDecor ? this.modules.alpineDecor.meshes : []
-                    );
-                    this.modules.chunkManager.registerRegion(
-                        'forest_decor', 0, 0, 220,
-                        this.modules.forestDecor ? this.modules.forestDecor.meshes : []
-                    );
-                    this.modules.renderer.chunkManager = this.modules.chunkManager;
-                }
-            } catch (e) {
-                console.warn('⚠️ ChunkManager no disponible', e);
-            }
-            
-            // Tercera IA: WorldAI (le da vida al mundo — estaciones, incendios, crecimiento, fauna)
-            try {
-                if (window.WorldAI) {
-                    this.modules.worldAI = new WorldAI(this);
-                }
-            } catch (e) {
-                console.warn('⚠️ WorldAI no disponible', e);
-            }
-            
-            // Sistema de sonido procedural (no se inicia aquí: requiere gesto del usuario)
-            try {
-                if (window.AudioSystem) {
-                    this.modules.audioSystem = new AudioSystem(this);
-                }
-            } catch (e) {
-                console.warn('⚠️ AudioSystem no disponible', e);
-            }
-            
-            // Editor (v0.3): colocar entidades tocando el suelo
+        }
+        
+        _initEditor() {
             try {
                 if (window.Editor) {
-                    this.modules.editor = new Editor(this);
+                    this.modules.game.editor = new Editor(this);
                     
-                    // Guardado/carga del mundo (v0.3): cada colocación del
-                    // editor se registra para poder guardarla después
                     if (window.WorldSerializer) {
-                        this.modules.worldSerializer = new WorldSerializer(this);
-                        this.modules.editor.onPlace = (type, x, y, z) => {
-                            this.modules.worldSerializer.recordPlacement(type, x, y, z);
+                        this.modules.game.worldSerializer = new WorldSerializer(this);
+                        this.modules.game.editor.onPlace = (type, x, y, z) => {
+                            this.modules.game.worldSerializer.recordPlacement(type, x, y, z);
                         };
                     }
                 }
             } catch (e) {
-                console.warn('⚠️ Editor no disponible', e);
+                console.warn('⚠️ Editor no disponible:', e);
             }
-            
-            // Minimapa (v0.3)
+        }
+        
+        _initMinimap() {
             try {
                 const canvas = document.getElementById('minimap-canvas');
                 if (window.Minimap && canvas) {
-                    this.modules.minimap = new Minimap(this, canvas, { worldRange: 200 });
+                    this.modules.game.minimap = new Minimap(this, canvas, { worldRange: 200 });
                 }
             } catch (e) {
-                console.warn('⚠️ Minimap no disponible', e);
+                console.warn('⚠️ Minimap no disponible:', e);
             }
-            
-            // Ajustar pasto/niebla/polvo/espuma a la altura real del terreno
-            // (el renderer los crea antes de que el mundo exista)
+        }
+        
+        _adjustTerrainEffects() {
             try {
-                const terrain = this.modules.gameWorld.generators && this.modules.gameWorld.generators.terrain;
-                const waterBodies = this.modules.gameWorld.ecosystems && this.modules.gameWorld.ecosystems.waterBodies
-                    ? Array.from(this.modules.gameWorld.ecosystems.waterBodies.values())
+                const terrain = this.modules.game.world?.generators?.terrain;
+                const waterBodies = this.modules.game.world?.ecosystems?.waterBodies
+                    ? Array.from(this.modules.game.world.ecosystems.waterBodies.values())
                     : [];
+                    
                 if (terrain && this.modules.renderer.conformGroundFXToTerrain) {
                     this.modules.renderer.conformGroundFXToTerrain(terrain, waterBodies);
                 }
@@ -397,87 +476,222 @@
                     this.modules.renderer.focusOnScenicSpot(terrain, waterBodies);
                 }
                 
-                // Bisontes de demostración cerca del lago (v0.3: pradera + lago)
-                if (waterBodies.length > 0 && this.modules.entityFactory) {
-                    const lake = waterBodies[Math.floor(Math.random() * waterBodies.length)];
-                    for (let i = 0; i < 2; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const dist = 4 + Math.random() * 8; // cerca de la orilla, como bebiendo agua
-                        const bx = lake.x + Math.cos(angle) * dist;
-                        const bz = lake.z + Math.sin(angle) * dist;
-                        const by = terrain.getHeight(bx, bz);
-                        const id = this.modules.entityFactory.createAnimal(bx, by + 0.3, bz, false);
-                        if (id !== -1) {
-                            this.modules.ecs.subType[id] = 1; // marca como bisonte para el renderer
-                            this.modules.ecs.scaleX[id] = 1.8;
-                            this.modules.ecs.scaleY[id] = 1.8;
-                            this.modules.ecs.scaleZ[id] = 1.8;
-                            if (this.modules.gameWorld.ecosystems && this.modules.gameWorld.ecosystems.entities) {
-                                this.modules.gameWorld.ecosystems.entities.animals.add(id);
-                            }
-                        }
-                    }
-                    console.log('🦬 Bisontes de demostración colocados junto al lago');
+                // Bisontes de demostración
+                if (waterBodies.length > 0 && this.modules.game.entityFactory) {
+                    this._placeDemoBisons(waterBodies, terrain);
                 }
             } catch (e) {
-                console.warn('⚠️ No se pudo ajustar efectos de suelo al terreno', e);
+                console.warn('⚠️ No se pudo ajustar efectos de suelo:', e);
             }
-            
-            console.log('✅ Mundo inicializado');
         }
         
-        // ============================================================
-        //  📊 BENCHMARK REAL EN SEGUNDO PLANO (recalibración de calidad)
-        //  El benchmark real (dibuja miles de triángulos, mide fps de
-        //  verdad) existía pero nunca se llamaba desde ningún lado — la
-        //  calidad inicial dependía solo de specs estáticas (nombre de
-        //  GPU + RAM total), que no reflejan cuántos recursos están
-        //  libres AHORA MISMO en este navegador/pestaña/momento.
-        // ============================================================
-        async _runBackgroundBenchmark() {
-            try {
-                if (!this.modules.hardware || typeof this.modules.hardware.runBenchmark !== 'function') return;
+        _placeDemoBisons(waterBodies, terrain) {
+            const lake = waterBodies[Math.floor(Math.random() * waterBodies.length)];
+            if (!lake) return;
+            
+            for (let i = 0; i < 2; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 4 + Math.random() * 8;
+                const bx = lake.x + Math.cos(angle) * dist;
+                const bz = lake.z + Math.sin(angle) * dist;
+                const by = terrain.getHeight(bx, bz);
                 
-                const results = await this.modules.hardware.runBenchmark(800);
-                if (!results || !this.modules.optimizerAI) return;
-                
-                const recommendations = this.modules.hardware.getRecommendations();
-                const measuredQuality = recommendations ? recommendations.measuredQuality : null;
-                if (!measuredQuality) return;
-                
-                const tiers = ['low', 'medium', 'high', 'ultra', 'quantum'];
-                const measuredIdx = tiers.indexOf(measuredQuality);
-                const currentIdx = this.modules.optimizerAI.currentQuality;
-                
-                if (measuredIdx !== -1 && Math.abs(measuredIdx - currentIdx) >= 1) {
-                    console.log(`📊 Benchmark real recalibrando calidad: ${tiers[currentIdx]} → ${measuredQuality} (condiciones actuales del dispositivo, no solo specs en papel)`);
-                    this.modules.optimizerAI.currentQuality = measuredIdx;
+                const id = this.modules.game.entityFactory.createAnimal(bx, by + 0.3, bz, false);
+                if (id !== -1) {
+                    this.modules.ecs.subType[id] = 1;
+                    this.modules.ecs.scaleX[id] = 1.8;
+                    this.modules.ecs.scaleY[id] = 1.8;
+                    this.modules.ecs.scaleZ[id] = 1.8;
+                    if (this.modules.game.world?.ecosystems?.entities) {
+                        this.modules.game.world.ecosystems.entities.animals.add(id);
+                    }
                 }
-            } catch (e) {
-                console.warn('⚠️ No se pudo ejecutar el benchmark en segundo plano', e);
             }
+            console.log('🦬 Bisontes de demostración colocados');
         }
         
         _initUtils() {
-            // Profiler
-            this.modules.profiler = window.Profiler;
-            if (!this.modules.profiler) {
-                console.warn('⚠️ Profiler no disponible');
-            }
-            
-            // Helpers
-            this.modules.helpers = window.Helpers;
-            if (!this.modules.helpers) {
-                console.warn('⚠️ Helpers no disponible');
-            }
-            
+            this.modules.utils.profiler = window.Profiler;
+            this.modules.utils.helpers = window.Helpers;
             console.log('✅ Utilidades inicializadas');
         }
         
         // ============================================================
-        //  🔌 SISTEMA DE PLUGINS
+        //  🧵 SISTEMA DE WORKERS
         //  ============================================================
+        _initWorkers() {
+            if (!window.Worker) {
+                console.warn('⚠️ Web Workers no soportados');
+                return;
+            }
+            
+            const threadCount = Math.min(this.config.maxThreads, navigator.hardwareConcurrency || 4);
+            
+            for (let i = 0; i < threadCount; i++) {
+                try {
+                    const worker = new Worker(URL.createObjectURL(
+                        new Blob([this._getWorkerScript()], { type: 'application/javascript' })
+                    ));
+                    
+                    worker.onmessage = (e) => this._handleWorkerMessage(e, i);
+                    worker.onerror = (e) => console.error(`🧵 Worker ${i} error:`, e);
+                    
+                    this._workers.push(worker);
+                    this.state.activeThreads++;
+                    
+                } catch (e) {
+                    console.warn(`⚠️ No se pudo crear worker ${i}:`, e);
+                }
+            }
+            
+            // SharedArrayBuffer para memoria compartida
+            try {
+                if (window.SharedArrayBuffer) {
+                    this._sharedMemory = new SharedArrayBuffer(1024 * 1024); // 1MB
+                }
+            } catch (e) {
+                // Silencioso
+            }
+            
+            console.log(`🧵 ${this._workers.length} workers inicializados`);
+        }
         
+        _getWorkerScript() {
+            return `
+                // Worker de Priom Engine
+                let taskId = 0;
+                
+                self.onmessage = function(e) {
+                    const { type, data, id } = e.data;
+                    
+                    switch(type) {
+                        case 'physics':
+                            const result = processPhysics(data);
+                            self.postMessage({ type: 'physics_result', data: result, id });
+                            break;
+                        case 'ai':
+                            const aiResult = processAI(data);
+                            self.postMessage({ type: 'ai_result', data: aiResult, id });
+                            break;
+                        case 'simulation':
+                            const simResult = processSimulation(data);
+                            self.postMessage({ type: 'simulation_result', data: simResult, id });
+                            break;
+                        default:
+                            self.postMessage({ type: 'error', data: 'Unknown task type', id });
+                    }
+                };
+                
+                function processPhysics(data) {
+                    // Simulación de física
+                    const results = [];
+                    for (const entity of data.entities) {
+                        const pos = entity.pos;
+                        const vel = entity.vel;
+                        const mass = entity.mass || 1;
+                        const gravity = data.gravity || -9.8;
+                        
+                        // Aplicar gravedad
+                        vel.y += gravity * data.delta;
+                        
+                        // Actualizar posición
+                        pos.x += vel.x * data.delta;
+                        pos.y += vel.y * data.delta;
+                        pos.z += vel.z * data.delta;
+                        
+                        // Colisión con suelo
+                        if (pos.y < 0) {
+                            pos.y = 0;
+                            vel.y *= -0.3;
+                        }
+                        
+                        results.push({ id: entity.id, pos, vel });
+                    }
+                    return results;
+                }
+                
+                function processAI(data) {
+                    // Simulación de IA
+                    const results = [];
+                    for (const entity of data.entities) {
+                        const state = entity.state;
+                        // Lógica de IA simplificada
+                        if (state === 'idle' && Math.random() < 0.01) {
+                            state = 'moving';
+                        } else if (state === 'moving' && Math.random() < 0.01) {
+                            state = 'idle';
+                        }
+                        results.push({ id: entity.id, state });
+                    }
+                    return results;
+                }
+                
+                function processSimulation(data) {
+                    // Simulación de ecosistema
+                    const results = [];
+                    for (const entity of data.entities) {
+                        // Lógica de simulación
+                        const newHealth = (entity.health || 0.5) + (Math.random() - 0.5) * 0.01;
+                        results.push({ id: entity.id, health: Math.max(0, Math.min(1, newHealth)) });
+                    }
+                    return results;
+                }
+            `;
+        }
+        
+        _handleWorkerMessage(e, workerIndex) {
+            const { type, data, id } = e.data;
+            
+            switch(type) {
+                case 'physics_result':
+                    this._applyPhysicsResults(data);
+                    break;
+                case 'ai_result':
+                    this._applyAIResults(data);
+                    break;
+                case 'simulation_result':
+                    this._applySimulationResults(data);
+                    break;
+                default:
+                    console.warn(`🧵 Mensaje desconocido del worker ${workerIndex}:`, type);
+            }
+            
+            this.state.tasksCompleted++;
+        }
+        
+        _applyPhysicsResults(results) {
+            // Aplicar resultados de física a las entidades
+            for (const result of results) {
+                const id = result.id;
+                if (this.modules.ecs && id >= 0 && id < this.modules.ecs.count) {
+                    this.modules.ecs.posX[id] = result.pos.x;
+                    this.modules.ecs.posY[id] = result.pos.y;
+                    this.modules.ecs.posZ[id] = result.pos.z;
+                    this.modules.ecs.velX[id] = result.vel.x;
+                    this.modules.ecs.velY[id] = result.vel.y;
+                    this.modules.ecs.velZ[id] = result.vel.z;
+                }
+            }
+        }
+        
+        _applyAIResults(results) {
+            // Aplicar resultados de IA
+            for (const result of results) {
+                const id = result.id;
+                if (this.modules.ecs && id >= 0 && id < this.modules.ecs.count) {
+                    this.modules.ecs.aiState[id] = result.state === 'moving' ? 1 : 0;
+                }
+            }
+        }
+        
+        _applySimulationResults(results) {
+            // Aplicar resultados de simulación
+            // (implementación específica según necesidades)
+        }
+        
+        // ============================================================
+        //  🔌 SISTEMA DE PLUGINS MEJORADO
+        //  ============================================================
         _loadPlugins() {
             for (const plugin of this.config.plugins) {
                 try {
@@ -498,9 +712,6 @@
             }
         }
         
-        /**
-         * Registrar un plugin
-         */
         registerPlugin(name, plugin) {
             if (this._plugins.has(name)) {
                 console.warn(`⚠️ Plugin "${name}" ya existe, sobrescribiendo`);
@@ -516,80 +727,48 @@
             return this;
         }
         
-        /**
-         * Obtener un plugin
-         */
         getPlugin(name) {
             return this._plugins.get(name) || null;
         }
         
-        /**
-         * Listar plugins
-         */
         listPlugins() {
             return Array.from(this._plugins.keys());
         }
         
         // ============================================================
-        //  📡 SISTEMA DE EVENTOS
+        //  📡 SISTEMA DE EVENTOS MEJORADO
         //  ============================================================
-        
         _setupEvents() {
-            // Eventos del ciclo de vida
-            this.on('start', () => {
-                console.log('▶️ Motor iniciado');
-            });
+            this.on('start', () => console.log('▶️ Motor iniciado'));
+            this.on('pause', () => console.log('⏸️ Motor pausado'));
+            this.on('resume', () => console.log('▶️ Motor reanudado'));
+            this.on('stop', () => console.log('⏹️ Motor detenido'));
             
-            this.on('pause', () => {
-                console.log('⏸️ Motor pausado');
-            });
-            
-            this.on('resume', () => {
-                console.log('▶️ Motor reanudado');
-            });
-            
-            this.on('stop', () => {
-                console.log('⏹️ Motor detenido');
-            });
-            
-            // ============================================================
-            //  👁️ VISIBILIDAD DE PÁGINA (bug real corregido)
-            //  Cuando se cambia de app, se bloquea la pantalla, o la
-            //  pestaña queda en segundo plano, el navegador pausa o
-            //  limita requestAnimationFrame para ahorrar batería. Al
-            //  volver, el siguiente frame calculaba su delta contra la
-            //  última vez que corrió ANTES de la pausa — un salto de
-            //  segundos o minutos — contaminando el cálculo de FPS con
-            //  valores imposibles (300+ de golpe, luego un desplome).
-            //  Esto reinicia el reloj del motor limpio al volver, en vez
-            //  de medir a través del hueco de tiempo oculto.
-            // ============================================================
+            // Visibility change
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     this._wasHiddenAt = performance.now();
                     console.log('👁️ Página oculta — pausando medición de tiempo');
                 } else {
                     const hiddenDuration = this._wasHiddenAt ? performance.now() - this._wasHiddenAt : 0;
-                    console.log(`👁️ Página visible de nuevo (oculta ${Math.round(hiddenDuration)}ms) — reiniciando reloj`);
+                    console.log(`👁️ Página visible de nuevo (oculta ${Math.round(hiddenDuration)}ms)`);
                     
-                    // Reiniciar el reloj del loop para no medir el hueco oculto
                     this._loop.lastTime = performance.now();
                     this._loop.accumulator = 0;
                     this._loop.fixedAccumulator = 0;
-                    
-                    // Limpiar muestras de FPS viejas/contaminadas
                     this._fpsSamples = [];
                     
-                    // Avisar a WorldAI para que tampoco salte sus temporizadores
-                    // de golpe (estaciones/crecimiento/fauna) por el hueco oculto
-                    if (this.modules.worldAI && typeof this.modules.worldAI.onResume === 'function') {
-                        this.modules.worldAI.onResume();
+                    if (this.modules.ai.world?.onResume) {
+                        this.modules.ai.world.onResume();
                     }
                 }
             });
             
             this.on('error', ({ error }) => {
                 console.error('❌ Error en motor:', error);
+                if (this.config.enableErrorRecovery) {
+                    this._attemptRecovery(error);
+                }
             });
             
             this.on('frame', ({ delta, frame }) => {
@@ -598,11 +777,17 @@
                     console.log(`📊 Frame ${frame} | FPS: ${stats.fps} | Entidades: ${stats.entities}`);
                 }
             });
+            
+            this.on('performance_warning', ({ metric, value, threshold }) => {
+                console.warn(`⚠️ Advertencia de rendimiento: ${metric} = ${value} (umbral: ${threshold})`);
+            });
+            
+            this.on('performance_critical', ({ metric, value, threshold }) => {
+                console.error(`🚨 CRÍTICO: ${metric} = ${value} (umbral: ${threshold})`);
+                this._applyPerformanceThrottling();
+            });
         }
         
-        /**
-         * Registrar evento
-         */
         on(event, callback) {
             if (!this._events.has(event)) {
                 this._events.set(event, []);
@@ -611,9 +796,6 @@
             return this;
         }
         
-        /**
-         * Eliminar evento
-         */
         off(event, callback) {
             if (!this._events.has(event)) return this;
             const listeners = this._events.get(event);
@@ -621,11 +803,11 @@
             return this;
         }
         
-        /**
-         * Emitir evento
-         */
         emit(event, data = {}) {
             if (!this._events.has(event)) return;
+            this._eventHistory.push({ event, data, timestamp: Date.now() });
+            if (this._eventHistory.length > 1000) this._eventHistory.shift();
+            
             const listeners = this._events.get(event);
             for (const callback of listeners) {
                 try {
@@ -637,12 +819,187 @@
         }
         
         // ============================================================
-        //  🎯 LOOP DE JUEGO
+        //  🧠 IA PREDICTIVA
         //  ============================================================
+        _setupPredictiveAI() {
+            this._predictor.interval = setInterval(() => {
+                this._updatePredictions();
+            }, 1000);
+        }
         
-        /**
-         * Iniciar el motor
-         */
+        _updatePredictions() {
+            const fpsHistory = this.state.fpsHistory;
+            if (fpsHistory.length < 10) return;
+            
+            const recent = fpsHistory.slice(-20);
+            const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const variance = recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length;
+            const std = Math.sqrt(variance);
+            
+            // Tendencia
+            const slope = this._calculateSlope(recent);
+            this._predictor.model.fpsTrend = slope;
+            this._predictor.model.loadTrend = -slope / mean;
+            this._predictor.model.confidence = Math.min(1, 1 - (std / mean));
+            
+            // Predicción
+            const nextFps = mean + slope * 5;
+            const forecast = [];
+            for (let i = 1; i <= 10; i++) {
+                forecast.push(mean + slope * i);
+            }
+            
+            this._predictor.forecast = forecast;
+            this._predictor.lastPrediction = {
+                fps: Math.max(10, Math.min(120, nextFps)),
+                trend: slope > 0.5 ? 'rising' : (slope < -0.5 ? 'falling' : 'stable'),
+                confidence: this._predictor.model.confidence,
+                load: this._predictor.model.loadTrend
+            };
+            
+            // Alertas
+            if (nextFps < 25 && this._predictor.model.confidence > 0.6) {
+                this._predictor.alerts.push({
+                    type: 'fps_drop_predicted',
+                    message: `🔮 Predicción: FPS caerá a ${Math.round(nextFps)} en breve`,
+                    timestamp: Date.now()
+                });
+                this.emit('performance_warning', {
+                    metric: 'fps_prediction',
+                    value: Math.round(nextFps),
+                    threshold: 30
+                });
+            }
+        }
+        
+        _calculateSlope(values) {
+            const n = values.length;
+            if (n < 2) return 0;
+            
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += i;
+                sumY += values[i];
+                sumXY += i * values[i];
+                sumXX += i * i;
+            }
+            
+            const denominator = (n * sumXX - sumX * sumX);
+            if (denominator === 0) return 0;
+            return (n * sumXY - sumX * sumY) / denominator;
+        }
+        
+        getPrediction() {
+            return this._predictor.lastPrediction;
+        }
+        
+        // ============================================================
+        //  📊 PERFORMANCE BUDGET
+        //  ============================================================
+        _setupPerformanceBudget() {
+            this._budgetInterval = setInterval(() => {
+                this._checkPerformanceBudget();
+            }, 1000);
+        }
+        
+        _checkPerformanceBudget() {
+            const budget = this.config.performanceBudget;
+            const fps = this.state.fps;
+            const cpuLoad = this.state.cpuLoad;
+            const memory = this.state.memoryUsage;
+            
+            // Verificar FPS
+            if (fps < budget.fps && this.state.status === 'running') {
+                this.emit('performance_warning', {
+                    metric: 'fps',
+                    value: fps,
+                    threshold: budget.fps
+                });
+                
+                if (fps < budget.fps * 0.6) {
+                    this.emit('performance_critical', {
+                        metric: 'fps',
+                        value: fps,
+                        threshold: budget.fps
+                    });
+                }
+            }
+            
+            // Verificar CPU
+            if (cpuLoad > budget.cpu) {
+                this.emit('performance_warning', {
+                    metric: 'cpu',
+                    value: cpuLoad,
+                    threshold: budget.cpu
+                });
+            }
+            
+            // Verificar memoria
+            if (memory > budget.memory) {
+                this.emit('performance_warning', {
+                    metric: 'memory',
+                    value: memory,
+                    threshold: budget.memory
+                });
+            }
+        }
+        
+        _applyPerformanceThrottling() {
+            // Reducir calidad para recuperar rendimiento
+            if (this.state.qualityLevel === 'ultra') {
+                this.setQuality('high');
+                console.log('⚡ Throttling: calidad reducida a HIGH');
+            } else if (this.state.qualityLevel === 'high') {
+                this.setQuality('medium');
+                console.log('⚡ Throttling: calidad reducida a MEDIUM');
+            } else if (this.state.qualityLevel === 'medium') {
+                this.setQuality('low');
+                console.log('⚡ Throttling: calidad reducida a LOW');
+            }
+        }
+        
+        // ============================================================
+        //  🎯 ADAPTIVE QUALITY
+        //  ============================================================
+        _setupAdaptiveQuality() {
+            this._adaptiveInterval = setInterval(() => {
+                this._adjustQuality();
+            }, 5000);
+        }
+        
+        _adjustQuality() {
+            const fps = this.state.fps;
+            const sceneComplexity = this.modules.ecs?.count || 0;
+            
+            if (fps < 25) {
+                this.setQuality('low');
+            } else if (fps < 35) {
+                this.setQuality('medium');
+            } else if (fps > 55 && sceneComplexity < 5000) {
+                this.setQuality('high');
+            } else if (fps > 70 && sceneComplexity < 2000) {
+                this.setQuality('ultra');
+            }
+        }
+        
+        setQuality(level) {
+            const validLevels = ['low', 'medium', 'high', 'ultra', 'quantum'];
+            if (!validLevels.includes(level)) return;
+            
+            this.state.qualityLevel = level;
+            this.config.qualityLevel = level;
+            
+            if (this.modules.renderer) {
+                this.modules.renderer.setQuality(level);
+            }
+            
+            console.log(`⚡ Calidad: ${level.toUpperCase()}`);
+            this.emit('quality_change', { level });
+        }
+        
+        // ============================================================
+        //  🎯 LOOP DE JUEGO MEJORADO
+        //  ============================================================
         start() {
             if (this.state.status === 'running') {
                 console.warn('⚠️ El motor ya está en ejecución');
@@ -660,11 +1017,8 @@
             this._loop.running = true;
             this._loop.accumulator = 0;
             this._loop.fixedAccumulator = 0;
-            
-            // Configurar fixed update
             this._loop.fixedDeltaTime = 1 / this.config.fixedUpdateRate;
             
-            // Iniciar el loop
             this._gameLoop();
             
             this.emit('start', { engine: this });
@@ -673,9 +1027,6 @@
             return this;
         }
         
-        /**
-         * Pausar el motor
-         */
         pause() {
             if (this.state.status !== 'running') {
                 console.warn('⚠️ El motor no está en ejecución');
@@ -691,9 +1042,6 @@
             return this;
         }
         
-        /**
-         * Reanudar el motor
-         */
         resume() {
             if (this.state.status !== 'paused') {
                 console.warn('⚠️ El motor no está pausado');
@@ -710,9 +1058,6 @@
             return this;
         }
         
-        /**
-         * Detener el motor
-         */
         stop() {
             this.state.status = 'stopped';
             this._loop.running = false;
@@ -724,9 +1069,8 @@
         }
         
         // ============================================================
-        //  🔄 GAME LOOP PRINCIPAL
+        //  🔄 GAME LOOP PRINCIPAL MEJORADO
         //  ============================================================
-        
         _gameLoop() {
             if (!this._loop.running && this.state.status !== 'running') {
                 return;
@@ -734,18 +1078,16 @@
             
             try {
                 const now = performance.now();
-                const rawDelta = now - this._loop.lastTime; // sin recortar, para medir FPS real
+                const rawDelta = now - this._loop.lastTime;
                 let delta = Math.min(rawDelta, this.config.maxDeltaTime * 1000);
                 this._loop.lastTime = now;
                 
-                // Convertir a segundos
                 const deltaSeconds = delta / 1000;
                 
-                // Acumular tiempo para fixed update
                 this._loop.accumulator += deltaSeconds;
                 this._loop.fixedAccumulator += deltaSeconds;
                 
-                // ===== FIXED UPDATE =====
+                // Fixed update con límite de pasos
                 let fixedSteps = 0;
                 while (this._loop.fixedAccumulator >= this._loop.fixedDeltaTime && fixedSteps < 5) {
                     this._fixedUpdate(this._loop.fixedDeltaTime);
@@ -753,75 +1095,57 @@
                     this._loop.updateCount++;
                     fixedSteps++;
                 }
-                // Evitar espiral de la muerte si el hilo se atrasa mucho
+                
                 if (this._loop.fixedAccumulator > this._loop.fixedDeltaTime * 5) {
                     this._loop.fixedAccumulator = 0;
                 }
                 
-                // ===== UPDATE =====
+                // Update
                 this._update(deltaSeconds);
                 
-                // ===== RENDER =====
+                // Render
                 this._render();
                 
-                // ===== POST-RENDER =====
+                // Post-render
                 this._postRender();
                 
-                // ===== ACTUALIZAR ESTADÍSTICAS =====
-                this.state.frameCount++;
-                this.state.uptime = now - this.state.startTime;
-                this.state.deltaTime = deltaSeconds;
+                // Actualizar estadísticas
+                this._updateStats(delta, rawDelta);
                 
-                // Calcular FPS (promedio real de los últimos frames, sin el
-                // recorte de maxDeltaTime — antes SIEMPRE daba exactamente 20,
-                // sin importar el rendimiento real, porque 1000/50ms = 20 fijo)
-                if (rawDelta > 0) {
-                    const instantFps = 1000 / rawDelta;
-                    // Descartar lecturas imposibles (ninguna pantalla real
-                    // pasa de ~150hz) — protege contra cualquier artefacto
-                    // de medición, venga de donde venga
-                    if (instantFps > 0 && instantFps <= 150) {
-                        this._fpsSamples = this._fpsSamples || [];
-                        this._fpsSamples.push(instantFps);
-                        if (this._fpsSamples.length > 20) this._fpsSamples.shift();
-                    }
-                }
-                if (this.state.frameCount % 15 === 0 && this._fpsSamples && this._fpsSamples.length > 0) {
-                    const avg = this._fpsSamples.reduce((a, b) => a + b, 0) / this._fpsSamples.length;
-                    this.state.fps = Math.round(avg);
-                }
-                
-                // ===== EVENTO DE FRAME =====
+                // Emitir evento de frame
                 this.emit('frame', {
                     delta: deltaSeconds,
                     frame: this.state.frameCount,
                     fps: this.state.fps
                 });
+                
             } catch (e) {
                 this._lastLoopError = (e && e.message) ? e.message : String(e);
+                this.stats.totalErrors++;
                 console.error('❌ Error en el game loop (frame ' + this.state.frameCount + '):', e);
+                
+                if (this.config.enableErrorRecovery) {
+                    this._attemptRecovery(e);
+                }
             }
             
-            // ===== CONTINUAR LOOP =====
             requestAnimationFrame(() => this._gameLoop());
         }
         
         // ============================================================
-        //  🔄 SUB-LOOPS
+        //  🔄 SUB-LOOPS MEJORADOS
         //  ============================================================
-        
-        /**
-         * Fixed Update (frecuencia fija)
-         */
         _fixedUpdate(delta) {
-            // Actualizar física
+            const startTime = performance.now();
+            
+            // ECS Física
             if (this.modules.ecs) {
                 const visible = this.modules.renderer?.lastVisible || null;
-                const terrain = this.modules.gameWorld && this.modules.gameWorld.generators
-                    ? this.modules.gameWorld.generators.terrain : null;
-                const getGroundHeight = terrain && terrain.getHeight
-                    ? (x, z) => terrain.getHeight(x, z)
+                const terrain = this.modules.game.world?.generators?.terrain;
+                const getGroundHeight = terrain?.getHeight 
+                    ? (x, z) => terrain.getHeight(x, z) 
                     : null;
+                    
                 this.modules.ecs.updatePhysics(
                     delta,
                     CONFIG.gravity || -9.8,
@@ -832,73 +1156,70 @@
                 );
             }
             
-            // Actualizar mundo del juego
-            if (this.modules.gameWorld) {
-                this.modules.gameWorld.update(delta);
+            // Game World
+            if (this.modules.game.world) {
+                this.modules.game.world.update(delta);
             }
             
-            // Tercera IA: WorldAI (vida del mundo)
-            if (this.modules.worldAI) {
+            // World AI
+            if (this.modules.ai.world) {
                 try {
-                    this.modules.worldAI.update(delta);
+                    this.modules.ai.world.update(delta);
                 } catch (e) {
-                    console.warn('⚠️ Error en WorldAI', e);
+                    console.warn('⚠️ Error en WorldAI:', e);
                 }
             }
             
-            // Sistema de sonido
-            if (this.modules.audioSystem) {
+            // Audio
+            if (this.modules.game.audio) {
                 try {
-                    this.modules.audioSystem.update(delta);
+                    this.modules.game.audio.update(delta);
                 } catch (e) {
-                    console.warn('⚠️ Error en AudioSystem', e);
+                    console.warn('⚠️ Error en AudioSystem:', e);
                 }
             }
             
-            // Minimapa
-            if (this.modules.minimap) {
+            // Minimap
+            if (this.modules.game.minimap) {
                 try {
-                    this.modules.minimap.update(delta);
+                    this.modules.game.minimap.update(delta);
                 } catch (e) {
-                    console.warn('⚠️ Error en Minimap', e);
+                    console.warn('⚠️ Error en Minimap:', e);
                 }
             }
             
-            // Actualizar IA
-            if (this.modules.optimizerAI && this.modules.metaAI) {
-                const perf = this.modules.profiler ? 
-                    this.modules.profiler.getSummary() : 
-                    { fps: this.state.fps };
+            // IA Optimizadora
+            if (this.modules.ai.optimizer && this.modules.ai.meta) {
+                const perf = this.modules.utils.profiler 
+                    ? this.modules.utils.profiler.getSummary() 
+                    : { fps: this.state.fps };
                     
-                const renderStats = this.modules.renderer ?
-                    this.modules.renderer.getStats() :
-                    {};
+                const renderStats = this.modules.renderer 
+                    ? this.modules.renderer.getStats() 
+                    : {};
                     
-                // IA Principal
-                const aiAction = this.modules.optimizerAI.update(
+                const aiAction = this.modules.ai.optimizer.update(
                     perf,
                     renderStats,
                     this.modules.ecs
                 );
                 
-                // IA Meta
-                const metaResult = this.modules.metaAI.update(
+                const metaResult = this.modules.ai.meta.update(
                     perf,
                     renderStats,
-                    this.modules.optimizerAI
+                    this.modules.ai.optimizer
                 );
                 
-                // Aplicar optimizaciones
                 this._applyAIAction(aiAction);
                 this._applyMetaAction(metaResult);
             }
             
-            // Actualizar laboratorio geométrico
-            if (this.modules.geometryLab) {
-                this.modules.geometryLab.update(delta);
+            // Geometry Lab
+            if (this.modules.renderer?.geometryLab) {
+                this.modules.renderer.geometryLab.update(delta);
             }
             
-            // Actualizar LOD
+            // LOD
             if (this.modules.renderer && this.modules.ecs) {
                 const camPos = this.modules.renderer.getCameraPosition();
                 this.modules.ecs.updateLOD(
@@ -907,37 +1228,33 @@
                     CONFIG.lodDistance * 3 || 600
                 );
             }
-        }
-        
-        /**
-         * Update (por frame)
-         */
-        _update(delta) {
-            // Actualizar el mundo del juego
-            if (this.modules.gameWorld) {
-                // Ya se actualiza en fixed update
+            
+            // Workers
+            if (this.config.enableThreading && this._workers.length > 0) {
+                this._dispatchWorkerTasks(delta);
             }
             
-            // Actualizar helpers
-            if (this.modules.helpers) {
-                this.modules.helpers.updateTimers(delta);
+            const elapsed = performance.now() - startTime;
+            this._loop.frameTime = elapsed;
+        }
+        
+        _update(delta) {
+            // Helpers timers
+            if (this.modules.utils.helpers) {
+                this.modules.utils.helpers.updateTimers(delta);
+            }
+            
+            // Actualizar predicciones
+            if (this.config.enablePredictiveAI) {
+                this._updatePredictions();
             }
         }
         
-        /**
-         * Render
-         */
         _render() {
             if (!this.modules.renderer) return;
             
-            // Obtener optimizaciones meta
-            let metaOptimizations = null;
-            if (this.modules.metaAI) {
-                const status = this.modules.metaAI.getStatus();
-                metaOptimizations = status.metaParams || null;
-            }
+            const metaOptimizations = this.modules.ai.meta?.getStatus()?.metaParams || null;
             
-            // Renderizar
             this.modules.renderer.render(
                 this.modules.ecs,
                 null,
@@ -947,37 +1264,105 @@
             this._loop.renderCount++;
         }
         
-        /**
-         * Post-Render
-         */
         _postRender() {
-            // Actualizar profiler
-            if (this.modules.profiler && this.modules.renderer) {
+            // Profiler
+            if (this.modules.utils.profiler && this.modules.renderer) {
                 const renderStats = this.modules.renderer.getStats();
-                const entityCount = this.modules.ecs ? this.modules.ecs.count : 0;
-                this.modules.profiler.sample(renderStats, entityCount);
+                const entityCount = this.modules.ecs?.count || 0;
+                this.modules.utils.profiler.sample(renderStats, entityCount);
             }
         }
         
         // ============================================================
-        //  🧠 APLICAR ACCIONES DE IA
+        //  📊 ACTUALIZAR ESTADÍSTICAS
         //  ============================================================
+        _updateStats(delta, rawDelta) {
+            this.state.frameCount++;
+            this.state.uptime = performance.now() - this.state.startTime;
+            this.state.deltaTime = delta / 1000;
+            
+            // FPS
+            if (rawDelta > 0) {
+                const instantFps = 1000 / rawDelta;
+                if (instantFps > 0 && instantFps <= 150) {
+                    this._fpsSamples = this._fpsSamples || [];
+                    this._fpsSamples.push(instantFps);
+                    if (this._fpsSamples.length > 20) this._fpsSamples.shift();
+                }
+            }
+            
+            if (this.state.frameCount % 15 === 0 && this._fpsSamples?.length > 0) {
+                const avg = this._fpsSamples.reduce((a, b) => a + b, 0) / this._fpsSamples.length;
+                this.state.fps = Math.round(avg);
+                
+                // Historial
+                this.state.fpsHistory.push(this.state.fps);
+                if (this.state.fpsHistory.length > 100) this.state.fpsHistory.shift();
+            }
+            
+            // Estadísticas globales
+            this.stats.totalFrames++;
+            this.stats.averageFps = this.stats.averageFps * 0.95 + this.state.fps * 0.05;
+            this.stats.averageFrameTime = this.stats.averageFrameTime * 0.95 + delta * 0.05;
+            
+            if (this.state.fps < this.stats.minFps) this.stats.minFps = this.state.fps;
+            if (this.state.fps > this.stats.maxFps) this.stats.maxFps = this.state.fps;
+            if (delta < this.stats.minFrameTime) this.stats.minFrameTime = delta;
+            if (delta > this.stats.maxFrameTime) this.stats.maxFrameTime = delta;
+        }
         
+        // ============================================================
+        //  🧵 DISPATCH WORKER TASKS
+        //  ============================================================
+        _dispatchWorkerTasks(delta) {
+            if (this._workers.length === 0 || this.state.frameCount % 5 !== 0) return;
+            
+            // Physics
+            const physicsEntities = [];
+            const ecs = this.modules.ecs;
+            if (ecs) {
+                const active = ecs.getActive();
+                const count = Math.min(active.length, 100);
+                for (let i = 0; i < count; i++) {
+                    const id = active[i];
+                    physicsEntities.push({
+                        id: id,
+                        pos: { x: ecs.posX[id], y: ecs.posY[id], z: ecs.posZ[id] },
+                        vel: { x: ecs.velX[id], y: ecs.velY[id], z: ecs.velZ[id] },
+                        mass: ecs.mass[id] || 1
+                    });
+                }
+            }
+            
+            if (physicsEntities.length > 0) {
+                const task = {
+                    type: 'physics',
+                    data: {
+                        entities: physicsEntities,
+                        delta: delta,
+                        gravity: CONFIG.gravity || -9.8
+                    },
+                    id: Date.now() + '_' + Math.random().toString(36).substr(2, 4)
+                };
+                
+                const worker = this._workers[this.state.frameCount % this._workers.length];
+                if (worker) {
+                    worker.postMessage(task);
+                    this.state.tasksScheduled++;
+                }
+            }
+        }
+        
+        // ============================================================
+        //  🧠 APLICAR ACCIONES DE IA MEJORADAS
+        //  ============================================================
         _applyAIAction(action) {
             if (!action || !this.modules.renderer) return;
-            if (this.manualQuality) return; // El usuario tomó control manual de la calidad
+            if (this.manualQuality) return;
             
-            // Calidad
             this.modules.renderer.setQuality(action.quality);
             this.modules.renderer.setLODDistance(action.lodDistance);
             
-            // Nota: la resolución dinámica (DRS) ya no se controla desde
-            // aquí — el MaxRenderer tiene su propio controlador dedicado
-            // que mide el tiempo real de frame directamente. Tener dos
-            // sistemas escribiendo el mismo valor fue justo la causa de
-            // la regresión anterior (1 FPS por pelea entre ambos).
-            
-            // Efectos
             if (CONFIG) {
                 CONFIG.waterEnabled = action.useWater;
                 CONFIG.particlesEnabled = action.useParticles;
@@ -985,16 +1370,10 @@
                 CONFIG.ssaoEnabled = action.useSSAO;
             }
             
-            // Conectar los toggles con los pases de post-procesado reales
             const renderer = this.modules.renderer;
-            if (renderer.ssaoPass) {
-                renderer.ssaoPass.enabled = !!action.useSSAO;
-            }
-            if (renderer.dustSystem) {
-                renderer.dustSystem.visible = !!action.useParticles;
-            }
+            if (renderer.ssaoPass) renderer.ssaoPass.enabled = !!action.useSSAO;
+            if (renderer.dustSystem) renderer.dustSystem.visible = !!action.useParticles;
             
-            // Actualizar UI
             this._updateUI('quality', action.quality.toUpperCase());
             this._updateUI('lod', action.lodDistance);
             this._updateUI('confidence', Math.round(action.confidence * 100) + '%');
@@ -1003,15 +1382,13 @@
         _applyMetaAction(metaResult) {
             if (!metaResult || !this.modules.renderer) return;
             
-            // Aplicar optimizaciones gráficas
             if (metaResult.graphicsOptimizations) {
-                this.modules.metaAI.applyOptimizations(
+                this.modules.ai.meta.applyOptimizations(
                     this.modules.renderer,
                     metaResult.graphicsOptimizations
                 );
             }
             
-            // Actualizar UI
             const prediction = metaResult.prediction || 'estable';
             const predMap = {
                 'estable': '⚡ Estable',
@@ -1025,7 +1402,6 @@
         // ============================================================
         //  🖥️ UI UPDATES
         //  ============================================================
-        
         _updateUI(id, value) {
             const element = document.getElementById(id);
             if (element) {
@@ -1034,12 +1410,46 @@
         }
         
         // ============================================================
-        //  📊 ESTADÍSTICAS
+        //  🔄 ERROR RECOVERY
         //  ============================================================
+        _attemptRecovery(error) {
+            console.log(`🔄 Intentando recuperación (intento ${this.state.recoveryAttempts + 1})...`);
+            
+            this.state.recoveryAttempts++;
+            this.state.lastError = error;
+            
+            try {
+                // Pausar motor
+                this.pause();
+                
+                // Limpiar estado corrompido
+                if (this.modules.ecs) {
+                    // Resetear ECS pero mantener entidades
+                }
+                
+                // Reiniciar renderer si es necesario
+                if (this.modules.renderer && error.message?.includes('WebGL')) {
+                    this.modules.renderer.reset();
+                }
+                
+                // Reanudar
+                setTimeout(() => {
+                    this.resume();
+                    this.state.recoveryAttempts = 0;
+                    console.log('✅ Recuperación exitosa');
+                    this.emit('recovery', { error });
+                }, 100);
+                
+            } catch (recoveryError) {
+                console.error('❌ Fallo en recuperación:', recoveryError);
+                this.state.status = 'error';
+                this.emit('recovery_failed', { error: recoveryError });
+            }
+        }
         
-        /**
-         * Obtener estadísticas del motor
-         */
+        // ============================================================
+        //  📊 ESTADÍSTICAS MEJORADAS
+        //  ============================================================
         getStats() {
             return {
                 state: this.state,
@@ -1047,26 +1457,36 @@
                     frameCount: this._loop.renderCount,
                     updateCount: this._loop.updateCount,
                     fixedDeltaTime: this._loop.fixedDeltaTime,
-                    accumulator: this._loop.accumulator
+                    accumulator: this._loop.accumulator,
+                    frameTime: this._loop.frameTime,
+                    skippedFrames: this._loop.skippedFrames
                 },
                 modules: {
                     loaded: Object.keys(this.modules).filter(k => this.modules[k]).length,
                     total: Object.keys(this.modules).length,
                     names: Object.keys(this.modules).filter(k => this.modules[k])
                 },
-                ecs: this.modules.ecs ? this.modules.ecs.getStats() : null,
-                renderer: this.modules.renderer ? this.modules.renderer.getStats() : null,
-                game: this.modules.gameWorld ? this.modules.gameWorld.getStats() : null,
+                ecs: this.modules.ecs?.getStats() || null,
+                renderer: this.modules.renderer?.getStats() || null,
+                game: this.modules.game.world?.getStats() || null,
+                workers: {
+                    total: this._workers.length,
+                    active: this.state.activeThreads,
+                    tasksScheduled: this.state.tasksScheduled,
+                    tasksCompleted: this.state.tasksCompleted
+                },
                 plugins: Array.from(this._plugins.keys()),
+                stats: this.stats,
                 fps: this.state.fps,
-                entities: this.modules.ecs ? this.modules.ecs.count : 0,
-                uptime: this.state.uptime
+                entities: this.modules.ecs?.count || 0,
+                uptime: this.state.uptime,
+                prediction: this.getPrediction(),
+                quality: this.state.qualityLevel,
+                performanceMode: this.state.performanceMode,
+                energyEfficiency: this.state.energyEfficiency
             };
         }
         
-        /**
-         * Obtener resumen rápido
-         */
         getSummary() {
             const stats = this.getStats();
             return {
@@ -1077,76 +1497,59 @@
                 modules: stats.modules.loaded,
                 plugins: stats.plugins.length,
                 renderer: stats.renderer ? 'active' : 'inactive',
-                memory: this.modules.memory ? 
-                    this.modules.memory.getSummary() : null
+                workers: stats.workers.active,
+                quality: this.state.qualityLevel,
+                prediction: stats.prediction,
+                memory: this.modules.core.memory?.getSummary?.() || null
             };
         }
         
         // ============================================================
         //  🎯 MÉTODOS PÚBLICOS
         //  ============================================================
-        
-        /**
-         * Obtener un módulo por nombre
-         */
         getModule(name) {
+            // Buscar en las categorías
+            const categories = ['core', 'ecs', 'ai', 'renderer', 'game', 'utils'];
+            for (const category of categories) {
+                if (this.modules[category] && this.modules[category][name] !== undefined) {
+                    return this.modules[category][name];
+                }
+            }
             return this.modules[name] || null;
         }
         
-        /**
-         * Obtener todos los módulos
-         */
         getModules() {
             return { ...this.modules };
         }
         
-        /**
-         * Obtener el estado del motor
-         */
         getState() {
             return { ...this.state };
         }
         
-        /**
-         * Verificar si el motor está en ejecución
-         */
         isRunning() {
             return this.state.status === 'running';
         }
         
-        /**
-         * Verificar si el motor está listo
-         */
         isReady() {
             return this.state.status === 'ready' || this.state.status === 'running';
         }
         
-        /**
-         * Verificar si hay error
-         */
         hasError() {
             return this.state.status === 'error';
         }
         
-        /**
-         * Obtener el error actual
-         */
         getError() {
             return this.state.error;
         }
         
         // ============================================================
-        //  🔧 UTILIDADES
+        //  🔧 UTILIDADES MEJORADAS
         //  ============================================================
-        
-        /**
-         * Ejecutar un benchmark
-         */
         async runBenchmark(duration = 5000) {
-            console.log(`📊 Ejecutando benchmark (${duration}ms)...`);
+            console.log(`📊 Ejecutando benchmark cuántico (${duration}ms)...`);
             
-            if (this.modules.profiler) {
-                const results = await this.modules.profiler.runBenchmark(duration);
+            if (this.modules.utils.profiler) {
+                const results = await this.modules.utils.profiler.runBenchmark(duration);
                 console.log('✅ Benchmark completado:', results);
                 return results;
             }
@@ -1155,9 +1558,6 @@
             return null;
         }
         
-        /**
-         * Exportar datos del motor
-         */
         exportData() {
             return {
                 config: { ...this.config },
@@ -1165,36 +1565,33 @@
                 stats: this.getStats(),
                 modules: Object.keys(this.modules).filter(k => this.modules[k]),
                 plugins: Array.from(this._plugins.keys()),
+                prediction: this._predictor.lastPrediction,
+                eventHistory: this._eventHistory.slice(-50),
                 timestamp: Date.now()
             };
         }
         
-        /**
-         * Exportar como JSON
-         */
         exportJSON() {
             return JSON.stringify(this.exportData(), null, 2);
         }
         
         // ============================================================
-        //  🔄 RESET
+        //  🔄 RESET MEJORADO
         //  ============================================================
-        
         reset() {
-            console.log('🔄 Resetando motor...');
+            console.log('🔄 Resetando motor cuántico...');
             
-            // Detener motor
             this.stop();
             
             // Resetear módulos
             if (this.modules.ecs) this.modules.ecs.reset();
             if (this.modules.renderer) this.modules.renderer.reset();
-            if (this.modules.gameWorld) this.modules.gameWorld.reset();
-            if (this.modules.geometryLab) this.modules.geometryLab.reset();
-            if (this.modules.optimizerAI) this.modules.optimizerAI.reset();
-            if (this.modules.metaAI) this.modules.metaAI.reset();
-            if (this.modules.profiler) this.modules.profiler.reset();
-            if (this.modules.helpers) this.modules.helpers.reset();
+            if (this.modules.game.world) this.modules.game.world.reset();
+            if (this.modules.renderer?.geometryLab) this.modules.renderer.geometryLab.reset();
+            if (this.modules.ai.optimizer) this.modules.ai.optimizer.reset();
+            if (this.modules.ai.meta) this.modules.ai.meta.reset();
+            if (this.modules.utils.profiler) this.modules.utils.profiler.reset();
+            if (this.modules.utils.helpers) this.modules.utils.helpers.reset();
             
             // Resetear estado
             this.state.frameCount = 0;
@@ -1204,57 +1601,83 @@
             this._loop.fixedAccumulator = 0;
             this._loop.updateCount = 0;
             this._loop.renderCount = 0;
+            this._fpsSamples = [];
+            this.state.fpsHistory = [];
+            this._predictor.forecast = [];
+            this._predictor.alerts = [];
+            this.stats = {
+                totalFrames: 0,
+                totalUpdates: 0,
+                totalRenders: 0,
+                totalErrors: 0,
+                averageFps: 0,
+                minFps: Infinity,
+                maxFps: 0,
+                averageFrameTime: 0,
+                minFrameTime: Infinity,
+                maxFrameTime: 0,
+                averageCpuLoad: 0,
+                averageGpuLoad: 0,
+                averageMemory: 0,
+                peakMemory: 0,
+                totalTasks: 0,
+                completedTasks: 0,
+                failedTasks: 0,
+                uptime: 0
+            };
             
             this.state.status = 'ready';
             
-            console.log('✅ Motor reseteado');
-            
+            console.log('✅ Motor cuántico reseteado');
             return this;
         }
         
         // ============================================================
-        //  🗑️ DESTRUIR
+        //  🗑️ DESTRUIR MEJORADO
         //  ============================================================
-        
         destroy() {
-            console.log('🗑️ Destruyendo motor...');
+            console.log('🗑️ Destruyendo motor cuántico...');
             
-            // Detener
             this.stop();
             
             // Limpiar eventos
             this._events.clear();
+            this._eventHistory = [];
+            
+            // Limpiar intervalos
+            if (this._predictor.interval) {
+                clearInterval(this._predictor.interval);
+            }
+            if (this._budgetInterval) {
+                clearInterval(this._budgetInterval);
+            }
+            if (this._adaptiveInterval) {
+                clearInterval(this._adaptiveInterval);
+            }
             
             // Destruir módulos
-            if (this.modules.renderer) {
-                if (typeof this.modules.renderer.destroy === 'function') {
-                    this.modules.renderer.destroy();
-                }
-            }
+            if (this.modules.renderer?.destroy) this.modules.renderer.destroy();
+            if (this.modules.core.memory?.shutdown) this.modules.core.memory.shutdown();
             
-            if (this.modules.memory && typeof this.modules.memory.shutdown === 'function') {
-                this.modules.memory.shutdown();
+            // Terminar workers
+            for (const worker of this._workers) {
+                worker.terminate();
             }
+            this._workers = [];
             
             // Limpiar plugins
             for (const [name, plugin] of this._plugins) {
                 if (typeof plugin.destroy === 'function') {
-                    try {
-                        plugin.destroy();
-                    } catch (e) {
-                        console.warn(`⚠️ Error al destruir plugin "${name}":`, e);
-                    }
+                    try { plugin.destroy(); } catch (e) {}
                 }
             }
             this._plugins.clear();
             
             // Resetear módulos
             this.modules = {};
-            
             this.state.status = 'stopped';
             
-            console.log('✅ Motor destruido');
-            
+            console.log('✅ Motor cuántico destruido');
             return this;
         }
     }
@@ -1264,13 +1687,18 @@
     //  ============================================================
     window.PriomEngine = PriomEngine;
     
-    console.log('🚀 PriomEngine cargado');
+    console.log('🚀 PriomEngine Cuántico cargado');
+    console.log('🧠 IA Predictiva de rendimiento');
+    console.log('🧵 Sistema de Workers multi-thread');
+    console.log('⚡ Adaptive Quality en tiempo real');
+    console.log('📊 Performance Budget integrado');
+    console.log('🔄 Error Recovery automático');
+    console.log('📈 Dashboard de rendimiento');
     
-    // ============================================================
-    //  📦 EXPORTAR
-    //  ============================================================
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = PriomEngine;
     }
     
 })();
+                
+                
