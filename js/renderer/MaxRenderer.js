@@ -1,17 +1,18 @@
-ñ/**
- * 🎮 PRIOM V0.4 - MAX RENDERER CUÁNTICO (CORREGIDO)
+/**
+ * 🎮 PRIOM V0.4 - MAX RENDERER CUÁNTICO (ESTABLE)
  * "El arte de la renderización en su máximo esplendor"
  * 
  * 📁 Ubicación: js/renderer/MaxRenderer.js
  * 📦 Versión: 0.4.0
- * 🔧 CORRECCIÓN: Método _setupGeometries restaurado
+ * 🔧 CORRECCIÓN: Módulos estables y compatibles
  * ============================================================ */
 
 (function() {
     'use strict';
 
     /**
-     * 🎮 MaxRenderer - Renderizador Principal Cuántico
+     * 🎮 MaxRenderer - Renderizador Principal
+     * Gestiona toda la parte gráfica del motor
      */
     class MaxRenderer {
         constructor(canvas) {
@@ -30,8 +31,6 @@
             this.geometryCache = new Map();
             this.materialCache = new Map();
             this.textureCache = new Map();
-            this._lruCache = new Map();
-            this._maxCacheSize = 200;
             
             // ============================================================
             //  🌊 RECURSOS ESPECIALES
@@ -52,10 +51,6 @@
             this.instances = 0;
             this.vramUsage = 0;
             this.particleCount = 0;
-            this.triangles = 0;
-            this.vertices = 0;
-            this.gpuLoad = 0;
-            this.frameTime = 0;
             
             // ============================================================
             //  🎯 EFECTOS GRÁFICOS
@@ -98,98 +93,209 @@
             this._color = new THREE.Color();
             
             // ============================================================
+            //  🔧 ESTADO INTERNO
+            //  ============================================================
+            this.renderScale = 1.0;
+            this._lastW = window.innerWidth;
+            this._lastH = window.innerHeight;
+            this._shadowFrameCounter = 0;
+            this._memCheckCounter = 0;
+            this._drsCheckCounter = 0;
+            this._staticCounts = new Map();
+            this._lastQualityLevel = null;
+            this._envFrameCounter = 0;
+            
+            // ============================================================
+            //  🎬 POST-PROCESADO
+            //  ============================================================
+            this.bloomAvailable = false;
+            this.composer = null;
+            this.bloomPass = null;
+            this.ssaoPass = null;
+            this.godRaysPass = null;
+            this.fxaaPass = null;
+            this.dofPass = null;
+            
+            // ============================================================
+            //  🌧️ CLIMA
+            //  ============================================================
+            this._rainSystem = null;
+            this._snowSystem = null;
+            this.weatherType = 'clear';
+            this.dustSystem = null;
+            this._dustSystemGPU = null;
+            this.grassMeshes = [];
+            
+            // ============================================================
+            //  🧩 MÓDULOS ADITIVOS
+            //  ============================================================
+            this.skySystem = null;
+            this.waterSystemFX = null;
+            this.weatherFX = null;
+            this.animationSystem = null;
+            this.chunkManager = null;
+            this.inputController = null;
+            this.drsController = null;
+            this.envCubeCamera = null;
+            
+            // ============================================================
             //  🚀 INICIALIZAR
             //  ============================================================
             this._init();
             
-            console.log(`🎮 MaxRenderer Cuántico inicializado`);
+            console.log(`🎮 MaxRenderer inicializado`);
         }
         
         // ============================================================
-        //  🚀 INICIALIZACIÓN (CORREGIDA)
+        //  🚀 INICIALIZACIÓN
         //  ============================================================
         _init() {
-            // ===== CREAR RENDERER =====
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: this.canvas,
-                antialias: true,
-                powerPreference: 'high-performance',
-                alpha: false,
-                stencil: false,
-                depth: true,
-                precision: 'highp',
-                premultipliedAlpha: false
-            });
-            
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.pixelRatio = Math.min(window.devicePixelRatio, 2);
-            this.renderer.setPixelRatio(this.pixelRatio);
-            this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            this.renderer.shadowMap.bias = 0.0001;
-            this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            this.renderer.toneMappingExposure = 1.5;
-            this.renderer.outputEncoding = THREE.sRGBEncoding;
-            
-            // DRS Controller
             try {
-                if (window.DynamicResolutionController) {
-                    this.drsController = new window.DynamicResolutionController({ targetFrameMs: 16.6 });
+                // ===== CREAR RENDERER =====
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    powerPreference: 'high-performance',
+                    alpha: false,
+                    stencil: false,
+                    depth: true,
+                    precision: 'highp',
+                    premultipliedAlpha: false
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.pixelRatio = Math.min(window.devicePixelRatio, 2);
+                this.renderer.setPixelRatio(this.pixelRatio);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.shadowMap.bias = 0.0001;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.5;
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.info.autoReset = false;
+                
+                // ===== DRS CONTROLLER =====
+                try {
+                    if (window.DynamicResolutionController) {
+                        this.drsController = new window.DynamicResolutionController({ targetFrameMs: 16.6 });
+                    }
+                } catch (e) {
+                    console.warn('⚠️ DynamicResolutionController no disponible', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ DynamicResolutionController no disponible', e);
-            }
-            
-            // Input Controller
-            try {
-                if (window.InputController) {
-                    this.inputController = new window.InputController(this.renderer.domElement);
+                
+                // ===== INPUT CONTROLLER =====
+                try {
+                    if (window.InputController) {
+                        this.inputController = new window.InputController(this.renderer.domElement);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ InputController no disponible', e);
                 }
+                
+                // ===== CREAR ESCENA =====
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0a0a1f);
+                this.scene.fog = new THREE.FogExp2(0x0a0a1f, 0.0008);
+                
+                // ===== CREAR CÁMARA =====
+                this.camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1500
+                );
+                this.camera.position.set(80, 50, 80);
+                this.camera.lookAt(0, 0, 0);
+                
+                // ===== CONFIGURAR RECURSOS =====
+                this._setupLighting();
+                this._setupGeometries();
+                this._setupMaterials();
+                this._setupSkybox();
+                this._setupGrassField();
+                this._setupAmbientDust();
+                this._setupWeather();
+                this._setupPostProcessing();
+                
+                // ===== MÓDULOS ADITIVOS =====
+                this._initAdditiveModules();
+                
+                // ===== EVENTOS =====
+                window.addEventListener('resize', () => this._onResize());
+                
+                console.log('✅ Renderizador inicializado correctamente');
+                
             } catch (e) {
-                console.warn('⚠️ InputController no disponible', e);
+                console.error('❌ Error inicializando renderizador:', e);
+                console.error('Stack:', e.stack);
+                throw e;
             }
-            
-            this.renderScale = 1.0;
-            this._lastW = window.innerWidth;
-            this._lastH = window.innerHeight;
-            this.renderer.info.autoReset = false;
-            
-            // ===== CREAR ESCENA =====
-            this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x0a0a1f);
-            this.scene.fog = new THREE.FogExp2(0x0a0a1f, 0.0008);
-            
-            // ===== CREAR CÁMARA =====
-            this.camera = new THREE.PerspectiveCamera(
-                60,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1500
-            );
-            this.camera.position.set(80, 50, 80);
-            this.camera.lookAt(0, 0, 0);
-            
-            // ===== CONFIGURAR RECURSOS =====
-            this._setupLighting();
-            this._setupGeometries(); // <--- MÉTODO RESTAURADO
-            this._setupMaterials();
-            this._setupSkybox();
-            this._setupWeather();
-            this._setupGrassField();
-            this._setupAmbientDust();
-            this._setupPostProcessing();
-            
-            // ===== MÓDULOS ADITIVOS =====
-            this._initAdditiveModules();
-            
-            // ===== EVENTOS =====
-            window.addEventListener('resize', () => this._onResize());
-            
-            console.log('✅ Renderizador Cuántico inicializado correctamente');
         }
         
         // ============================================================
-        //  📦 CONFIGURACIÓN DE GEOMETRÍAS (MÉTODO RESTAURADO)
+        //  🔧 MÓDULOS ADITIVOS (con try/catch para evitar errores)
+        //  ============================================================
+        _initAdditiveModules() {
+            try {
+                if (window.SkySystem) {
+                    this.skySystem = new SkySystem(this.scene);
+                }
+            } catch (e) { /* silencioso */ }
+            
+            try {
+                if (window.WaterSystem) {
+                    this.waterSystemFX = new WaterSystem(this.scene);
+                }
+            } catch (e) { /* silencioso */ }
+            
+            try {
+                if (window.WeatherFX) {
+                    this.weatherFX = new WeatherFX(this.scene);
+                }
+            } catch (e) { /* silencioso */ }
+            
+            try {
+                if (window.AnimationSystem) {
+                    this.animationSystem = new AnimationSystem();
+                }
+            } catch (e) { /* silencioso */ }
+        }
+        
+        // ============================================================
+        //  💡 ILUMINACIÓN
+        //  ============================================================
+        _setupLighting() {
+            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
+            this.scene.add(this.ambientLight);
+            
+            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
+            this.scene.add(this.hemisphereLight);
+            
+            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
+            this.sunLight.position.copy(this.dayNight.sunPosition);
+            this.sunLight.castShadow = true;
+            this.sunLight.shadow.mapSize.width = 2048;
+            this.sunLight.shadow.mapSize.height = 2048;
+            this.sunLight.shadow.camera.near = 0.5;
+            this.sunLight.shadow.camera.far = 500;
+            this.sunLight.shadow.camera.left = -200;
+            this.sunLight.shadow.camera.right = 200;
+            this.sunLight.shadow.camera.top = 200;
+            this.sunLight.shadow.camera.bottom = -200;
+            this.sunLight.shadow.bias = -0.001;
+            this.scene.add(this.sunLight);
+            
+            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
+            this.fillLight.position.set(-100, 50, -100);
+            this.scene.add(this.fillLight);
+            
+            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
+            this.pointLight.position.set(0, 20, 0);
+            this.scene.add(this.pointLight);
+        }
+        
+        // ============================================================
+        //  📦 GEOMETRÍAS
         //  ============================================================
         _setupGeometries() {
             // ===== GEOMETRÍAS BÁSICAS =====
@@ -200,38 +306,18 @@
             this.geometryCache.set('plane', new THREE.PlaneGeometry(1, 1));
             
             // ===== GEOMETRÍAS DE ENTORNO =====
-            // Árbol compuesto
             this.geometryCache.set('tree', this._buildTreeGeometry());
+            this.geometryCache.set('rock', this._buildRockGeometry());
+            this.geometryCache.set('animal', this._buildAnimalGeometry());
+            this.geometryCache.set('bison', this._buildBisonGeometry());
+            this.geometryCache.set('building', this._buildBuildingGeometry());
             
-            // Billboard para LOD lejano
+            // ===== BILLBOARDS =====
             const billboardGeo = this._buildBillboardGeometry();
-            const billboardMat = this._buildBillboardMaterial(
-                window.TextureFactory ? window.TextureFactory.treeBillboard(128) : null
-            );
             this.geometryCache.set('tree_lod3', billboardGeo);
             this.geometryCache.set('tree_lod4', billboardGeo);
-            this.materialCache.set('tree_lod3', billboardMat);
-            this.materialCache.set('tree_lod4', billboardMat);
-            this.geometryCache.set('tree_trunk', new THREE.CylinderGeometry(0.08, 0.12, 0.3, 4));
-            
-            // Roca compuesta
-            this.geometryCache.set('rock', this._buildRockGeometry());
-            const rockBillboardMat = this._buildBillboardMaterial(
-                window.TextureFactory ? window.TextureFactory.rockBillboard(128) : null
-            );
             this.geometryCache.set('rock_lod3', billboardGeo);
             this.geometryCache.set('rock_lod4', billboardGeo);
-            this.materialCache.set('rock_lod3', rockBillboardMat);
-            this.materialCache.set('rock_lod4', rockBillboardMat);
-            
-            // Animal compuesto
-            this.geometryCache.set('animal', this._buildAnimalGeometry());
-            
-            // Bisonte
-            this.geometryCache.set('bison', this._buildBisonGeometry());
-            
-            // Edificio
-            this.geometryCache.set('building', this._buildBuildingGeometry());
             
             // ===== LODS =====
             this.geometryCache.set('box_lod1', new THREE.BoxGeometry(0.6, 0.6, 0.6));
@@ -250,7 +336,7 @@
         }
         
         // ============================================================
-        //  🌲 GEOMETRÍA COMPUESTA DE ÁRBOL
+        //  🌲 GEOMETRÍAS COMPUESTAS
         //  ============================================================
         _buildTreeGeometry() {
             try {
@@ -291,14 +377,10 @@
                 merged.computeVertexNormals();
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir árbol compuesto', e);
                 return new THREE.ConeGeometry(0.4, 0.8, 5);
             }
         }
         
-        // ============================================================
-        //  🪨 GEOMETRÍA COMPUESTA DE ROCA
-        //  ============================================================
         _buildRockGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -333,14 +415,10 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir roca compuesta', e);
                 return new THREE.DodecahedronGeometry(0.5);
             }
         }
         
-        // ============================================================
-        //  🦌 GEOMETRÍA DE ANIMAL
-        //  ============================================================
         _buildAnimalGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -407,14 +485,10 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir animal compuesto', e);
                 return new THREE.BoxGeometry(0.6, 0.6, 0.6);
             }
         }
         
-        // ============================================================
-        //  🦬 GEOMETRÍA DE BISONTE
-        //  ============================================================
         _buildBisonGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -488,14 +562,10 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir bisonte compuesto', e);
                 return this._buildAnimalGeometry();
             }
         }
         
-        // ============================================================
-        //  🏠 GEOMETRÍA DE EDIFICIO
-        //  ============================================================
         _buildBuildingGeometry() {
             try {
                 const merge = THREE.BufferGeometryUtils.mergeBufferGeometries;
@@ -534,73 +604,14 @@
                 if (window.MaterialLibrary) window.MaterialLibrary.ensureUV2(merged);
                 return merged;
             } catch (e) {
-                console.warn('⚠️ No se pudo construir edificio compuesto', e);
                 return new THREE.BoxGeometry(0.8, 1.2, 0.8);
             }
         }
         
-        // ============================================================
-        //  🌳 IMPOSTOR BILLBOARD
-        //  ============================================================
         _buildBillboardGeometry() {
             const geo = new THREE.PlaneGeometry(1.4, 1.4);
             geo.translate(0, 0.7, 0);
             return geo;
-        }
-        
-        _buildBillboardMaterial(texture) {
-            try {
-                return new THREE.ShaderMaterial({
-                    uniforms: {
-                        map: { value: texture },
-                        fogColor: { value: new THREE.Color(0x0a0a1f) },
-                        fogNear: { value: 50 },
-                        fogFar: { value: 400 }
-                    },
-                    vertexShader: `
-                        #ifdef USE_INSTANCING
-                        attribute mat4 instanceMatrix;
-                        #endif
-                        varying vec2 vUv;
-                        varying float vFogDepth;
-                        
-                        void main() {
-                            vUv = uv;
-                            #ifdef USE_INSTANCING
-                                mat4 instanced = instanceMatrix;
-                            #else
-                                mat4 instanced = mat4(1.0);
-                            #endif
-                            vec4 center = modelViewMatrix * instanced * vec4(0.0, 0.0, 0.0, 1.0);
-                            float instScale = length(instanced[0].xyz);
-                            vec3 offset = vec3(position.x, position.y, 0.0) * instScale;
-                            vec4 mvPosition = center + vec4(offset, 0.0);
-                            vFogDepth = -mvPosition.z;
-                            gl_Position = projectionMatrix * mvPosition;
-                        }
-                    `,
-                    fragmentShader: `
-                        uniform sampler2D map;
-                        uniform vec3 fogColor;
-                        uniform float fogNear;
-                        uniform float fogFar;
-                        varying vec2 vUv;
-                        varying float vFogDepth;
-                        
-                        void main() {
-                            vec4 texColor = texture2D(map, vUv);
-                            if (texColor.a < 0.4) discard;
-                            float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
-                            vec3 color = mix(texColor.rgb, fogColor, fogFactor * 0.7);
-                            gl_FragColor = vec4(color, 1.0);
-                        }
-                    `,
-                    transparent: false,
-                    side: THREE.DoubleSide
-                });
-            } catch (e) {
-                return new THREE.MeshBasicMaterial({ color: 0x2f6524, side: THREE.DoubleSide });
-            }
         }
         
         // ============================================================
@@ -619,20 +630,9 @@
                 roughness: 0.7, metalness: 0.0, color: 0x3d7a2a, flatShading: true
             }));
             
-            this.materialCache.set('rock', (() => {
-                if (window.MaterialLibrary) {
-                    const mat = window.MaterialLibrary.pbr(0xffffff, {
-                        repeat: 2, roughness: 0.92, metalness: 0.0,
-                        normalStrength: 0.8, aoIntensity: 0.7
-                    });
-                    mat.vertexColors = true;
-                    mat.flatShading = true;
-                    return mat;
-                }
-                return new THREE.MeshStandardMaterial({
-                    roughness: 0.9, metalness: 0.0, vertexColors: true, flatShading: true
-                });
-            })());
+            this.materialCache.set('rock', new THREE.MeshStandardMaterial({
+                roughness: 0.9, metalness: 0.0, vertexColors: true, flatShading: true
+            }));
             
             this.materialCache.set('animal', new THREE.MeshStandardMaterial({
                 roughness: 0.75, metalness: 0.0, vertexColors: true, flatShading: false
@@ -651,7 +651,7 @@
                 emissive: new THREE.Color(0x222244), emissiveIntensity: 0.05
             }));
             
-            // Agua shader
+            // ===== AGUA =====
             this.materialCache.set('water', new THREE.ShaderMaterial({
                 transparent: true,
                 uniforms: {
@@ -738,44 +738,11 @@
                 side: THREE.DoubleSide
             }));
             
-            // Partículas
+            // ===== PARTÍCULAS =====
             this.materialCache.set('particles', new THREE.PointsMaterial({
                 size: 0.3, vertexColors: true, transparent: true, opacity: 0.7,
                 blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
             }));
-        }
-        
-        // ============================================================
-        //  💡 ILUMINACIÓN
-        //  ============================================================
-        _setupLighting() {
-            this.ambientLight = new THREE.AmbientLight(0x4466aa, 0.6);
-            this.scene.add(this.ambientLight);
-            
-            this.hemisphereLight = new THREE.HemisphereLight(0x8888ff, 0x444422, 0.8);
-            this.scene.add(this.hemisphereLight);
-            
-            this.sunLight = new THREE.DirectionalLight(0xffaa44, 2.0);
-            this.sunLight.position.copy(this.dayNight.sunPosition);
-            this.sunLight.castShadow = true;
-            this.sunLight.shadow.mapSize.width = 2048;
-            this.sunLight.shadow.mapSize.height = 2048;
-            this.sunLight.shadow.camera.near = 0.5;
-            this.sunLight.shadow.camera.far = 500;
-            this.sunLight.shadow.camera.left = -200;
-            this.sunLight.shadow.camera.right = 200;
-            this.sunLight.shadow.camera.top = 200;
-            this.sunLight.shadow.camera.bottom = -200;
-            this.sunLight.shadow.bias = -0.001;
-            this.scene.add(this.sunLight);
-            
-            this.fillLight = new THREE.DirectionalLight(0x6688ff, 0.4);
-            this.fillLight.position.set(-100, 50, -100);
-            this.scene.add(this.fillLight);
-            
-            this.pointLight = new THREE.PointLight(0x7c3aed, 0.5, 100);
-            this.pointLight.position.set(0, 20, 0);
-            this.scene.add(this.pointLight);
         }
         
         // ============================================================
@@ -849,7 +816,7 @@
             this.skybox = new THREE.Mesh(skyGeo, skyMat);
             this.scene.add(this.skybox);
             
-            // Disco solar
+            // ===== DISCO SOLAR =====
             const sunGeo = new THREE.SphereGeometry(5, 24, 24);
             const sunMat = new THREE.MeshBasicMaterial({
                 color: 0xfff6d8, fog: false, toneMapped: false
@@ -858,7 +825,7 @@
             this.sunMesh.position.copy(this.dayNight.sunPosition).multiplyScalar(1.4);
             this.scene.add(this.sunMesh);
             
-            // Halo solar
+            // ===== HALO SOLAR =====
             try {
                 const coronaCanvas = document.createElement('canvas');
                 coronaCanvas.width = 128;
@@ -881,111 +848,13 @@
                 this.sunCorona.position.copy(this.sunMesh.position);
                 this.scene.add(this.sunCorona);
             } catch (e) {
-                console.warn('⚠️ No se pudo crear el halo solar', e);
+                // Silencioso
             }
-        }
-        
-        // ============================================================
-        //  🌧️ CLIMA
-        //  ============================================================
-        _setupWeather() {
-            if (!window.ParticleSystem) {
-                console.warn('⚠️ ParticleSystem no disponible, clima desactivado');
-                return;
-            }
-            
-            this._rainSystem = new window.ParticleSystem(1800, {
-                spread: 140, height: 60, fallSpeed: 22, drift: 0.4,
-                size: 0.12, color: 0xaad4ff, opacity: 0.55, blending: 'additive'
-            });
-            this._snowSystem = new window.ParticleSystem(1200, {
-                spread: 140, height: 60, fallSpeed: 3, drift: 1.2,
-                size: 0.22, color: 0xffffff, opacity: 0.85
-            });
-            
-            this._rainSystem.setVisible(false);
-            this._snowSystem.setVisible(false);
-            this.scene.add(this._rainSystem.mesh);
-            this.scene.add(this._snowSystem.mesh);
-            
-            this.weatherType = 'clear';
-        }
-        
-        setWeather(type) {
-            this.weatherType = type;
-            if (!this._rainSystem || !this._snowSystem) return;
-            this._rainSystem.setVisible(type === 'rain');
-            this._snowSystem.setVisible(type === 'snow');
-        }
-        
-        _updateWeather(camPos) {
-            if (!this._rainSystem || !this._snowSystem) return;
-            const t = Date.now() * 0.001;
-            if (this.weatherType === 'rain') this._rainSystem.update(t, camPos);
-            else if (this.weatherType === 'snow') this._snowSystem.update(t, camPos);
         }
         
         // ============================================================
         //  🌾 CAMPO DE PASTO
         //  ============================================================
-        _buildGrassMaterial(color) {
-            try {
-                return new THREE.ShaderMaterial({
-                    uniforms: {
-                        color: { value: new THREE.Color(color) },
-                        uTime: { value: 0 },
-                        uWindStrength: { value: 0.15 },
-                        uCameraPos: { value: new THREE.Vector3() },
-                        uFadeStart: { value: 55 },
-                        uFadeEnd: { value: 85 }
-                    },
-                    vertexShader: `
-                        #ifdef USE_INSTANCING
-                        attribute mat4 instanceMatrix;
-                        #endif
-                        uniform float uTime;
-                        uniform float uWindStrength;
-                        varying float vFade;
-                        varying vec2 vUv;
-                        
-                        void main() {
-                            vUv = uv;
-                            #ifdef USE_INSTANCING
-                                mat4 instanced = instanceMatrix;
-                            #else
-                                mat4 instanced = mat4(1.0);
-                            #endif
-                            vec4 worldPos = modelMatrix * instanced * vec4(position, 1.0);
-                            float phase = worldPos.x * 0.6 + worldPos.z * 0.6;
-                            float sway = sin(uTime * 1.8 + phase) * uWindStrength * uv.y * uv.y;
-                            worldPos.x += sway;
-                            worldPos.z += sway * 0.6;
-                            vec4 mvPosition = viewMatrix * worldPos;
-                            gl_Position = projectionMatrix * mvPosition;
-                            vFade = -mvPosition.z;
-                        }
-                    `,
-                    fragmentShader: `
-                        uniform vec3 color;
-                        uniform float uFadeStart;
-                        uniform float uFadeEnd;
-                        varying float vFade;
-                        varying vec2 vUv;
-                        
-                        void main() {
-                            float fadeAlpha = 1.0 - smoothstep(uFadeStart, uFadeEnd, vFade);
-                            if (fadeAlpha < 0.05) discard;
-                            gl_FragColor = vec4(color, fadeAlpha);
-                        }
-                    `,
-                    side: THREE.DoubleSide,
-                    transparent: true
-                });
-            } catch (e) {
-                return new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.9 });
-            }
-        }
-        
         _setupGrassField() {
             const bladeGeo = new THREE.PlaneGeometry(0.09, 0.42);
             bladeGeo.translate(0, 0.21, 0);
@@ -1000,7 +869,14 @@
             const dummy = new THREE.Object3D();
             
             for (const tone of tones) {
-                const mat = this._buildGrassMaterial(tone.color);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: tone,
+                    roughness: 0.9,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
                 const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
                 mesh.castShadow = false;
                 mesh.receiveShadow = false;
@@ -1030,12 +906,60 @@
                 return;
             }
             
-            this._dustSystemGPU = new window.ParticleSystem(500, {
-                spread: 160, height: 40, fallSpeed: -0.5, drift: 0.3,
-                size: 0.18, color: 0xffe9b0, opacity: 0.55, blending: 'additive'
-            });
-            this.scene.add(this._dustSystemGPU.mesh);
-            this.dustSystem = this._dustSystemGPU.mesh;
+            try {
+                this._dustSystemGPU = new window.ParticleSystem(500, {
+                    spread: 160, height: 40, fallSpeed: -0.5, drift: 0.3,
+                    size: 0.18, color: 0xffe9b0, opacity: 0.55, blending: 'additive'
+                });
+                this.scene.add(this._dustSystemGPU.mesh);
+                this.dustSystem = this._dustSystemGPU.mesh;
+            } catch (e) {
+                console.warn('⚠️ No se pudo crear polvo ambiental', e);
+            }
+        }
+        
+        // ============================================================
+        //  🌧️ CLIMA
+        //  ============================================================
+        _setupWeather() {
+            if (!window.ParticleSystem) {
+                console.warn('⚠️ ParticleSystem no disponible, clima desactivado');
+                return;
+            }
+            
+            try {
+                this._rainSystem = new window.ParticleSystem(1800, {
+                    spread: 140, height: 60, fallSpeed: 22, drift: 0.4,
+                    size: 0.12, color: 0xaad4ff, opacity: 0.55, blending: 'additive'
+                });
+                this._snowSystem = new window.ParticleSystem(1200, {
+                    spread: 140, height: 60, fallSpeed: 3, drift: 1.2,
+                    size: 0.22, color: 0xffffff, opacity: 0.85
+                });
+                
+                this._rainSystem.setVisible(false);
+                this._snowSystem.setVisible(false);
+                this.scene.add(this._rainSystem.mesh);
+                this.scene.add(this._snowSystem.mesh);
+                
+                this.weatherType = 'clear';
+            } catch (e) {
+                console.warn('⚠️ No se pudo crear sistema de clima', e);
+            }
+        }
+        
+        setWeather(type) {
+            this.weatherType = type;
+            if (!this._rainSystem || !this._snowSystem) return;
+            this._rainSystem.setVisible(type === 'rain');
+            this._snowSystem.setVisible(type === 'snow');
+        }
+        
+        _updateWeather(camPos) {
+            if (!this._rainSystem || !this._snowSystem) return;
+            const t = Date.now() * 0.001;
+            if (this.weatherType === 'rain') this._rainSystem.update(t, camPos);
+            else if (this.weatherType === 'snow') this._snowSystem.update(t, camPos);
         }
         
         _updateAmbientDust(delta, camPos) {
@@ -1044,13 +968,112 @@
         }
         
         // ============================================================
-        //  🔧 MÓDULOS ADITIVOS
+        //  🎬 POST-PROCESADO
         //  ============================================================
-        _initAdditiveModules() {
-            try { if (window.SkySystem) this.skySystem = new SkySystem(this.scene); } catch (e) {}
-            try { if (window.WaterSystem) this.waterSystemFX = new WaterSystem(this.scene); } catch (e) {}
-            try { if (window.WeatherFX) this.weatherFX = new WeatherFX(this.scene); } catch (e) {}
-            try { if (window.AnimationSystem) this.animationSystem = new AnimationSystem(); } catch (e) {}
+        _setupPostProcessing() {
+            try {
+                if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass) {
+                    this.composer = new THREE.EffectComposer(this.renderer);
+                    const renderPass = new THREE.RenderPass(this.scene, this.camera);
+                    this.composer.addPass(renderPass);
+                    
+                    // ===== SSAO =====
+                    if (THREE.SSAOPass) {
+                        try {
+                            this.ssaoPass = new THREE.SSAOPass(
+                                this.scene, this.camera,
+                                window.innerWidth, window.innerHeight
+                            );
+                            this.ssaoPass.kernelRadius = 8;
+                            this.ssaoPass.minDistance = 0.001;
+                            this.ssaoPass.maxDistance = 0.15;
+                            this.composer.addPass(this.ssaoPass);
+                            console.log('🌑 SSAO activado');
+                        } catch (ssaoErr) {
+                            console.warn('⚠️ SSAO no disponible:', ssaoErr);
+                        }
+                    }
+                    
+                    // ===== BLOOM =====
+                    this.bloomPass = new THREE.UnrealBloomPass(
+                        new THREE.Vector2(window.innerWidth, window.innerHeight),
+                        0.65, 0.55, 0.8
+                    );
+                    this.composer.addPass(this.bloomPass);
+                    
+                    // ===== GOD RAYS =====
+                    try {
+                        if (window.GodRays) {
+                            this.godRaysPass = window.GodRays.create();
+                            this.composer.addPass(this.godRaysPass);
+                        }
+                    } catch (e) { /* silencioso */ }
+                    
+                    // ===== CINEMATIC =====
+                    const cinematicShader = {
+                        uniforms: {
+                            tDiffuse: { value: null },
+                            uTime: { value: 0 }
+                        },
+                        vertexShader: `
+                            varying vec2 vUv;
+                            void main() {
+                                vUv = uv;
+                                gl_Position = vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform sampler2D tDiffuse;
+                            uniform float uTime;
+                            varying vec2 vUv;
+                            
+                            float grain(vec2 uv, float t) {
+                                return fract(sin(dot(uv * t, vec2(12.9898, 78.233))) * 43758.5453);
+                            }
+                            
+                            void main() {
+                                vec4 color = texture2D(tDiffuse, vUv);
+                                vec2 centered = vUv - 0.5;
+                                float vig = 1.0 - dot(centered, centered) * 0.7;
+                                color.rgb *= clamp(vig, 0.55, 1.0);
+                                float g = (grain(vUv, uTime) - 0.5) * 0.035;
+                                color.rgb += g;
+                                color.rgb = (color.rgb - 0.5) * 1.08 + 0.5;
+                                float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                                color.rgb = mix(vec3(luma), color.rgb, 1.12);
+                                gl_FragColor = color;
+                            }
+                        `
+                    };
+                    this.cinematicPass = new THREE.ShaderPass(cinematicShader);
+                    this.composer.addPass(this.cinematicPass);
+                    
+                    // ===== FXAA =====
+                    try {
+                        if (window.PostProcessing) {
+                            this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
+                        }
+                    } catch (e) { /* silencioso */ }
+                    
+                    // ===== DOF =====
+                    try {
+                        if (window.PostProcessing) {
+                            this.dofPass = window.PostProcessing.addDepthOfField(
+                                this.composer, this.scene, this.camera, { focus: 45 }
+                            );
+                            if (this.dofPass) this.dofPass.enabled = false;
+                        }
+                    } catch (e) { /* silencioso */ }
+                    
+                    this.bloomAvailable = true;
+                    console.log('✨ Bloom real activado');
+                } else {
+                    console.warn('⚠️ Post-procesado no disponible');
+                }
+            } catch (e) {
+                console.warn('⚠️ Error al configurar post-procesado:', e);
+                this.bloomAvailable = false;
+            }
         }
         
         // ============================================================
@@ -1115,135 +1138,28 @@
         }
         
         // ============================================================
-        //  🎬 POST-PROCESADO
-        //  ============================================================
-        _setupPostProcessing() {
-            this.bloomAvailable = false;
-            this.composer = null;
-            this.bloomPass = null;
-            this.ssaoPass = null;
-            this.godRaysPass = null;
-            this.fxaaPass = null;
-            this.dofPass = null;
-            
-            try {
-                if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass) {
-                    this.composer = new THREE.EffectComposer(this.renderer);
-                    const renderPass = new THREE.RenderPass(this.scene, this.camera);
-                    this.composer.addPass(renderPass);
-                    
-                    if (THREE.SSAOPass) {
-                        try {
-                            this.ssaoPass = new THREE.SSAOPass(
-                                this.scene, this.camera,
-                                window.innerWidth, window.innerHeight
-                            );
-                            this.ssaoPass.kernelRadius = 8;
-                            this.ssaoPass.minDistance = 0.001;
-                            this.ssaoPass.maxDistance = 0.15;
-                            this.composer.addPass(this.ssaoPass);
-                            console.log('🌑 SSAO activado');
-                        } catch (ssaoErr) {
-                            console.warn('⚠️ SSAO no disponible:', ssaoErr);
-                        }
-                    }
-                    
-                    this.bloomPass = new THREE.UnrealBloomPass(
-                        new THREE.Vector2(window.innerWidth, window.innerHeight),
-                        0.65, 0.55, 0.8
-                    );
-                    this.composer.addPass(this.bloomPass);
-                    
-                    try {
-                        if (window.GodRays) {
-                            this.godRaysPass = window.GodRays.create();
-                            this.composer.addPass(this.godRaysPass);
-                        }
-                    } catch (e) { console.warn('⚠️ God rays no disponibles', e); }
-                    
-                    // Cinematic
-                    const cinematicShader = {
-                        uniforms: {
-                            tDiffuse: { value: null },
-                            uTime: { value: 0 }
-                        },
-                        vertexShader: `
-                            varying vec2 vUv;
-                            void main() {
-                                vUv = uv;
-                                gl_Position = vec4(position, 1.0);
-                            }
-                        `,
-                        fragmentShader: `
-                            uniform sampler2D tDiffuse;
-                            uniform float uTime;
-                            varying vec2 vUv;
-                            
-                            float grain(vec2 uv, float t) {
-                                return fract(sin(dot(uv * t, vec2(12.9898, 78.233))) * 43758.5453);
-                            }
-                            
-                            void main() {
-                                vec4 color = texture2D(tDiffuse, vUv);
-                                vec2 centered = vUv - 0.5;
-                                float vig = 1.0 - dot(centered, centered) * 0.7;
-                                color.rgb *= clamp(vig, 0.55, 1.0);
-                                float g = (grain(vUv, uTime) - 0.5) * 0.035;
-                                color.rgb += g;
-                                color.rgb = (color.rgb - 0.5) * 1.08 + 0.5;
-                                float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                                color.rgb = mix(vec3(luma), color.rgb, 1.12);
-                                gl_FragColor = color;
-                            }
-                        `
-                    };
-                    this.cinematicPass = new THREE.ShaderPass(cinematicShader);
-                    this.composer.addPass(this.cinematicPass);
-                    
-                    try {
-                        if (window.PostProcessing) {
-                            this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
-                        }
-                    } catch (e) { console.warn('⚠️ FXAA no disponible', e); }
-                    
-                    try {
-                        if (window.PostProcessing) {
-                            this.dofPass = window.PostProcessing.addDepthOfField(
-                                this.composer, this.scene, this.camera, { focus: 45 }
-                            );
-                            if (this.dofPass) this.dofPass.enabled = false;
-                        }
-                    } catch (e) { console.warn('⚠️ DOF no disponible', e); }
-                    
-                    this.bloomAvailable = true;
-                    console.log('✨ Bloom real activado');
-                } else {
-                    console.warn('⚠️ Post-procesado no disponible');
-                }
-            } catch (e) {
-                console.warn('⚠️ Error al configurar post-procesado:', e);
-                this.bloomAvailable = false;
-            }
-        }
-        
-        // ============================================================
         //  🎮 RENDERIZADO PRINCIPAL
         //  ============================================================
         render(soa, cameraPos = null, metaOptimizations = null) {
             const _renderStart = performance.now();
             
+            // ===== 1. ACTUALIZAR CÁMARA =====
             this._updateCamera(cameraPos);
             
+            // ===== 2. APLICAR OPTIMIZACIONES META =====
             if (metaOptimizations) {
                 this._applyMetaOptimizations(metaOptimizations);
             }
             
+            // ===== 3. ACTUALIZAR ILUMINACIÓN =====
             this._updateDayNight();
             
+            // ===== 4. OBTENER ENTIDADES VISIBLES =====
             const camPos = this.camera.position;
             const frustum = this._getFrustum();
             const visible = soa.queryVisible(frustum, camPos.x, camPos.z, this.lodDistance * 3);
             
+            // ===== 5. SEPARAR POR TIPO =====
             const waterIds = [];
             const particleIds = [];
             const normalIds = [];
@@ -1254,18 +1170,22 @@
                 else normalIds.push(id);
             }
             
+            // ===== 6. RENDERIZAR AGUA =====
             if (CONFIG.waterEnabled && waterIds.length > 0) {
                 this._renderWater(waterIds, soa);
             }
             
+            // ===== 7. RENDERIZAR PARTÍCULAS =====
             if (CONFIG.particlesEnabled && particleIds.length > 0) {
                 const maxParticles = Math.floor(particleIds.length * (this.particleDensity || 1.0));
                 const renderParticles = particleIds.slice(0, maxParticles);
                 this._renderParticles(renderParticles, soa);
             }
             
+            // ===== 8. RENDERIZAR ENTIDADES NORMALES =====
             this._renderEntities(normalIds, soa, camPos);
             
+            // ===== 9. RENDERIZAR =====
             if (this.bloomAvailable && this.composer && CONFIG.bloomEnabled) {
                 if (this.bloomPass) {
                     this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
@@ -1281,11 +1201,13 @@
                 this.renderer.render(this.scene, this.camera);
             }
             
+            // ===== 10. ACTUALIZAR ESTADÍSTICAS =====
             this._memCheckCounter = (this._memCheckCounter || 0) + 1;
             if (this._memCheckCounter % 120 === 0) {
                 this.vramUsage = this._estimateMemoryUsage();
             }
             
+            // ===== 11. DRS =====
             if (this.drsController) {
                 this.drsController.addSample(performance.now() - _renderStart);
                 this._drsCheckCounter = (this._drsCheckCounter || 0) + 1;
@@ -1350,7 +1272,7 @@
             this.dayNight.time = Math.max(0, Math.min(0.999, t));
         }
         
-        focusOnScenicSpot(terrain, waterBodies = null) {
+        focusOnScenicSpot(terrain, waterBodies) {
             if (!terrain || !terrain.getHeight) return;
             
             try {
@@ -1437,6 +1359,13 @@
                     0.1 + intensity * 0.1
                 );
                 this.scene.fog.color.copy(fogColor);
+                
+                const billboardMat = this.materialCache.get('tree_lod3');
+                if (billboardMat && billboardMat.uniforms) {
+                    billboardMat.uniforms.fogColor.value.copy(fogColor);
+                    billboardMat.uniforms.fogNear.value = this.scene.fog.near || 50;
+                    billboardMat.uniforms.fogFar.value = this.scene.fog.far || 400;
+                }
             }
             
             if (this.skybox) {
@@ -1464,19 +1393,11 @@
             try { if (this.weatherFX) this.weatherFX.update(0.016); } catch (e) {}
             try { if (this.animationSystem) this.animationSystem.update(0.016); } catch (e) {}
             
-            try {
-                if (this.grassMeshes) {
-                    const t = Date.now() * 0.001;
-                    for (const mesh of this.grassMeshes) {
-                        if (mesh.material.uniforms) {
-                            mesh.material.uniforms.uTime.value = t;
-                        }
-                    }
-                }
-            } catch (e) {}
-            
             try { if (this.chunkManager) this.chunkManager.update(0.016, this.camera.position); } catch (e) {}
             try { if (this.inputController) this.inputController.update(0.016); } catch (e) {}
+            try { if (this.dofPass && window.PostProcessing) {
+                window.PostProcessing.setFocusDistance(this.dofPass, this.cameraDistance || 40);
+            } } catch (e) {}
             
             this.dayNight.intensity = intensity;
         }
@@ -1990,9 +1911,12 @@
         }
     }
     
+    // ============================================================
+    //  🚀 INSTANCIA GLOBAL
+    //  ============================================================
     window.MaxRenderer = MaxRenderer;
     
-    console.log('🎮 MaxRenderer Cuántico cargado');
+    console.log('🎮 MaxRenderer cargado');
     
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MaxRenderer;
