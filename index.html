@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
     <title>🌍 PRIOM V0.4 - Demo "Tierra Cuántica"</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0f; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -13,9 +12,9 @@
         
         /* ===== LOADING ===== */
         #loading-screen {
-            position: fixed; inset: 0; background: #0a0a0f; display: flex;
-            align-items: center; justify-content: center; z-index: 9999;
-            transition: opacity 0.8s ease;
+            position: fixed; inset: 0; background: #0a0a0f;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 0.8s ease;
             background-image: radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08), transparent 60%),
                               radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.08), transparent 60%);
         }
@@ -25,16 +24,15 @@
         @keyframes loaderIn { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         
         .loader-icon { font-size: 80px; display: block; margin-bottom: 12px; animation: iconPulse 2.5s ease-in-out infinite; filter: drop-shadow(0 0 40px rgba(124,58,237,0.2)); }
-        @keyframes iconPulse { 0%,100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 20px rgba(124,58,237,0.3)); } 50% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 60px rgba(124,58,237,0.6)); } }
+        @keyframes iconPulse { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.1) rotate(5deg); } }
         
         .loader-title { font-size: 36px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradMove 4s ease-in-out infinite; letter-spacing: 4px; }
         @keyframes gradMove { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        
         .loader-version { color: #6b7280; font-size: 13px; letter-spacing: 3px; margin-top: 4px; opacity: 0.7; }
         
         .loader-bar-wrapper { display: flex; align-items: center; gap: 14px; margin: 24px 0 16px; }
         .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
-        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.4s ease; animation: gradMove 3s ease-in-out infinite; box-shadow: 0 0 30px rgba(124,58,237,0.2); }
+        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.4s ease; animation: gradMove 3s ease-in-out infinite; }
         .loader-fill::after { content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 40px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 1.8s ease-in-out infinite; }
         @keyframes shimmer { 0% { transform: translateX(-60px); } 100% { transform: translateX(80px); } }
         
@@ -132,7 +130,7 @@
         #ai-status-bar .ai-text .world-status { font-size: 9px; color: #34d399; margin-top: 2px; }
         
         #ai-status-bar .ai-progress { width: 120px; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
-        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.3s ease; animation: gradMove 3s ease-in-out infinite; box-shadow: 0 0 20px rgba(124,58,237,0.1); }
+        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.3s ease; animation: gradMove 3s ease-in-out infinite; }
         
         #ai-status-bar .ai-stats { font-size: 9px; color: #6b7280; display: flex; gap: 14px; flex-shrink: 0; }
         #ai-status-bar .ai-stats .highlight { color: #8b5cf6; font-weight: 600; }
@@ -167,11 +165,25 @@
         .ctrl-group { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); }
         .ctrl-group .group-label { font-size: 7px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; padding-right: 4px; }
         
-        .time-slider-container { display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.02); flex: 1; min-width: 100px; }
+        .time-slider-container {
+            display: flex; align-items: center; gap: 6px; padding: 2px 8px;
+            background: rgba(255,255,255,0.02); border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.02); flex: 1; min-width: 100px;
+        }
         .time-slider-container .time-icon { font-size: 12px; opacity: 0.5; }
-        .time-slider-container input[type="range"] { flex: 1; height: 3px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.06); border-radius: 2px; outline: none; accent-color: #8b5cf6; }
-        .time-slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #06b6d4); cursor: pointer; box-shadow: 0 0 20px rgba(124,58,237,0.2); }
-        .time-slider-container input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); box-shadow: 0 0 30px rgba(124,58,237,0.3); }
+        .time-slider-container input[type="range"] {
+            flex: 1; height: 3px; -webkit-appearance: none; appearance: none;
+            background: rgba(255,255,255,0.06); border-radius: 2px; outline: none;
+            accent-color: #8b5cf6;
+        }
+        .time-slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 12px; height: 12px;
+            border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #06b6d4);
+            cursor: pointer; box-shadow: 0 0 20px rgba(124,58,237,0.2);
+        }
+        .time-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2); box-shadow: 0 0 30px rgba(124,58,237,0.3);
+        }
         
         /* ===== NOTIFICACIONES ===== */
         #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 90vw; }
@@ -590,6 +602,7 @@
                             };
                         }
                         
+                        // Crear el motor
                         const engine = new PriomEngine({
                             qualityLevel: 'ultra',
                             enableThreading: true,
@@ -609,14 +622,107 @@
                         }
 
                         console.log('✅ Motor cuántico iniciado');
-                        wireUI(engine);
                         
+                        // --- FORZAR GENERACIÓN DEL MUNDO ---
                         setTimeout(() => {
-                            if (elements.screen) {
-                                elements.screen.classList.add('fade-out');
+                            try {
+                                const gameWorld = engine.getModule('gameWorld');
+                                const ecs = engine.getModule('ecs');
+                                const factory = engine.getModule('entityFactory');
+                                const renderer = engine.getModule('renderer');
+                                
+                                if (gameWorld && gameWorld._generateWorld) {
+                                    console.log('🌍 Generando mundo manualmente...');
+                                    // Forzar regeneración del mundo
+                                    gameWorld.reset();
+                                }
+                                
+                                // POBLAR EL MUNDO MANUALMENTE CON ÁRBOLES Y ANIMALES
+                                if (factory && ecs) {
+                                    console.log('🌳 Poblando mundo con árboles y animales...');
+                                    
+                                    // Crear árboles en un bosque
+                                    for (let i = 0; i < 300; i++) {
+                                        const angle = Math.random() * Math.PI * 2;
+                                        const dist = 20 + Math.random() * 150;
+                                        const x = Math.cos(angle) * dist;
+                                        const z = Math.sin(angle) * dist;
+                                        const y = 0.5 + Math.random() * 2;
+                                        
+                                        const id = factory.createTree(x, y, z);
+                                        if (id !== -1) {
+                                            // Variar escala
+                                            ecs.scaleX[id] = 0.8 + Math.random() * 2.5;
+                                            ecs.scaleY[id] = 0.8 + Math.random() * 2.5;
+                                            ecs.scaleZ[id] = 0.8 + Math.random() * 2.5;
+                                        }
+                                    }
+                                    
+                                    // Crear animales
+                                    for (let i = 0; i < 30; i++) {
+                                        const angle = Math.random() * Math.PI * 2;
+                                        const dist = 30 + Math.random() * 120;
+                                        const x = Math.cos(angle) * dist;
+                                        const z = Math.sin(angle) * dist;
+                                        const y = 0.5;
+                                        
+                                        const isPredator = Math.random() < 0.2;
+                                        const id = factory.createAnimal(x, y, z, isPredator);
+                                        if (id !== -1) {
+                                            ecs.scaleX[id] = 0.5 + Math.random() * 0.5;
+                                            ecs.scaleY[id] = 0.5 + Math.random() * 0.5;
+                                            ecs.scaleZ[id] = 0.5 + Math.random() * 0.5;
+                                            
+                                            // Añadir al ecosistema
+                                            if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
+                                                gameWorld.ecosystems.entities.animals.add(id);
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Crear rocas
+                                    for (let i = 0; i < 50; i++) {
+                                        const angle = Math.random() * Math.PI * 2;
+                                        const dist = 10 + Math.random() * 140;
+                                        const x = Math.cos(angle) * dist;
+                                        const z = Math.sin(angle) * dist;
+                                        const y = 0.3 + Math.random() * 0.5;
+                                        
+                                        const id = factory.createRock(x, y, z);
+                                        if (id !== -1) {
+                                            ecs.scaleX[id] = 0.5 + Math.random() * 2;
+                                            ecs.scaleY[id] = 0.5 + Math.random() * 2;
+                                            ecs.scaleZ[id] = 0.5 + Math.random() * 2;
+                                        }
+                                    }
+                                    
+                                    console.log('✅ Mundo poblado con árboles y animales');
+                                }
+                                
+                                // Conectar UI
+                                wireUI(engine);
+                                
+                                // Ocultar pantalla de carga
                                 setTimeout(() => {
-                                    elements.screen.style.display = 'none';
-                                }, 800);
+                                    if (elements.screen) {
+                                        elements.screen.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            elements.screen.style.display = 'none';
+                                        }, 800);
+                                    }
+                                }, 500);
+                                
+                            } catch (e) {
+                                console.error('❌ Error poblando mundo:', e);
+                                wireUI(engine);
+                                setTimeout(() => {
+                                    if (elements.screen) {
+                                        elements.screen.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            elements.screen.style.display = 'none';
+                                        }, 800);
+                                    }
+                                }, 500);
                             }
                         }, 500);
                         
@@ -680,6 +786,7 @@
                 if (hud.fps) hud.fps.textContent = stats.fps || 0;
                 if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
                 
+                // Contar árboles manualmente
                 if (hud.trees) {
                     const ecs = engine.getModule('ecs');
                     let treeCount = 0;
@@ -691,10 +798,16 @@
                     hud.trees.textContent = treeCount;
                 }
                 
+                // Contar animales manualmente
                 if (hud.animals) {
-                    const gameWorld = engine.getModule('gameWorld');
-                    const count = gameWorld?.ecosystems?.entities?.animals?.size || 0;
-                    hud.animals.textContent = count;
+                    const ecs = engine.getModule('ecs');
+                    let animalCount = 0;
+                    if (ecs) {
+                        for (let i = 0; i < ecs.count; i++) {
+                            if (ecs.isAnimal && ecs.isAnimal[i]) animalCount++;
+                        }
+                    }
+                    hud.animals.textContent = animalCount;
                 }
                 
                 if (hud.ram) {
@@ -815,33 +928,58 @@
                 });
             });
             
+            // ----- Spawn -----
             const spawnBtn = document.getElementById('btn-spawn');
             if (spawnBtn) {
                 spawnBtn.addEventListener('click', () => {
                     const factory = engine.getModule('entityFactory');
-                    if (!factory) return;
+                    const ecs = engine.getModule('ecs');
+                    const gameWorld = engine.getModule('gameWorld');
+                    if (!factory || !ecs) return;
+                    
                     for (let i = 0; i < 15; i++) {
                         const angle = Math.random() * Math.PI * 2;
                         const dist = 15 + Math.random() * 80;
                         const x = Math.cos(angle) * dist;
                         const z = Math.sin(angle) * dist;
                         const isPredator = Math.random() < 0.2;
-                        factory.createAnimal(x, 5, z, isPredator);
+                        const id = factory.createAnimal(x, 0.5, z, isPredator);
+                        if (id !== -1) {
+                            ecs.scaleX[id] = 0.5 + Math.random() * 0.5;
+                            ecs.scaleY[id] = 0.5 + Math.random() * 0.5;
+                            ecs.scaleZ[id] = 0.5 + Math.random() * 0.5;
+                            if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
+                                gameWorld.ecosystems.entities.animals.add(id);
+                            }
+                        }
                     }
                     showNotification('🦌 15 animales spawnados', 'success');
                 });
             }
             
+            // ----- Time Slider (conexión real) -----
             const timeSlider = document.getElementById('time-slider');
             if (timeSlider) {
                 timeSlider.addEventListener('input', (e) => {
                     const renderer = engine.getModule('renderer');
+                    const value = parseFloat(e.target.value);
                     if (renderer && renderer.setTimeOfDay) {
-                        renderer.setTimeOfDay(parseFloat(e.target.value));
+                        renderer.setTimeOfDay(value);
+                        // Actualizar también el sky system
+                        const skySystem = renderer.skySystem;
+                        if (skySystem && skySystem.update) {
+                            const sunHeight = Math.sin(value * Math.PI * 2) * 0.5 + 0.5;
+                            skySystem.update(0.016, sunHeight);
+                        }
+                        showNotification(`🕐 Hora: ${Math.round(value * 24)}:00`, 'info');
+                    } else {
+                        // Fallback: mostrar notificación
+                        showNotification(`🕐 Hora: ${Math.round(value * 24)}:00 (simulado)`, 'info');
                     }
                 });
             }
             
+            // ----- Sound -----
             const soundBtn = document.getElementById('btn-sound');
             if (soundBtn) {
                 soundBtn.addEventListener('click', () => {
@@ -854,6 +992,7 @@
                 });
             }
             
+            // ----- Editor -----
             const editorBtn = document.getElementById('btn-editor');
             const editorTypeBtn = document.getElementById('btn-editor-type');
             const editorTypes = { tree: '🌲 Árbol', rock: '🪨 Roca', animal: '🦌 Animal', flower: '🌼 Flor', building: '🏠 Edificio' };
@@ -997,6 +1136,15 @@
                     }
                 });
             }
+            
+            // ----- Minimap (forzar actualización) -----
+            setTimeout(() => {
+                const minimap = engine.getModule('minimap');
+                if (minimap) {
+                    minimap._draw();
+                    console.log('🗺️ Minimap actualizado');
+                }
+            }, 2000);
             
             function showNotification(message, type = 'info') {
                 const container = document.getElementById('notifications');
