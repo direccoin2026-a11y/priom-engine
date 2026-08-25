@@ -31,7 +31,7 @@
         .loader-version { color: #6b7280; font-size: 13px; letter-spacing: 3px; margin-top: 4px; opacity: 0.7; }
         
         .loader-bar-wrapper { display: flex; align-items: center; gap: 14px; margin: 24px 0 16px; }
-        .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
+        .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; position: relative; }
         .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.4s ease; animation: gradMove 3s ease-in-out infinite; }
         .loader-fill::after { content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 40px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 1.8s ease-in-out infinite; }
         @keyframes shimmer { 0% { transform: translateX(-60px); } 100% { transform: translateX(80px); } }
@@ -319,6 +319,7 @@
         <div class="stat"><span>🎯 IA Confianza</span><span class="value ai" id="confidence">100%</span></div>
         <div class="stat"><span>🔮 Predicción</span><span class="value" id="prediction">⚡ Estable</span></div>
         <div class="stat"><span>🌡️ Temperatura</span><span class="value" id="temperature">42°C</span></div>
+        <div class="stat"><span>🕐 Hora</span><span class="value meta" id="time-display">12:00</span></div>
     </div>
 
     <!-- ===== AI STATUS ===== -->
@@ -432,7 +433,7 @@
 
     <script>
     // ============================================================
-    //  🚀 SISTEMA DE CARGA
+    //  🚀 SISTEMA DE CARGA Y DEMO
     //  ============================================================
     (function() {
         'use strict';
@@ -503,245 +504,111 @@
             document.head.appendChild(script);
         }
         
-        async function startEngine() {
-            startTime = performance.now();
-            elements.text.textContent = '🌍 Generando mundo cuántico...';
+        // ============================================================
+        //  🎯 POBLAR MUNDO MANUALMENTE
+        //  ============================================================
+        function populateWorld(engine) {
+            console.log('🌳 Poblando mundo con árboles y animales...');
             
-            try {
-                if (typeof THREE === 'undefined') {
-                    elements.text.textContent = '❌ THREE.js no cargado';
-                    elements.text.className = 'loader-text error';
-                    return;
-                }
-                loaded++;
-                updateUI();
-                console.log('✅ THREE.js cargado:', THREE.REVISION);
-                
-                const modules = [
-                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260823' },
-                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260823' },
-                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260823' },
-                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260823' },
-                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260823' },
-                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260823' },
-                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260823' },
-                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260823' },
-                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260823' },
-                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260823' },
-                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260823' },
-                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260823' },
-                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260823' },
-                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260823' },
-                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260823' },
-                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260823' },
-                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260823' },
-                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260823' },
-                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260823' },
-                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260823' },
-                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260823' },
-                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260823' },
-                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260823' },
-                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260823' },
-                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260823' },
-                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260823' },
-                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260823' },
-                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260823' },
-                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260823' },
-                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260823' },
-                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260823' },
-                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260823' },
-                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260823' },
-                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260823' }
-                ];
-                
-                for (const mod of modules) {
-                    if (hasError) break;
-                    
-                    const result = await loadModule(
-                        mod.name,
-                        mod.check,
-                        (callback) => loadScript(mod.url, callback)
-                    );
-                    
-                    if (!result) {
-                        hasError = true;
-                        break;
-                    }
-                }
-                
-                if (hasError) {
-                    elements.text.textContent = '❌ Error cargando módulos. Recarga la página.';
-                    elements.text.className = 'loader-text error';
-                    return;
-                }
-                
-                elements.text.textContent = '🌍 ¡Mundo cuántico generado!';
-                elements.text.className = 'loader-text success';
-                elements.subtext.textContent = '🎮 Iniciando ecosistema...';
-                elements.status.textContent = '✅ Listo';
-                elements.trees.textContent = '🌳 500+ árboles';
-                
-                console.log('🎉 Todos los módulos cargados correctamente');
-                console.log(`⏱️ Tiempo de carga: ${(performance.now() - startTime).toFixed(0)}ms`);
-                
-                setTimeout(() => {
-                    try {
-                        if (typeof CONFIG === 'undefined') {
-                            window.CONFIG = {
-                                version: '0.4.0',
-                                maxEntities: 120000,
-                                targetFPS: 60,
-                                quality: 'ultra',
-                                lodDistance: 300,
-                                waterEnabled: true,
-                                particlesEnabled: true,
-                                shadowsEnabled: true,
-                                bloomEnabled: true,
-                                ssaoEnabled: true,
-                                debug: false
-                            };
-                        }
-                        
-                        // Crear el motor
-                        const engine = new PriomEngine({
-                            qualityLevel: 'ultra',
-                            enableThreading: true,
-                            enablePredictiveAI: true,
-                            enableAdaptiveQuality: true,
-                            enablePerformanceBudget: true,
-                            enableErrorRecovery: true
-                        });
-                        window.engine = engine;
-
-                        if (engine.hasError()) {
-                            const err = engine.getError();
-                            console.error('❌ Error:', err);
-                            elements.text.textContent = '❌ Error: ' + (err ? err.message : 'desconocido');
-                            elements.text.className = 'loader-text error';
-                            return;
-                        }
-
-                        console.log('✅ Motor cuántico iniciado');
-                        
-                        // --- FORZAR GENERACIÓN DEL MUNDO ---
-                        setTimeout(() => {
-                            try {
-                                const gameWorld = engine.getModule('gameWorld');
-                                const ecs = engine.getModule('ecs');
-                                const factory = engine.getModule('entityFactory');
-                                const renderer = engine.getModule('renderer');
-                                
-                                if (gameWorld && gameWorld._generateWorld) {
-                                    console.log('🌍 Generando mundo manualmente...');
-                                    // Forzar regeneración del mundo
-                                    gameWorld.reset();
-                                }
-                                
-                                // POBLAR EL MUNDO MANUALMENTE CON ÁRBOLES Y ANIMALES
-                                if (factory && ecs) {
-                                    console.log('🌳 Poblando mundo con árboles y animales...');
-                                    
-                                    // Crear árboles en un bosque
-                                    for (let i = 0; i < 300; i++) {
-                                        const angle = Math.random() * Math.PI * 2;
-                                        const dist = 20 + Math.random() * 150;
-                                        const x = Math.cos(angle) * dist;
-                                        const z = Math.sin(angle) * dist;
-                                        const y = 0.5 + Math.random() * 2;
-                                        
-                                        const id = factory.createTree(x, y, z);
-                                        if (id !== -1) {
-                                            // Variar escala
-                                            ecs.scaleX[id] = 0.8 + Math.random() * 2.5;
-                                            ecs.scaleY[id] = 0.8 + Math.random() * 2.5;
-                                            ecs.scaleZ[id] = 0.8 + Math.random() * 2.5;
-                                        }
-                                    }
-                                    
-                                    // Crear animales
-                                    for (let i = 0; i < 30; i++) {
-                                        const angle = Math.random() * Math.PI * 2;
-                                        const dist = 30 + Math.random() * 120;
-                                        const x = Math.cos(angle) * dist;
-                                        const z = Math.sin(angle) * dist;
-                                        const y = 0.5;
-                                        
-                                        const isPredator = Math.random() < 0.2;
-                                        const id = factory.createAnimal(x, y, z, isPredator);
-                                        if (id !== -1) {
-                                            ecs.scaleX[id] = 0.5 + Math.random() * 0.5;
-                                            ecs.scaleY[id] = 0.5 + Math.random() * 0.5;
-                                            ecs.scaleZ[id] = 0.5 + Math.random() * 0.5;
-                                            
-                                            // Añadir al ecosistema
-                                            if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
-                                                gameWorld.ecosystems.entities.animals.add(id);
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Crear rocas
-                                    for (let i = 0; i < 50; i++) {
-                                        const angle = Math.random() * Math.PI * 2;
-                                        const dist = 10 + Math.random() * 140;
-                                        const x = Math.cos(angle) * dist;
-                                        const z = Math.sin(angle) * dist;
-                                        const y = 0.3 + Math.random() * 0.5;
-                                        
-                                        const id = factory.createRock(x, y, z);
-                                        if (id !== -1) {
-                                            ecs.scaleX[id] = 0.5 + Math.random() * 2;
-                                            ecs.scaleY[id] = 0.5 + Math.random() * 2;
-                                            ecs.scaleZ[id] = 0.5 + Math.random() * 2;
-                                        }
-                                    }
-                                    
-                                    console.log('✅ Mundo poblado con árboles y animales');
-                                }
-                                
-                                // Conectar UI
-                                wireUI(engine);
-                                
-                                // Ocultar pantalla de carga
-                                setTimeout(() => {
-                                    if (elements.screen) {
-                                        elements.screen.classList.add('fade-out');
-                                        setTimeout(() => {
-                                            elements.screen.style.display = 'none';
-                                        }, 800);
-                                    }
-                                }, 500);
-                                
-                            } catch (e) {
-                                console.error('❌ Error poblando mundo:', e);
-                                wireUI(engine);
-                                setTimeout(() => {
-                                    if (elements.screen) {
-                                        elements.screen.classList.add('fade-out');
-                                        setTimeout(() => {
-                                            elements.screen.style.display = 'none';
-                                        }, 800);
-                                    }
-                                }, 500);
-                            }
-                        }, 500);
-                        
-                    } catch (e) {
-                        console.error('❌ Error:', e);
-                        elements.text.textContent = '❌ Error: ' + e.message;
-                        elements.text.className = 'loader-text error';
-                    }
-                }, 300);
-                
-            } catch (e) {
-                console.error('❌ Error:', e);
-                elements.text.textContent = '❌ Error: ' + e.message;
-                elements.text.className = 'loader-text error';
+            const factory = engine.getModule('entityFactory');
+            const ecs = engine.getModule('ecs');
+            const gameWorld = engine.getModule('gameWorld');
+            
+            if (!factory || !ecs) {
+                console.warn('⚠️ No se puede poblar el mundo: faltan módulos');
+                return false;
             }
+            
+            let createdTrees = 0;
+            let createdAnimals = 0;
+            let createdRocks = 0;
+            
+            // === ÁRBOLES: bosque denso ===
+            for (let i = 0; i < 350; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 15 + Math.random() * 180;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                const y = 0.3 + Math.random() * 1.5;
+                
+                const id = factory.createTree(x, y, z);
+                if (id !== -1) {
+                    const scale = 0.6 + Math.random() * 2.8;
+                    ecs.scaleX[id] = scale;
+                    ecs.scaleY[id] = scale;
+                    ecs.scaleZ[id] = scale;
+                    // Variación de color
+                    ecs.colR[id] = 60 + Math.floor(Math.random() * 80);
+                    ecs.colG[id] = 130 + Math.floor(Math.random() * 60);
+                    ecs.colB[id] = 40 + Math.floor(Math.random() * 30);
+                    createdTrees++;
+                }
+            }
+            
+            // === ANIMALES ===
+            for (let i = 0; i < 40; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 25 + Math.random() * 140;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                const y = 0.3;
+                
+                const isPredator = Math.random() < 0.15;
+                const id = factory.createAnimal(x, y, z, isPredator);
+                if (id !== -1) {
+                    const scale = 0.4 + Math.random() * 0.6;
+                    ecs.scaleX[id] = scale;
+                    ecs.scaleY[id] = scale;
+                    ecs.scaleZ[id] = scale;
+                    
+                    // Color según depredador o presa
+                    if (isPredator) {
+                        ecs.colR[id] = 180 + Math.floor(Math.random() * 60);
+                        ecs.colG[id] = 60 + Math.floor(Math.random() * 40);
+                        ecs.colB[id] = 40 + Math.floor(Math.random() * 30);
+                    } else {
+                        ecs.colR[id] = 160 + Math.floor(Math.random() * 60);
+                        ecs.colG[id] = 130 + Math.floor(Math.random() * 50);
+                        ecs.colB[id] = 80 + Math.floor(Math.random() * 40);
+                    }
+                    
+                    // Añadir al ecosistema para que WorldAI lo gestione
+                    if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
+                        gameWorld.ecosystems.entities.animals.add(id);
+                    }
+                    createdAnimals++;
+                }
+            }
+            
+            // === ROCAS ===
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 10 + Math.random() * 160;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                const y = 0.2 + Math.random() * 0.5;
+                
+                const id = factory.createRock(x, y, z);
+                if (id !== -1) {
+                    const scale = 0.4 + Math.random() * 2.5;
+                    ecs.scaleX[id] = scale;
+                    ecs.scaleY[id] = scale * (0.6 + Math.random() * 0.4);
+                    ecs.scaleZ[id] = scale;
+                    createdRocks++;
+                }
+            }
+            
+            console.log(`✅ Mundo poblado: ${createdTrees} árboles, ${createdAnimals} animales, ${createdRocks} rocas`);
+            return true;
         }
         
+        // ============================================================
+        //  🔌 CONECTAR UI AL MOTOR
+        //  ============================================================
         function wireUI(engine) {
-            // ----- Geo Lab toggle -----
+            console.log('🔌 Conectando UI...');
+            
+            // ---- Geo Lab Toggle ----
             const geoTitle = document.getElementById('geo-title');
             const geoBody = document.getElementById('geo-body');
             const geoIcon = document.getElementById('geo-toggle-icon');
@@ -758,11 +625,12 @@
                 });
             }
             
-            // ----- Error banner -----
+            // ---- Error Banner ----
             const errorBanner = document.createElement('div');
             errorBanner.id = 'engine-error-banner';
             document.body.appendChild(errorBanner);
             
+            // ---- Referencias UI ----
             const hud = {
                 fps: document.getElementById('fps'),
                 trees: document.getElementById('trees'),
@@ -776,122 +644,138 @@
                 aiMeta: document.getElementById('ai-meta'),
                 aiFps: document.getElementById('ai-fps'),
                 aiProgress: document.getElementById('ai-progress-fill'),
-                temperature: document.getElementById('temperature')
+                temperature: document.getElementById('temperature'),
+                timeDisplay: document.getElementById('time-display')
             };
             
-            // ----- Stats update -----
+            // ---- Actualización de estadísticas ----
             setInterval(() => {
-                const stats = engine.getStats();
-                
-                if (hud.fps) hud.fps.textContent = stats.fps || 0;
-                if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
-                
-                // Contar árboles manualmente
-                if (hud.trees) {
+                try {
+                    const stats = engine.getStats();
+                    
+                    if (hud.fps) hud.fps.textContent = stats.fps || 0;
+                    if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
+                    
+                    // Contar árboles
                     const ecs = engine.getModule('ecs');
-                    let treeCount = 0;
+                    let treeCount = 0, animalCount = 0;
                     if (ecs) {
                         for (let i = 0; i < ecs.count; i++) {
                             if (ecs.isTree && ecs.isTree[i]) treeCount++;
-                        }
-                    }
-                    hud.trees.textContent = treeCount;
-                }
-                
-                // Contar animales manualmente
-                if (hud.animals) {
-                    const ecs = engine.getModule('ecs');
-                    let animalCount = 0;
-                    if (ecs) {
-                        for (let i = 0; i < ecs.count; i++) {
                             if (ecs.isAnimal && ecs.isAnimal[i]) animalCount++;
                         }
                     }
-                    hud.animals.textContent = animalCount;
-                }
-                
-                if (hud.ram) {
-                    const mb = stats.renderer ? Math.round((stats.renderer.vram || 0) / (1024 * 1024)) : 0;
-                    hud.ram.innerHTML = mb + ' <span style="font-size:8px;color:#6b7280;">MB</span>';
-                }
-                
-                if (hud.confidence) {
-                    const c = engine.getModule('optimizerAI');
-                    if (c && typeof c.getStatus === 'function') {
-                        const st = c.getStatus();
-                        const conf = Math.round((st.confidence || 1) * 100);
-                        hud.confidence.textContent = conf + '%';
-                        if (hud.aiConf) hud.aiConf.textContent = conf + '%';
+                    if (hud.trees) hud.trees.textContent = treeCount;
+                    if (hud.animals) hud.animals.textContent = animalCount;
+                    
+                    // Memoria
+                    if (hud.ram) {
+                        const mb = stats.renderer ? Math.round((stats.renderer.vram || 0) / (1024 * 1024)) : 0;
+                        hud.ram.textContent = mb + ' MB';
                     }
-                }
-                
-                const metaAI = engine.getModule('metaAI');
-                if (metaAI && typeof metaAI.getStatus === 'function') {
-                    const mstat = metaAI.getStatus();
-                    if (hud.aiMeta) hud.aiMeta.textContent = Math.round((mstat.confidence || 1) * 100) + '%';
-                }
-                
-                if (hud.aiDetail) {
-                    hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
-                }
-                
-                const worldAI = engine.getModule('worldAI');
-                const worldStatusEl = document.getElementById('world-ai-status');
-                if (worldAI && worldStatusEl) {
-                    const ws = worldAI.getStatus();
-                    worldStatusEl.textContent = `🌍 Trinity AI #3 · ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
-                }
-                
-                if (hud.temperature) {
-                    const baseTemp = 40 + (stats.cpuLoad || 20) * 0.3;
-                    const temp = Math.round(baseTemp + Math.sin(performance.now() * 0.001) * 2);
-                    hud.temperature.textContent = temp + '°C';
-                    hud.temperature.className = 'value' + (temp > 70 ? ' bad' : temp > 55 ? ' warn' : ' good');
-                }
-                
-                if (hud.quality) {
-                    const q = stats.quality || 'ultra';
-                    hud.quality.textContent = q.toUpperCase();
-                    hud.quality.className = 'value ultra';
-                }
-                
-                if (hud.prediction && stats.prediction) {
-                    const pred = stats.prediction;
-                    const trend = pred.trend || 'stable';
-                    const icons = { rising: '📈', falling: '📉', stable: '⚡' };
-                    const labels = { rising: 'Mejorando', falling: 'Degradando', stable: 'Estable' };
-                    hud.prediction.textContent = `${icons[trend] || '⚡'} ${labels[trend] || 'Estable'}`;
-                    hud.prediction.className = 'value' + (trend === 'falling' ? ' bad' : trend === 'rising' ? ' good' : '');
-                }
-                
-                if (hud.aiProgress) {
-                    const c = engine.getModule('optimizerAI');
-                    if (c && typeof c.getStatus === 'function') {
-                        const st = c.getStatus();
-                        const progress = Math.min(100, (st.confidence || 0.5) * 100);
-                        hud.aiProgress.style.width = progress + '%';
+                    
+                    // Confianza IA
+                    if (hud.confidence) {
+                        const c = engine.getModule('optimizerAI');
+                        if (c && typeof c.getStatus === 'function') {
+                            const st = c.getStatus();
+                            const conf = Math.round((st.confidence || 1) * 100);
+                            hud.confidence.textContent = conf + '%';
+                            if (hud.aiConf) hud.aiConf.textContent = conf + '%';
+                        }
                     }
+                    
+                    // Meta AI
+                    const metaAI = engine.getModule('metaAI');
+                    if (metaAI && typeof metaAI.getStatus === 'function') {
+                        const mstat = metaAI.getStatus();
+                        if (hud.aiMeta) hud.aiMeta.textContent = Math.round((mstat.confidence || 1) * 100) + '%';
+                    }
+                    
+                    // Detalles IA
+                    if (hud.aiDetail) {
+                        hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
+                    }
+                    
+                    // Mundo AI
+                    const worldAI = engine.getModule('worldAI');
+                    const worldStatusEl = document.getElementById('world-ai-status');
+                    if (worldAI && worldStatusEl) {
+                        const ws = worldAI.getStatus();
+                        worldStatusEl.textContent = `🌍 Trinity AI #3 · ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
+                    }
+                    
+                    // Temperatura
+                    if (hud.temperature) {
+                        const baseTemp = 40 + (stats.cpuLoad || 20) * 0.3;
+                        const temp = Math.round(baseTemp + Math.sin(performance.now() * 0.001) * 2);
+                        hud.temperature.textContent = temp + '°C';
+                        hud.temperature.className = 'value' + (temp > 70 ? ' bad' : temp > 55 ? ' warn' : ' good');
+                    }
+                    
+                    // Calidad
+                    if (hud.quality) {
+                        const q = stats.quality || 'ultra';
+                        hud.quality.textContent = q.toUpperCase();
+                        hud.quality.className = 'value ultra';
+                    }
+                    
+                    // Predicción
+                    if (hud.prediction && stats.prediction) {
+                        const pred = stats.prediction;
+                        const trend = pred.trend || 'stable';
+                        const icons = { rising: '📈', falling: '📉', stable: '⚡' };
+                        const labels = { rising: 'Mejorando', falling: 'Degradando', stable: 'Estable' };
+                        hud.prediction.textContent = `${icons[trend] || '⚡'} ${labels[trend] || 'Estable'}`;
+                        hud.prediction.className = 'value' + (trend === 'falling' ? ' bad' : trend === 'rising' ? ' good' : '');
+                    }
+                    
+                    // Progreso IA
+                    if (hud.aiProgress) {
+                        const c = engine.getModule('optimizerAI');
+                        if (c && typeof c.getStatus === 'function') {
+                            const st = c.getStatus();
+                            const progress = Math.min(100, (st.confidence || 0.5) * 100);
+                            hud.aiProgress.style.width = progress + '%';
+                        }
+                    }
+                    
+                    // Hora
+                    if (hud.timeDisplay) {
+                        const renderer = engine.getModule('renderer');
+                        if (renderer && renderer.dayNight) {
+                            const time = renderer.dayNight.time || 0.5;
+                            const hours = Math.floor(time * 24);
+                            const mins = Math.floor((time * 24 - hours) * 60);
+                            hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                        }
+                    }
+                    
+                    // Error banner
+                    if (engine._lastLoopError) {
+                        errorBanner.textContent = '⚠️ Loop error: ' + engine._lastLoopError;
+                        errorBanner.style.display = 'block';
+                    } else if (engine.hasError && engine.hasError()) {
+                        const err = engine.getError();
+                        errorBanner.textContent = '⚠️ Init error: ' + (err ? err.message : 'desconocido');
+                        errorBanner.style.display = 'block';
+                    } else {
+                        errorBanner.style.display = 'none';
+                    }
+                    
+                    // Animación de valores
+                    document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
+                        el.classList.remove('updating');
+                        void el.offsetWidth;
+                        el.classList.add('updating');
+                    });
+                    
+                } catch (e) {
+                    // Silencioso
                 }
-                
-                if (engine._lastLoopError) {
-                    errorBanner.textContent = '⚠️ Loop error: ' + engine._lastLoopError;
-                    errorBanner.style.display = 'block';
-                } else if (engine.hasError && engine.hasError()) {
-                    const err = engine.getError();
-                    errorBanner.textContent = '⚠️ Init error: ' + (err ? err.message : 'desconocido');
-                    errorBanner.style.display = 'block';
-                } else {
-                    errorBanner.style.display = 'none';
-                }
-                
-                document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
-                    el.classList.remove('updating');
-                    void el.offsetWidth;
-                    el.classList.add('updating');
-                });
             }, 300);
             
-            // ----- Botones -----
+            // ---- Botones de calidad ----
             const qualityButtons = {
                 'btn-low': 'low',
                 'btn-medium': 'medium',
@@ -914,6 +798,7 @@
                     engine.manualQuality = false;
                     engine.setQuality('ultra');
                     setActiveButton('btn-dual');
+                    showNotification('🧠 Trinity AI activada', 'success');
                 });
             }
             
@@ -925,39 +810,46 @@
                     engine.setQuality(qualityButtons[btnId]);
                     if (hud.quality) hud.quality.textContent = qualityButtons[btnId].toUpperCase();
                     setActiveButton(btnId);
+                    showNotification(`⚡ Calidad: ${qualityButtons[btnId].toUpperCase()}`, 'info');
                 });
             });
             
-            // ----- Spawn -----
+            // ---- Spawn ----
             const spawnBtn = document.getElementById('btn-spawn');
             if (spawnBtn) {
                 spawnBtn.addEventListener('click', () => {
                     const factory = engine.getModule('entityFactory');
                     const ecs = engine.getModule('ecs');
                     const gameWorld = engine.getModule('gameWorld');
-                    if (!factory || !ecs) return;
+                    if (!factory || !ecs) {
+                        showNotification('⚠️ EntityFactory no disponible', 'error');
+                        return;
+                    }
                     
-                    for (let i = 0; i < 15; i++) {
+                    let created = 0;
+                    for (let i = 0; i < 20; i++) {
                         const angle = Math.random() * Math.PI * 2;
-                        const dist = 15 + Math.random() * 80;
+                        const dist = 15 + Math.random() * 100;
                         const x = Math.cos(angle) * dist;
                         const z = Math.sin(angle) * dist;
                         const isPredator = Math.random() < 0.2;
                         const id = factory.createAnimal(x, 0.5, z, isPredator);
                         if (id !== -1) {
-                            ecs.scaleX[id] = 0.5 + Math.random() * 0.5;
-                            ecs.scaleY[id] = 0.5 + Math.random() * 0.5;
-                            ecs.scaleZ[id] = 0.5 + Math.random() * 0.5;
+                            const scale = 0.4 + Math.random() * 0.6;
+                            ecs.scaleX[id] = scale;
+                            ecs.scaleY[id] = scale;
+                            ecs.scaleZ[id] = scale;
                             if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
                                 gameWorld.ecosystems.entities.animals.add(id);
                             }
+                            created++;
                         }
                     }
-                    showNotification('🦌 15 animales spawnados', 'success');
+                    showNotification(`🦌 ${created} animales spawnados`, 'success');
                 });
             }
             
-            // ----- Time Slider (conexión real) -----
+            // ---- Time Slider (conexión real) ----
             const timeSlider = document.getElementById('time-slider');
             if (timeSlider) {
                 timeSlider.addEventListener('input', (e) => {
@@ -965,21 +857,18 @@
                     const value = parseFloat(e.target.value);
                     if (renderer && renderer.setTimeOfDay) {
                         renderer.setTimeOfDay(value);
-                        // Actualizar también el sky system
-                        const skySystem = renderer.skySystem;
-                        if (skySystem && skySystem.update) {
-                            const sunHeight = Math.sin(value * Math.PI * 2) * 0.5 + 0.5;
-                            skySystem.update(0.016, sunHeight);
+                        // Forzar actualización del cielo
+                        if (renderer._updateDayNight) renderer._updateDayNight();
+                        if (hud.timeDisplay) {
+                            const hours = Math.floor(value * 24);
+                            const mins = Math.floor((value * 24 - hours) * 60);
+                            hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
                         }
-                        showNotification(`🕐 Hora: ${Math.round(value * 24)}:00`, 'info');
-                    } else {
-                        // Fallback: mostrar notificación
-                        showNotification(`🕐 Hora: ${Math.round(value * 24)}:00 (simulado)`, 'info');
                     }
                 });
             }
             
-            // ----- Sound -----
+            // ---- Sound ----
             const soundBtn = document.getElementById('btn-sound');
             if (soundBtn) {
                 soundBtn.addEventListener('click', () => {
@@ -992,7 +881,7 @@
                 });
             }
             
-            // ----- Editor -----
+            // ---- Editor ----
             const editorBtn = document.getElementById('btn-editor');
             const editorTypeBtn = document.getElementById('btn-editor-type');
             const editorTypes = { tree: '🌲 Árbol', rock: '🪨 Roca', animal: '🦌 Animal', flower: '🌼 Flor', building: '🏠 Edificio' };
@@ -1127,7 +1016,10 @@
             if (geoBtn) {
                 geoBtn.addEventListener('click', () => {
                     const lab = engine.getModule('geometryLab');
-                    if (!lab || !geoFamily) return;
+                    if (!lab || !geoFamily) {
+                        showNotification('⚠️ GeometryLab no disponible', 'error');
+                        return;
+                    }
                     const result = lab.generate(geoFamily.value);
                     if (result) {
                         if (geoVerts) geoVerts.textContent = result.vertices || 0;
@@ -1137,15 +1029,7 @@
                 });
             }
             
-            // ----- Minimap (forzar actualización) -----
-            setTimeout(() => {
-                const minimap = engine.getModule('minimap');
-                if (minimap) {
-                    minimap._draw();
-                    console.log('🗺️ Minimap actualizado');
-                }
-            }, 2000);
-            
+            // ---- Notificaciones ----
             function showNotification(message, type = 'info') {
                 const container = document.getElementById('notifications');
                 if (!container) return;
@@ -1163,9 +1047,200 @@
             }
             
             window.showNotification = showNotification;
-            console.log('🔗 UI conectada al motor cuántico');
+            console.log('✅ UI conectada al motor');
         }
         
+        // ============================================================
+        //  🚀 INICIAR MOTOR
+        //  ============================================================
+        async function startEngine() {
+            startTime = performance.now();
+            elements.text.textContent = '🌍 Generando mundo cuántico...';
+            
+            try {
+                if (typeof THREE === 'undefined') {
+                    elements.text.textContent = '❌ THREE.js no cargado';
+                    elements.text.className = 'loader-text error';
+                    return;
+                }
+                loaded++;
+                updateUI();
+                console.log('✅ THREE.js cargado:', THREE.REVISION);
+                
+                const modules = [
+                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260823' },
+                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260823' },
+                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260823' },
+                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260823' },
+                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260823' },
+                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260823' },
+                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260823' },
+                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260823' },
+                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260823' },
+                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260823' },
+                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260823' },
+                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260823' },
+                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260823' },
+                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260823' },
+                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260823' },
+                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260823' },
+                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260823' },
+                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260823' },
+                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260823' },
+                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260823' },
+                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260823' },
+                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260823' },
+                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260823' },
+                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260823' },
+                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260823' },
+                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260823' },
+                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260823' },
+                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260823' },
+                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260823' },
+                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260823' },
+                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260823' },
+                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260823' },
+                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260823' },
+                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260823' }
+                ];
+                
+                for (const mod of modules) {
+                    if (hasError) break;
+                    
+                    const result = await loadModule(
+                        mod.name,
+                        mod.check,
+                        (callback) => loadScript(mod.url, callback)
+                    );
+                    
+                    if (!result) {
+                        hasError = true;
+                        break;
+                    }
+                }
+                
+                if (hasError) {
+                    elements.text.textContent = '❌ Error cargando módulos. Recarga la página.';
+                    elements.text.className = 'loader-text error';
+                    return;
+                }
+                
+                elements.text.textContent = '🌍 ¡Mundo cuántico generado!';
+                elements.text.className = 'loader-text success';
+                elements.subtext.textContent = '🎮 Iniciando ecosistema...';
+                elements.status.textContent = '✅ Listo';
+                elements.trees.textContent = '🌳 500+ árboles';
+                
+                console.log('🎉 Todos los módulos cargados correctamente');
+                console.log(`⏱️ Tiempo de carga: ${(performance.now() - startTime).toFixed(0)}ms`);
+                
+                // ============================================================
+                //  🚀 INICIAR MOTOR Y POBLAR MUNDO
+                //  ============================================================
+                setTimeout(() => {
+                    try {
+                        if (typeof CONFIG === 'undefined') {
+                            window.CONFIG = {
+                                version: '0.4.0',
+                                maxEntities: 120000,
+                                targetFPS: 60,
+                                quality: 'ultra',
+                                lodDistance: 300,
+                                waterEnabled: true,
+                                particlesEnabled: true,
+                                shadowsEnabled: true,
+                                bloomEnabled: true,
+                                ssaoEnabled: true,
+                                debug: false,
+                                worldSize: 400,
+                                terrainHeight: 30,
+                                treeDensity: 0.5,
+                                animalCount: 80
+                            };
+                        }
+                        
+                        // Crear motor
+                        const engine = new PriomEngine({
+                            qualityLevel: 'ultra',
+                            enableThreading: true,
+                            enablePredictiveAI: true,
+                            enableAdaptiveQuality: true,
+                            enablePerformanceBudget: true,
+                            enableErrorRecovery: true,
+                            autoStart: true
+                        });
+                        window.engine = engine;
+
+                        if (engine.hasError()) {
+                            const err = engine.getError();
+                            console.error('❌ Error:', err);
+                            elements.text.textContent = '❌ Error: ' + (err ? err.message : 'desconocido');
+                            elements.text.className = 'loader-text error';
+                            return;
+                        }
+
+                        console.log('✅ Motor cuántico iniciado');
+                        
+                        // Esperar a que el mundo esté listo y poblarlo
+                        setTimeout(() => {
+                            try {
+                                // Poblar el mundo con árboles y animales
+                                populateWorld(engine);
+                                
+                                // Conectar UI
+                                wireUI(engine);
+                                
+                                // === MINIMAP: forzar actualización ===
+                                setTimeout(() => {
+                                    const minimap = engine.getModule('minimap');
+                                    if (minimap && minimap._draw) {
+                                        minimap._draw();
+                                        console.log('🗺️ Minimap actualizado');
+                                    } else {
+                                        console.warn('⚠️ Minimap no disponible');
+                                    }
+                                }, 1500);
+                                
+                                // Ocultar loading
+                                setTimeout(() => {
+                                    if (elements.screen) {
+                                        elements.screen.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            elements.screen.style.display = 'none';
+                                        }, 800);
+                                    }
+                                }, 500);
+                                
+                            } catch (e) {
+                                console.error('❌ Error en post-inicialización:', e);
+                                // Intentar conectar UI de todas formas
+                                wireUI(engine);
+                                setTimeout(() => {
+                                    if (elements.screen) {
+                                        elements.screen.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            elements.screen.style.display = 'none';
+                                        }, 800);
+                                    }
+                                }, 500);
+                            }
+                        }, 800);
+                        
+                    } catch (e) {
+                        console.error('❌ Error fatal:', e);
+                        elements.text.textContent = '❌ Error: ' + e.message;
+                        elements.text.className = 'loader-text error';
+                    }
+                }, 300);
+                
+            } catch (e) {
+                console.error('❌ Error:', e);
+                elements.text.textContent = '❌ Error: ' + e.message;
+                elements.text.className = 'loader-text error';
+            }
+        }
+        
+        // === Iniciar ===
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', startEngine);
         } else {
