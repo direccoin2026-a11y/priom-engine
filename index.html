@@ -10,7 +10,6 @@
         body { background: #0a0a0f; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
         canvas#gameCanvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
         
-        /* ===== HUD ===== */
         #hud {
             position: fixed; top: 16px; left: 16px;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
@@ -28,7 +27,6 @@
         .badge-ai { background: linear-gradient(135deg, #10b981, #059669); }
         .badge-quantum { background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981); }
         
-        /* ===== STATS ===== */
         #stats-panel {
             position: fixed; top: 16px; right: 16px;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
@@ -49,7 +47,6 @@
         #stats-panel .stat .value.ultra { color: #fbbf24; }
         #stats-panel .stat .value.meta { color: #06b6d4; }
         
-        /* ===== TIME INDICATOR ===== */
         #time-indicator {
             position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.7); backdrop-filter: blur(16px);
@@ -62,7 +59,6 @@
         }
         #time-indicator .time-label { font-weight: 600; color: #fff; }
         
-        /* ===== AI STATUS ===== */
         #ai-status-bar {
             position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
@@ -80,7 +76,6 @@
         #ai-status-bar .ai-stats .highlight { color: #8b5cf6; font-weight: 600; }
         #ai-status-bar .ai-stats .meta { color: #06b6d4; font-weight: 600; }
         
-        /* ===== CONTROLES ===== */
         #controls {
             position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
             z-index: 100; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
@@ -119,7 +114,6 @@
             cursor: pointer;
         }
         
-        /* ===== MINIMAP ===== */
         #minimap-canvas {
             position: fixed; bottom: 110px; left: 16px; z-index: 90;
             border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.6);
@@ -128,7 +122,6 @@
         }
         #minimap-canvas:hover { border-color: rgba(124,58,237,0.3); transform: scale(1.05); }
         
-        /* ===== NOTIFICACIONES ===== */
         #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 90vw; }
         .notification { background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.12); border-radius: 10px; padding: 8px 20px; font-size: 11px; color: #fff; animation: notifIn 0.4s ease, notifOut 0.4s 3.5s ease forwards; box-shadow: 0 10px 40px rgba(0,0,0,0.6); pointer-events: none; font-weight: 500; }
         @keyframes notifIn { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -233,10 +226,13 @@
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         CARGA DE SCRIPTS
+         CARGA DE SCRIPTS - ORDEN CORRECTO
          ============================================================ -->
+    
+    <!-- 1. THREE.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
     
+    <!-- 2. Post-procesado de THREE -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -252,18 +248,83 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/BokehShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/BokehPass.js"></script>
 
+    <!-- 3. CORE -->
+    <script src="js/core/Config.js?v=20260823"></script>
+    <script src="js/core/HardwareDetector.js?v=20260823"></script>
+    <script src="js/core/PersistentMemory.js?v=20260823"></script>
+
+    <!-- 4. ECS -->
+    <script src="js/ecs/SoaManager.js?v=20260823"></script>
+
+    <!-- 5. UTILS -->
+    <script src="js/utils/Helpers.js?v=20260823"></script>
+    <script src="js/utils/Profiler.js?v=20260823"></script>
+
+    <!-- 6. AI -->
+    <script src="js/ai/OptimizerAI.js?v=20260823"></script>
+    <script src="js/ai/MetaOptimizerAI.js?v=20260823"></script>
+    <script src="js/ai/WorldAI.js?v=20260823"></script>
+
+    <!-- 7. RENDERER - MATERIALES Y TEXTURAS -->
+    <script src="js/renderer/textures/TextureFactory.js?v=20260823"></script>
+    <script src="js/renderer/materials/MaterialLibrary.js?v=20260823"></script>
+    
+    <!-- 8. RENDERER - ENVIRONMENT -->
+    <script src="js/renderer/environment/SkySystem.js?v=20260823"></script>
+    <script src="js/renderer/environment/WaterSystem.js?v=20260823"></script>
+    <script src="js/renderer/environment/WeatherFX.js?v=20260823"></script>
+
+    <!-- 9. RENDERER - VFX -->
+    <script src="js/renderer/vfx/ParticleSystem.js?v=20260823"></script>
+    <script src="js/renderer/vfx/GodRays.js?v=20260823"></script>
+    <script src="js/renderer/vfx/AnimationSystem.js?v=20260823"></script>
+
+    <!-- 10. RENDERER - PRINCIPAL -->
+    <script src="js/renderer/DynamicResolutionController.js?v=20260823"></script>
+    <script src="js/renderer/PostProcessing.js?v=20260823"></script>
+    <script src="js/renderer/ComplexGeometryLab.js?v=20260823"></script>
+    <script src="js/renderer/MaxRenderer.js?v=20260823"></script>
+
+    <!-- 11. GAME -->
+    <script src="js/game/TerrainGenerator.js?v=20260823"></script>
+    <script src="js/game/EntityFactory.js?v=20260823"></script>
+    <script src="js/game/VegetationPlacer.js?v=20260823"></script>
+    <script src="js/game/AlpineDecor.js?v=20260823"></script>
+    <script src="js/game/ForestDecor.js?v=20260823"></script>
+    <script src="js/game/GameWorld.js?v=20260823"></script>
+
+    <!-- 12. ENGINE -->
+    <script src="js/engine/ChunkManager.js?v=20260823"></script>
+    <script src="js/engine/PriomEngine.js?v=20260823"></script>
+
+    <!-- 13. INPUT -->
+    <script src="js/input/InputController.js?v=20260823"></script>
+
+    <!-- 14. EDITOR -->
+    <script src="js/editor/Editor.js?v=20260823"></script>
+    <script src="js/editor/WorldSerializer.js?v=20260823"></script>
+
+    <!-- 15. UI -->
+    <script src="js/ui/Minimap.js?v=20260823"></script>
+
+    <!-- 16. AUDIO -->
+    <script src="js/audio/AudioSystem.js?v=20260823"></script>
+
     <script>
     // ============================================================
     //  🚀 INICIAR MOTOR
     //  ============================================================
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🌍 Iniciando Priom Engine...');
+        console.log('📦 Versión: 0.4.0');
+        console.log('🧠 Trinity AI activa');
+        console.log('🌍 Generando mundo cuántico...');
         
         // Configurar CONFIG global
         window.CONFIG = {
-            version: '0.4.3',
+            version: '0.4.0',
             build: '2026.08.25',
-            maxEntities: 100000,
+            maxEntities: 120000,
             targetFPS: 60,
             quality: 'ultra',
             lodDistance: 300,
@@ -276,24 +337,55 @@
             worldSize: 500,
             terrainHeight: 40,
             treeDensity: 0.35,
-            animalCount: 50
+            animalCount: 60,
+            gravity: -9.8,
+            windStrength: 0.6,
+            worldSeed: 42
         };
         
-        // Crear motor
-        const engine = new PriomEngine({
-            qualityLevel: 'ultra',
-            autoStart: true,
-            enableThreading: false,
-            enablePredictiveAI: true,
-            enableAdaptiveQuality: true,
-            enableErrorRecovery: true
-        });
-        window.engine = engine;
+        // Verificar que THREE está cargado
+        if (typeof THREE === 'undefined') {
+            console.error('❌ THREE.js no cargado');
+            document.getElementById('fps').textContent = 'ERROR';
+            return;
+        }
+        console.log('✅ THREE.js cargado:', THREE.REVISION);
         
-        // Conectar UI
-        setTimeout(() => {
-            connectUI(engine);
-        }, 1000);
+        // Verificar módulos core
+        const requiredModules = ['SoaManager', 'MaxRenderer', 'TerrainGenerator', 'GameWorld'];
+        let missingModules = [];
+        for (const mod of requiredModules) {
+            if (typeof window[mod] === 'undefined') {
+                missingModules.push(mod);
+            }
+        }
+        if (missingModules.length > 0) {
+            console.warn('⚠️ Módulos faltantes:', missingModules);
+        }
+        
+        // Crear motor
+        try {
+            const engine = new PriomEngine({
+                qualityLevel: 'ultra',
+                autoStart: true,
+                enableThreading: false,
+                enablePredictiveAI: true,
+                enableAdaptiveQuality: true,
+                enableErrorRecovery: true
+            });
+            window.engine = engine;
+            console.log('✅ Motor creado correctamente');
+            
+            // Conectar UI después de un momento
+            setTimeout(() => {
+                connectUI(engine);
+            }, 1500);
+            
+        } catch (e) {
+            console.error('❌ Error al crear el motor:', e);
+            document.getElementById('fps').textContent = 'ERROR';
+            document.getElementById('fps').className = 'value bad';
+        }
         
         // Notificaciones
         function showNotification(message, type = 'info') {
@@ -316,7 +408,7 @@
     function connectUI(engine) {
         console.log('🔌 Conectando UI...');
         
-        // ---- Referencias ----
+        // Referencias
         const hud = {
             fps: document.getElementById('fps'),
             trees: document.getElementById('trees'),
@@ -335,7 +427,9 @@
             aiDetail: document.getElementById('ai-detail')
         };
         
-        // ---- Actualización de estadísticas ----
+        // Actualización de estadísticas
+        let lastUpdate = 0;
+        
         setInterval(() => {
             try {
                 const stats = engine.getStats();
@@ -345,16 +439,39 @@
                 if (hud.aiFps) hud.aiFps.textContent = state.fps || 0;
                 if (hud.trees) hud.trees.textContent = state.treesCount || 0;
                 if (hud.animals) hud.animals.textContent = state.animalsCount || 0;
-                if (hud.ram) hud.ram.textContent = Math.round((state.memoryUsage || 0) / (1024 * 1024)) + ' MB';
-                if (hud.quality) hud.quality.textContent = (state.qualityLevel || 'ultra').toUpperCase();
                 
-                // Confianza IA
+                // RAM
+                if (hud.ram) {
+                    const mem = state.memoryUsage || 0;
+                    hud.ram.textContent = Math.round(mem / (1024 * 1024)) + ' MB';
+                }
+                
+                // Calidad
+                if (hud.quality) {
+                    hud.quality.textContent = (state.qualityLevel || 'ultra').toUpperCase();
+                }
+                
+                // IA Confianza
                 const optimizer = engine.getModule('optimizerAI');
-                if (optimizer && optimizer.getStatus) {
+                if (optimizer && optimizer.getStatus && hud.confidence) {
                     const status = optimizer.getStatus();
                     const conf = Math.round((status.confidence || 1) * 100);
-                    if (hud.confidence) hud.confidence.textContent = conf + '%';
+                    hud.confidence.textContent = conf + '%';
                     if (hud.aiConf) hud.aiConf.textContent = conf + '%';
+                }
+                
+                // IA Progress
+                if (optimizer && optimizer.getStatus && hud.aiProgress) {
+                    const status = optimizer.getStatus();
+                    const progress = Math.min(100, (status.confidence || 0.5) * 100);
+                    hud.aiProgress.style.width = progress + '%';
+                }
+                
+                // Meta AI
+                const metaAI = engine.getModule('metaAI');
+                if (metaAI && metaAI.getStatus && hud.aiMeta) {
+                    const status = metaAI.getStatus();
+                    hud.aiMeta.textContent = Math.round((status.confidence || 1) * 100) + '%';
                 }
                 
                 // Hora
@@ -390,19 +507,21 @@
                     hud.weatherLabel.textContent = map[weather] || '☀️ Despejado';
                 }
                 
-                // Progreso IA
-                if (optimizer && optimizer.getStatus && hud.aiProgress) {
-                    const status = optimizer.getStatus();
-                    const progress = Math.min(100, (status.confidence || 0.5) * 100);
-                    hud.aiProgress.style.width = progress + '%';
-                }
-                
-                // Detalle IA
+                // Detalle
                 if (hud.aiDetail) {
                     hud.aiDetail.textContent = '· ' + state.status + ' · frame ' + state.frameCount;
                 }
                 
-            } catch (e) {}
+                // Animación de valores
+                document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
+                    el.classList.remove('updating');
+                    void el.offsetWidth;
+                    el.classList.add('updating');
+                });
+                
+            } catch (e) {
+                // Silencioso para no saturar
+            }
         }, 300);
         
         // ---- Botones ----
@@ -443,7 +562,7 @@
             });
         });
         
-        // ---- Time Slider ----
+        // Time Slider
         const timeSlider = document.getElementById('time-slider');
         if (timeSlider) {
             timeSlider.addEventListener('input', (e) => {
@@ -456,7 +575,7 @@
             });
         }
         
-        // ---- Clima ----
+        // Clima
         const weatherBtn = document.getElementById('btn-weather');
         if (weatherBtn) {
             const cycle = ['clear', 'cloudy', 'rain', 'snow', 'stormy'];
@@ -473,7 +592,7 @@
             });
         }
         
-        // ---- Reset ----
+        // Reset
         const resetBtn = document.getElementById('btn-reset');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
@@ -482,9 +601,6 @@
                 setActiveButton('btn-dual');
                 engine.reset();
                 showNotification('🔄 Motor reiniciado', 'warning');
-                setTimeout(() => {
-                    engine._generateWorld();
-                }, 500);
             });
         }
         
@@ -501,7 +617,7 @@
         }
         window.showNotification = showNotification;
         
-        console.log('✅ UI conectada');
+        console.log('✅ UI conectada correctamente');
     }
     </script>
 
