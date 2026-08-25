@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
-    <title>🌍 PRIOM V0.4 - Demo "Tierra Cuántica"</title>
+    <title>🌄 PRIOM V0.4 - Amanecer Cuántico</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0f; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -64,7 +64,7 @@
         /* ===== HUD ===== */
         #hud {
             position: fixed; top: 16px; left: 16px;
-            background: rgba(0,0,0,0.92); backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
             border: 1px solid rgba(124,58,237,0.2); border-radius: 16px;
             padding: 14px 22px; min-width: 200px; pointer-events: none; z-index: 100;
             box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 40px rgba(124,58,237,0.05);
@@ -87,10 +87,25 @@
         @keyframes badgePulse { 0%,100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); } 50% { box-shadow: 0 0 30px rgba(124,58,237,0.5); } }
         @keyframes badgeQuantum { 0%,100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); } 33% { box-shadow: 0 0 30px rgba(6,182,212,0.3); } 66% { box-shadow: 0 0 30px rgba(16,185,129,0.3); } }
         
+        /* ===== TIME INDICATOR ===== */
+        #time-indicator {
+            position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 30px;
+            padding: 6px 20px; z-index: 90;
+            font-size: 11px; color: #9ca3af; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 16px;
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+        #time-indicator .time-label { font-weight: 600; color: #fff; }
+        #time-indicator .time-icon { font-size: 14px; }
+        #time-indicator .weather-icon { font-size: 14px; }
+        
         /* ===== STATS ===== */
         #stats-panel {
             position: fixed; top: 16px; right: 16px;
-            background: rgba(0,0,0,0.92); backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
             border: 1px solid rgba(255,255,255,0.04); border-radius: 16px;
             padding: 12px 16px; min-width: 170px; pointer-events: none; z-index: 100;
             box-shadow: 0 20px 80px rgba(0,0,0,0.9); max-height: calc(100vh - 140px); overflow-y: auto;
@@ -107,6 +122,9 @@
         #stats-panel .stat .value.ai { color: #8b5cf6; }
         #stats-panel .stat .value.ultra { color: #fbbf24; }
         #stats-panel .stat .value.meta { color: #06b6d4; }
+        #stats-panel .stat .value.sunrise { color: #ff6b35; }
+        #stats-panel .stat .value.sunset { color: #ff8c42; }
+        #stats-panel .stat .value.night { color: #4466aa; }
         
         @keyframes valPulse { 0% { transform: scale(1); } 30% { transform: scale(1.15); color: #fff; } 70% { transform: scale(0.95); } 100% { transform: scale(1); } }
         #stats-panel .stat .value.updating { animation: valPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -114,7 +132,7 @@
         /* ===== AI STATUS ===== */
         #ai-status-bar {
             position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.92); backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
             border: 1px solid rgba(124,58,237,0.1); border-radius: 9999px;
             padding: 8px 28px; z-index: 100; display: flex; align-items: center; gap: 18px;
             min-width: 520px; justify-content: center;
@@ -201,37 +219,9 @@
             border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.6), 0 0 60px rgba(124,58,237,0.03);
             background: rgba(0,0,0,0.3); border: 2px solid rgba(124,58,237,0.1);
             transition: all 0.3s ease; pointer-events: none;
+            width: 140px; height: 140px;
         }
         #minimap-canvas:hover { border-color: rgba(124,58,237,0.3); box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 80px rgba(124,58,237,0.05); transform: scale(1.05); }
-        
-        /* ===== GEO LAB ===== */
-        #geo-lab {
-            position: fixed; top: 80px; right: 16px; width: 220px;
-            background: rgba(0,0,0,0.92); backdrop-filter: blur(24px) saturate(1.2);
-            border: 1px solid rgba(16,185,129,0.1); border-radius: 16px;
-            padding: 14px 16px; z-index: 90; font-size: 10px;
-            max-height: calc(100vh - 180px); overflow-y: auto;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.9);
-        }
-        #geo-lab::-webkit-scrollbar { width: 2px; }
-        #geo-lab::-webkit-scrollbar-thumb { background: #10b981; border-radius: 1px; }
-        #geo-lab.collapsed { width: 50px; height: 50px; padding: 0; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        #geo-lab.collapsed .geo-body, #geo-lab.collapsed .geo-title-text { display: none; }
-        
-        #geo-lab .geo-title { font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-        #geo-lab .geo-title:hover { filter: brightness(1.2); }
-        #geo-lab .geo-toggle { color: #6b7280; font-size: 14px; transition: transform 0.3s ease; }
-        #geo-lab.collapsed .geo-toggle { transform: rotate(-90deg); }
-        
-        #geo-lab select, #geo-lab button.geo-btn { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: #e5e7eb; padding: 6px 10px; border-radius: 8px; font-size: 10px; margin-bottom: 6px; font-family: inherit; cursor: pointer; transition: all 0.2s ease; outline: none; }
-        #geo-lab select:hover, #geo-lab button.geo-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-        #geo-lab select:focus { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.05); }
-        #geo-lab button.geo-btn { background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; font-weight: 700; padding: 8px; margin-top: 4px; box-shadow: 0 0 30px rgba(16,185,129,0.05); }
-        #geo-lab button.geo-btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(16,185,129,0.12); }
-        #geo-lab button.geo-btn:active { transform: scale(0.97); }
-        
-        #geo-lab .geo-stats { display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 9px; color: #6b7280; }
-        #geo-lab .geo-stats b { color: #10b981; }
         
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
@@ -247,11 +237,10 @@
             #controls { bottom: 56px; gap: 3px; padding: 4px; border-radius: 8px; max-width: 98vw; }
             #controls button { padding: 3px 8px; font-size: 7px; border-radius: 4px; }
             .time-slider-container { min-width: 70px; padding: 2px 6px; }
-            #geo-lab { top: 70px; right: 10px; width: 180px; padding: 10px 12px; max-height: calc(100vh - 160px); border-radius: 12px; font-size: 9px; }
-            #geo-lab.collapsed { width: 40px; height: 40px; }
             #notifications { top: 60px; }
             .notification { font-size: 10px; padding: 6px 14px; border-radius: 8px; }
             #minimap-canvas { bottom: 80px; left: 10px; width: 100px; height: 100px; }
+            #time-indicator { bottom: 120px; font-size: 9px; padding: 4px 14px; gap: 10px; }
         }
         @media (max-width: 480px) {
             #hud .logo { font-size: 14px; }
@@ -268,22 +257,22 @@
     <!-- ===== LOADING ===== -->
     <div id="loading-screen">
         <div class="loader-container">
-            <div class="loader-icon">🌍</div>
+            <div class="loader-icon">🌄</div>
             <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.4 · Demo "Tierra Cuántica"</div>
+            <div class="loader-version">v0.4 · Amanecer Cuántico</div>
             
             <div class="loader-bar-wrapper">
                 <div class="loader-bar"><div class="loader-fill" id="loader-fill" style="width:0%"></div></div>
                 <div class="loader-percent" id="loader-percent">0%</div>
             </div>
             
-            <p class="loader-text" id="loader-text">🌍 Generando mundo cuántico...</p>
-            <p class="loader-subtext" id="loader-subtext">🌲 Creando bosques milenarios...</p>
+            <p class="loader-text" id="loader-text">🌄 Despertando el mundo...</p>
+            <p class="loader-subtext" id="loader-subtext">⛰️ Tallando montañas...</p>
             
             <div class="loader-details">
                 <span id="loader-status">⏳ Inicializando...</span>
                 <span id="loader-modules">📦 0/34</span>
-                <span id="loader-progress-bar">🌍 Generando terreno...</span>
+                <span id="loader-progress">🌅 Creando atmósfera...</span>
             </div>
             
             <div class="loader-particles">
@@ -293,33 +282,43 @@
                 <span class="dot"></span><span class="dot"></span>
             </div>
             
-            <div class="loader-footer">🌍 Tierra Cuántica · 🧠 Trinity AI · 🌲 Ecosistema Vivo · 🦌 Simulación Avanzada</div>
+            <div class="loader-footer">🌄 Amanecer Cuántico · ⛰️ Montañas Vivas · 🌨️ Nieve Realista · 🧠 Trinity AI</div>
         </div>
     </div>
 
     <!-- ===== HUD ===== -->
     <div id="hud">
-        <div class="logo">🌍 PRIOM V0.4</div>
-        <div class="subtitle">🌲 Tierra Cuántica · Ecosistema Vivo</div>
+        <div class="logo">🌄 PRIOM V0.4</div>
+        <div class="subtitle">⛰️ Amanecer Cuántico · Montañas Vivas</div>
         <div class="badge-container">
             <span class="badge badge-trinity">🧬 TRINITY AI</span>
             <span class="badge badge-meta">⚡ META</span>
             <span class="badge badge-ai">🎯 OPTIMIZANDO</span>
-            <span class="badge badge-quantum">🌍 MUNDO VIVO</span>
+            <span class="badge badge-quantum">🌨️ NIEVE DINÁMICA</span>
         </div>
     </div>
 
     <!-- ===== STATS ===== -->
     <div id="stats-panel">
         <div class="stat"><span>📊 FPS</span><span class="value good" id="fps">0</span></div>
-        <div class="stat"><span>🌳 Árboles</span><span class="value" id="trees">0</span></div>
-        <div class="stat"><span>🦌 Animales</span><span class="value" id="animals">0</span></div>
+        <div class="stat"><span>⛰️ Altitud</span><span class="value meta" id="altitude">0m</span></div>
+        <div class="stat"><span>🌨️ Nieve</span><span class="value" id="snow-level">0%</span></div>
+        <div class="stat"><span>🌡️ Temperatura</span><span class="value" id="temperature">12°C</span></div>
         <div class="stat"><span>💾 RAM</span><span class="value" id="ram">0 MB</span></div>
         <div class="stat"><span>⚡ Calidad</span><span class="value ultra" id="quality">ULTRA</span></div>
         <div class="stat"><span>🎯 IA Confianza</span><span class="value ai" id="confidence">100%</span></div>
-        <div class="stat"><span>🔮 Predicción</span><span class="value" id="prediction">⚡ Estable</span></div>
-        <div class="stat"><span>🌡️ Temperatura</span><span class="value" id="temperature">42°C</span></div>
         <div class="stat"><span>🕐 Hora</span><span class="value meta" id="time-display">12:00</span></div>
+    </div>
+
+    <!-- ===== TIME INDICATOR ===== -->
+    <div id="time-indicator">
+        <span class="time-icon" id="time-icon">🌅</span>
+        <span class="time-label" id="time-label">Amanecer</span>
+        <span style="color:#4b5563;">|</span>
+        <span class="weather-icon" id="weather-icon">☀️</span>
+        <span id="weather-label" style="color:#9ca3af;">Despejado</span>
+        <span style="color:#4b5563;">|</span>
+        <span id="snow-indicator" style="color:#9ca3af;">❄️ 0%</span>
     </div>
 
     <!-- ===== AI STATUS ===== -->
@@ -327,8 +326,8 @@
         <div class="ai-icon">🧠</div>
         <div class="ai-text">
             <strong id="ai-action">TRINITY AI ACTIVA</strong>
-            <span class="ai-detail" id="ai-detail">· Explorando el bosque...</span>
-            <span class="world-status" id="world-ai-status">🌳 Ecosistema en equilibrio</span>
+            <span class="ai-detail" id="ai-detail">· Observando el amanecer...</span>
+            <span class="world-status" id="world-ai-status">⛰️ Montañas en calma</span>
         </div>
         <div class="ai-progress"><div class="fill" id="ai-progress-fill" style="width:100%"></div></div>
         <div class="ai-stats">
@@ -351,26 +350,9 @@
             <button id="btn-quantum" style="background:linear-gradient(135deg,#7c3aed,#06b6d4);border-color:transparent;color:#fff;font-weight:700;">🌀 Quantum</button>
         </div>
         
-        <button id="btn-spawn">➕ Spawn</button>
-        <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">☀️ Clima</button>
-        <button id="btn-sound">🔊 Sonido</button>
-        
-        <div class="ctrl-group">
-            <span class="group-label">Editor</span>
-            <button id="btn-editor">✏️ OFF</button>
-            <button id="btn-editor-type">🌲 Árbol</button>
-            <button id="btn-editor-mode">📍 Colocar</button>
-            <button id="btn-editor-delete">🗑️ Borrar</button>
-            <button id="btn-editor-undo">↩️</button>
-            <button id="btn-editor-redo">↪️</button>
-        </div>
-        
-        <div class="ctrl-group">
-            <span class="group-label">Mundo</span>
-            <button id="btn-save-world">💾 Guardar</button>
-            <button id="btn-load-world">📂 Cargar</button>
-        </div>
+        <button id="btn-snow">❄️ Nieve</button>
+        <button id="btn-reset">🔄 Reset</button>
         
         <div class="time-slider-container">
             <span class="time-icon">🕐</span>
@@ -383,36 +365,12 @@
 
     <!-- ===== MINIMAP ===== -->
     <canvas id="minimap-canvas" width="140" height="140"></canvas>
-    
-    <!-- ===== GEO LAB ===== -->
-    <div id="geo-lab">
-        <div class="geo-title" id="geo-title">
-            <span><span class="geo-icon">🔷</span> <span class="geo-title-text">Laboratorio Geométrico</span></span>
-            <span class="geo-toggle" id="geo-toggle-icon">▾</span>
-        </div>
-        <div class="geo-body" id="geo-body" style="display:none;">
-            <select id="geo-family">
-                <option value="supershape">🌀 Supershape 3D</option>
-                <option value="torusknot">🎀 Nudo tórico</option>
-                <option value="mobius">♾️ Cinta de Möbius</option>
-                <option value="menger">🧊 Esponja de Menger</option>
-                <option value="heart">❤️ Corazón 3D</option>
-                <option value="spiral">🌀 Espiral</option>
-                <option value="galaxy">🌌 Galaxia</option>
-            </select>
-            <button class="geo-btn" id="geo-generate">✨ Generar forma</button>
-            <div class="geo-stats">
-                <span>📐 Vértices <b id="geo-verts">0</b></span>
-                <span>🔺 Triángulos <b id="geo-tris">0</b></span>
-            </div>
-        </div>
-    </div>
 
     <!-- ===== CANVAS ===== -->
     <canvas id="gameCanvas"></canvas>
 
     <!-- ============================================================
-         CARGA DE SCRIPTS - VERSIÓN COMPLETA
+         CARGA DE SCRIPTS
          ============================================================ -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
     
@@ -433,7 +391,7 @@
 
     <script>
     // ============================================================
-    //  🚀 SISTEMA DE CARGA Y DEMO
+    //  🚀 SISTEMA DE CARGA Y DEMO - AMANECER CUÁNTICO
     //  ============================================================
     (function() {
         'use strict';
@@ -442,7 +400,7 @@
         let loaded = 0;
         let hasError = false;
         let startTime = performance.now();
-        let generationStage = '';
+        let generationStage = '🌄 Despertando el mundo...';
         
         const elements = {
             fill: document.getElementById('loader-fill'),
@@ -451,7 +409,7 @@
             subtext: document.getElementById('loader-subtext'),
             status: document.getElementById('loader-status'),
             modules: document.getElementById('loader-modules'),
-            progressBar: document.getElementById('loader-progress-bar'),
+            progress: document.getElementById('loader-progress'),
             screen: document.getElementById('loading-screen')
         };
         
@@ -460,7 +418,7 @@
             if (elements.fill) elements.fill.style.width = progress + '%';
             if (elements.percent) elements.percent.textContent = Math.round(progress) + '%';
             if (elements.modules) elements.modules.textContent = `📦 ${loaded}/${totalModules}`;
-            if (elements.progressBar) elements.progressBar.textContent = generationStage || '🌍 Generando mundo...';
+            if (elements.progress) elements.progress.textContent = generationStage;
         }
         
         function loadModule(name, checkFn, loadFn) {
@@ -504,72 +462,91 @@
         }
         
         // ============================================================
-        //  🔌 CONECTAR UI AL MOTOR
+        //  🌄 UI CONEXIÓN CON INDICADORES DE AMANECER
         //  ============================================================
         function wireUI(engine) {
-            console.log('🔌 Conectando UI...');
+            console.log('🌄 Conectando UI con indicadores de amanecer...');
             
-            // ---- Geo Lab Toggle ----
-            const geoTitle = document.getElementById('geo-title');
-            const geoBody = document.getElementById('geo-body');
-            const geoIcon = document.getElementById('geo-toggle-icon');
-            const geoLab = document.getElementById('geo-lab');
-            if (geoTitle && geoBody && geoLab) {
-                geoBody.style.display = 'none';
-                geoLab.classList.add('collapsed');
-                if (geoIcon) geoIcon.textContent = '▸';
-                geoTitle.addEventListener('click', () => {
-                    const collapsed = geoBody.style.display === 'none';
-                    geoBody.style.display = collapsed ? 'block' : 'none';
-                    geoLab.classList.toggle('collapsed', !collapsed);
-                    if (geoIcon) geoIcon.textContent = collapsed ? '▾' : '▸';
-                });
-            }
+            // ---- Referencias UI ----
+            const hud = {
+                fps: document.getElementById('fps'),
+                altitude: document.getElementById('altitude'),
+                snowLevel: document.getElementById('snow-level'),
+                temperature: document.getElementById('temperature'),
+                ram: document.getElementById('ram'),
+                quality: document.getElementById('quality'),
+                confidence: document.getElementById('confidence'),
+                timeDisplay: document.getElementById('time-display'),
+                aiDetail: document.getElementById('ai-detail'),
+                aiConf: document.getElementById('ai-conf'),
+                aiMeta: document.getElementById('ai-meta'),
+                aiFps: document.getElementById('ai-fps'),
+                aiProgress: document.getElementById('ai-progress-fill'),
+                worldStatus: document.getElementById('world-ai-status')
+            };
+            
+            // ---- Time Indicator ----
+            const timeIcon = document.getElementById('time-icon');
+            const timeLabel = document.getElementById('time-label');
+            const weatherIcon = document.getElementById('weather-icon');
+            const weatherLabel = document.getElementById('weather-label');
+            const snowIndicator = document.getElementById('snow-indicator');
             
             // ---- Error Banner ----
             const errorBanner = document.createElement('div');
             errorBanner.id = 'engine-error-banner';
             document.body.appendChild(errorBanner);
             
-            // ---- Referencias UI ----
-            const hud = {
-                fps: document.getElementById('fps'),
-                trees: document.getElementById('trees'),
-                animals: document.getElementById('animals'),
-                ram: document.getElementById('ram'),
-                quality: document.getElementById('quality'),
-                confidence: document.getElementById('confidence'),
-                prediction: document.getElementById('prediction'),
-                aiDetail: document.getElementById('ai-detail'),
-                aiConf: document.getElementById('ai-conf'),
-                aiMeta: document.getElementById('ai-meta'),
-                aiFps: document.getElementById('ai-fps'),
-                aiProgress: document.getElementById('ai-progress-fill'),
-                temperature: document.getElementById('temperature'),
-                timeDisplay: document.getElementById('time-display')
-            };
-            
             // ---- Actualización de estadísticas ----
+            let lastSnowUpdate = 0;
+            
             setInterval(() => {
                 try {
                     const stats = engine.getStats();
                     const ecs = engine.getModule('ecs');
+                    const renderer = engine.getModule('renderer');
+                    const worldAI = engine.getModule('worldAI');
                     
                     if (hud.fps) hud.fps.textContent = stats.fps || 0;
                     if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
                     
-                    // Contar árboles y animales desde el ECS
-                    let treeCount = 0, animalCount = 0;
-                    if (ecs) {
-                        for (let i = 0; i < ecs.count; i++) {
-                            if (ecs.active && ecs.active[i]) {
-                                if (ecs.isTree && ecs.isTree[i]) treeCount++;
-                                if (ecs.isAnimal && ecs.isAnimal[i]) animalCount++;
+                    // Altitud máxima (simulada)
+                    if (hud.altitude) {
+                        const maxAlt = Math.floor(150 + Math.sin(performance.now() * 0.0001) * 30);
+                        hud.altitude.textContent = maxAlt + 'm';
+                    }
+                    
+                    // Nieve (simulada con WorldAI)
+                    if (hud.snowLevel) {
+                        let snow = 0;
+                        if (worldAI) {
+                            const ws = worldAI.getStatus();
+                            snow = ws.season === 'invierno' ? 60 + Math.random() * 30 : 
+                                   ws.season === 'otoño' ? 20 + Math.random() * 20 : 
+                                   ws.season === 'primavera' ? 10 + Math.random() * 15 : 
+                                   Math.random() * 5;
+                        }
+                        hud.snowLevel.textContent = Math.round(snow) + '%';
+                        hud.snowLevel.className = 'value' + (snow > 60 ? ' good' : snow > 30 ? ' meta' : '');
+                    }
+                    
+                    // Temperatura
+                    if (hud.temperature) {
+                        const renderer = engine.getModule('renderer');
+                        let temp = 12;
+                        if (renderer && renderer.dayNight) {
+                            const time = renderer.dayNight.time || 0.5;
+                            const sunHeight = Math.sin(time * Math.PI * 2);
+                            temp = 15 + sunHeight * 12;
+                            // Efecto de nieve
+                            if (hud.snowLevel) {
+                                const snow = parseInt(hud.snowLevel.textContent) || 0;
+                                temp -= snow * 0.15;
                             }
                         }
+                        hud.temperature.textContent = Math.round(temp) + '°C';
+                        hud.temperature.className = 'value' + (temp > 20 ? ' good' : temp > 10 ? ' meta' : '');
                     }
-                    if (hud.trees) hud.trees.textContent = treeCount;
-                    if (hud.animals) hud.animals.textContent = animalCount;
                     
                     // Memoria
                     if (hud.ram) {
@@ -601,19 +578,9 @@
                     }
                     
                     // Mundo AI
-                    const worldAI = engine.getModule('worldAI');
-                    const worldStatusEl = document.getElementById('world-ai-status');
-                    if (worldAI && worldStatusEl) {
+                    if (worldAI && hud.worldStatus) {
                         const ws = worldAI.getStatus();
-                        worldStatusEl.textContent = `🌍 Trinity AI #3 · ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
-                    }
-                    
-                    // Temperatura
-                    if (hud.temperature) {
-                        const baseTemp = 40 + (stats.cpuLoad || 20) * 0.3;
-                        const temp = Math.round(baseTemp + Math.sin(performance.now() * 0.001) * 2);
-                        hud.temperature.textContent = temp + '°C';
-                        hud.temperature.className = 'value' + (temp > 70 ? ' bad' : temp > 55 ? ' warn' : ' good');
+                        hud.worldStatus.textContent = `⛰️ ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
                     }
                     
                     // Calidad
@@ -623,14 +590,47 @@
                         hud.quality.className = 'value ultra';
                     }
                     
-                    // Predicción
-                    if (hud.prediction && stats.prediction) {
-                        const pred = stats.prediction;
-                        const trend = pred.trend || 'stable';
-                        const icons = { rising: '📈', falling: '📉', stable: '⚡' };
-                        const labels = { rising: 'Mejorando', falling: 'Degradando', stable: 'Estable' };
-                        hud.prediction.textContent = `${icons[trend] || '⚡'} ${labels[trend] || 'Estable'}`;
-                        hud.prediction.className = 'value' + (trend === 'falling' ? ' bad' : trend === 'rising' ? ' good' : '');
+                    // Hora y Time Indicator
+                    if (hud.timeDisplay && renderer && renderer.dayNight) {
+                        const time = renderer.dayNight.time || 0.5;
+                        const hours = Math.floor(time * 24);
+                        const mins = Math.floor((time * 24 - hours) * 60);
+                        hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                        
+                        // Time Indicator
+                        const sunHeight = Math.sin(time * Math.PI * 2);
+                        const isNight = sunHeight < -0.3;
+                        const isSunrise = sunHeight > -0.3 && sunHeight < 0.3 && sunHeight > 0;
+                        const isSunset = sunHeight > -0.3 && sunHeight < 0.3 && sunHeight < 0;
+                        const isDay = sunHeight > 0.3;
+                        
+                        let icon = '🌅', label = 'Amanecer';
+                        if (isNight) { icon = '🌙'; label = 'Noche'; }
+                        else if (isSunrise) { icon = '🌅'; label = 'Amanecer'; }
+                        else if (isSunset) { icon = '🌇'; label = 'Atardecer'; }
+                        else if (isDay) { icon = '☀️'; label = 'Día'; }
+                        
+                        if (timeIcon) timeIcon.textContent = icon;
+                        if (timeLabel) timeLabel.textContent = label;
+                        
+                        // Clima
+                        const weather = renderer.weatherType || 'clear';
+                        const weatherMap = {
+                            clear: { icon: '☀️', label: 'Despejado' },
+                            cloudy: { icon: '⛅', label: 'Nublado' },
+                            rain: { icon: '🌧️', label: 'Lluvia' },
+                            snow: { icon: '❄️', label: 'Nieve' },
+                            stormy: { icon: '⛈️', label: 'Tormenta' }
+                        };
+                        const w = weatherMap[weather] || weatherMap.clear;
+                        if (weatherIcon) weatherIcon.textContent = w.icon;
+                        if (weatherLabel) weatherLabel.textContent = w.label;
+                        
+                        // Nieve
+                        if (snowIndicator) {
+                            const snow = hud.snowLevel ? parseInt(hud.snowLevel.textContent) || 0 : 0;
+                            snowIndicator.textContent = `❄️ ${Math.round(snow)}%`;
+                        }
                     }
                     
                     // Progreso IA
@@ -640,17 +640,6 @@
                             const st = c.getStatus();
                             const progress = Math.min(100, (st.confidence || 0.5) * 100);
                             hud.aiProgress.style.width = progress + '%';
-                        }
-                    }
-                    
-                    // Hora
-                    if (hud.timeDisplay) {
-                        const renderer = engine.getModule('renderer');
-                        if (renderer && renderer.dayNight) {
-                            const time = renderer.dayNight.time || 0.5;
-                            const hours = Math.floor(time * 24);
-                            const mins = Math.floor((time * 24 - hours) * 60);
-                            hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
                         }
                     }
                     
@@ -666,7 +655,6 @@
                         errorBanner.style.display = 'none';
                     }
                     
-                    // Animación de valores
                     document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
                         el.classList.remove('updating');
                         void el.offsetWidth;
@@ -678,7 +666,7 @@
                 }
             }, 300);
             
-            // ---- Botones de calidad ----
+            // ---- Botones ----
             const qualityButtons = {
                 'btn-low': 'low',
                 'btn-medium': 'medium',
@@ -717,42 +705,7 @@
                 });
             });
             
-            // ---- Spawn ----
-            const spawnBtn = document.getElementById('btn-spawn');
-            if (spawnBtn) {
-                spawnBtn.addEventListener('click', () => {
-                    const factory = engine.getModule('entityFactory');
-                    const ecs = engine.getModule('ecs');
-                    const gameWorld = engine.getModule('gameWorld');
-                    if (!factory || !ecs) {
-                        showNotification('⚠️ EntityFactory no disponible', 'error');
-                        return;
-                    }
-                    
-                    let created = 0;
-                    for (let i = 0; i < 20; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const dist = 15 + Math.random() * 100;
-                        const x = Math.cos(angle) * dist;
-                        const z = Math.sin(angle) * dist;
-                        const isPredator = Math.random() < 0.2;
-                        const id = factory.createAnimal(x, 0.5, z, isPredator);
-                        if (id !== -1) {
-                            const scale = 0.4 + Math.random() * 0.6;
-                            ecs.scaleX[id] = scale;
-                            ecs.scaleY[id] = scale;
-                            ecs.scaleZ[id] = scale;
-                            if (gameWorld && gameWorld.ecosystems && gameWorld.ecosystems.entities) {
-                                gameWorld.ecosystems.entities.animals.add(id);
-                            }
-                            created++;
-                        }
-                    }
-                    showNotification(`🦌 ${created} animales spawnados`, 'success');
-                });
-            }
-            
-            // ---- Time Slider (conexión real) ----
+            // ---- Time Slider ----
             const timeSlider = document.getElementById('time-slider');
             if (timeSlider) {
                 timeSlider.addEventListener('input', (e) => {
@@ -760,146 +713,56 @@
                     const value = parseFloat(e.target.value);
                     if (renderer && renderer.setTimeOfDay) {
                         renderer.setTimeOfDay(value);
-                        // Forzar actualización del cielo
                         if (renderer._updateDayNight) renderer._updateDayNight();
-                        if (hud.timeDisplay) {
-                            const hours = Math.floor(value * 24);
-                            const mins = Math.floor((value * 24 - hours) * 60);
-                            hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-                        }
                     }
                 });
             }
             
-            // ---- Sound ----
-            const soundBtn = document.getElementById('btn-sound');
-            if (soundBtn) {
-                soundBtn.addEventListener('click', () => {
-                    const audio = engine.getModule('audioSystem');
-                    if (audio) {
-                        audio.start();
-                        soundBtn.textContent = '🔈 Sonido ON';
-                        showNotification('🔊 Sonido activado', 'info');
-                    }
-                });
-            }
-            
-            // ---- Editor ----
-            const editorBtn = document.getElementById('btn-editor');
-            const editorTypeBtn = document.getElementById('btn-editor-type');
-            const editorTypes = { tree: '🌲 Árbol', rock: '🪨 Roca', animal: '🦌 Animal', flower: '🌼 Flor', building: '🏠 Edificio' };
-            const editorTypeKeys = Object.keys(editorTypes);
-            let editorTypeIdx = 0;
-            
-            if (editorBtn) {
-                editorBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (!editor) return;
-                    const enabled = editor.toggle();
-                    editorBtn.textContent = enabled ? '✏️ ON' : '✏️ OFF';
-                    editorBtn.classList.toggle('active', enabled);
-                    showNotification(enabled ? '✏️ Editor activado' : '✏️ Editor desactivado', 'info');
-                });
-            }
-            
-            if (editorTypeBtn) {
-                editorTypeBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (!editor) return;
-                    editorTypeIdx = (editorTypeIdx + 1) % editorTypeKeys.length;
-                    const type = editorTypeKeys[editorTypeIdx];
-                    editor.setPlacementType(type);
-                    editorTypeBtn.textContent = editorTypes[type];
-                });
-            }
-            
-            const editorModeBtn = document.getElementById('btn-editor-mode');
-            const editorDeleteBtn = document.getElementById('btn-editor-delete');
-            
-            if (editorModeBtn) {
-                editorModeBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (!editor) return;
-                    const modes = ['place', 'select', 'move', 'rotate', 'scale'];
-                    const currentIdx = modes.indexOf(editor.mode) || 0;
-                    const newIdx = (currentIdx + 1) % modes.length;
-                    const newMode = modes[newIdx];
-                    editor.setMode(newMode);
-                    const labels = { place: '📍 Colocar', select: '👆 Seleccionar', move: '✋ Mover', rotate: '🔄 Rotar', scale: '📐 Escalar' };
-                    editorModeBtn.textContent = labels[newMode] || '📍 Colocar';
-                });
-            }
-            
-            if (editorDeleteBtn) {
-                editorDeleteBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (editor) {
-                        const deleted = editor.deleteSelected();
-                        if (deleted) showNotification('🗑️ Entidades eliminadas', 'warning');
-                    }
-                });
-            }
-            
-            const editorUndoBtn = document.getElementById('btn-editor-undo');
-            const editorRedoBtn = document.getElementById('btn-editor-redo');
-            
-            if (editorUndoBtn) {
-                editorUndoBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (editor && editor.undo()) {
-                        showNotification('↩️ Deshacer', 'info');
-                    }
-                });
-            }
-            
-            if (editorRedoBtn) {
-                editorRedoBtn.addEventListener('click', () => {
-                    const editor = engine.getModule('editor');
-                    if (editor && editor.redo()) {
-                        showNotification('↪️ Rehacer', 'info');
-                    }
-                });
-            }
-            
-            const saveBtn = document.getElementById('btn-save-world');
-            const loadBtn = document.getElementById('btn-load-world');
-            
-            if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
-                    const serializer = engine.getModule('worldSerializer');
-                    if (serializer && serializer.save()) {
-                        saveBtn.textContent = '💾 ¡Guardado!';
-                        showNotification('💾 Mundo guardado', 'success');
-                        setTimeout(() => { saveBtn.textContent = '💾 Guardar'; }, 1500);
-                    }
-                });
-            }
-            
-            if (loadBtn) {
-                loadBtn.addEventListener('click', () => {
-                    const serializer = engine.getModule('worldSerializer');
-                    if (serializer && serializer.load()) {
-                        loadBtn.textContent = '📂 ¡Cargado!';
-                        showNotification('📂 Mundo cargado', 'success');
-                        setTimeout(() => { loadBtn.textContent = '📂 Cargar'; }, 1500);
-                    }
-                });
-            }
-            
+            // ---- Clima ----
             const weatherBtn = document.getElementById('btn-weather');
             if (weatherBtn) {
-                const cycle = ['clear', 'rain', 'snow', 'stormy'];
-                const labels = { clear: '☀️ Claro', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
+                const cycle = ['clear', 'cloudy', 'rain', 'snow', 'stormy'];
+                const labels = { clear: '☀️ Claro', cloudy: '⛅ Nublado', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
                 let idx = 0;
                 weatherBtn.addEventListener('click', () => {
                     idx = (idx + 1) % cycle.length;
                     const renderer = engine.getModule('renderer');
-                    if (renderer && renderer.setWeather) renderer.setWeather(cycle[idx]);
+                    if (renderer && renderer.setWeather) {
+                        renderer.setWeather(cycle[idx]);
+                        // Forzar actualización del clima en WorldAI
+                        const worldAI = engine.getModule('worldAI');
+                        if (worldAI && worldAI.setWeather) {
+                            worldAI.setWeather(cycle[idx], true);
+                        }
+                    }
                     weatherBtn.textContent = labels[cycle[idx]];
                     showNotification(`🌤️ Clima: ${labels[cycle[idx]]}`, 'info');
                 });
             }
             
+            // ---- Nieve (efecto especial) ----
+            const snowBtn = document.getElementById('btn-snow');
+            if (snowBtn) {
+                let snowActive = false;
+                snowBtn.addEventListener('click', () => {
+                    snowActive = !snowActive;
+                    snowBtn.textContent = snowActive ? '❄️ Nieve ON' : '❄️ Nieve';
+                    snowBtn.classList.toggle('active', snowActive);
+                    
+                    const renderer = engine.getModule('renderer');
+                    if (renderer) {
+                        if (snowActive) {
+                            renderer.setWeather('snow');
+                            showNotification('❄️ Nieve activada', 'success');
+                        } else {
+                            renderer.setWeather('clear');
+                            showNotification('☀️ Nieve desactivada', 'info');
+                        }
+                    }
+                });
+            }
+            
+            // ---- Reset ----
             const resetBtn = document.getElementById('btn-reset');
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
@@ -908,27 +771,6 @@
                     setActiveButton('btn-dual');
                     engine.reset();
                     showNotification('🔄 Motor reiniciado', 'warning');
-                });
-            }
-            
-            const geoFamily = document.getElementById('geo-family');
-            const geoBtn = document.getElementById('geo-generate');
-            const geoVerts = document.getElementById('geo-verts');
-            const geoTris = document.getElementById('geo-tris');
-            
-            if (geoBtn) {
-                geoBtn.addEventListener('click', () => {
-                    const lab = engine.getModule('geometryLab');
-                    if (!lab || !geoFamily) {
-                        showNotification('⚠️ GeometryLab no disponible', 'error');
-                        return;
-                    }
-                    const result = lab.generate(geoFamily.value);
-                    if (result) {
-                        if (geoVerts) geoVerts.textContent = result.vertices || 0;
-                        if (geoTris) geoTris.textContent = Math.round(result.triangles || 0);
-                        showNotification(`🔷 ${geoFamily.options[geoFamily.selectedIndex].text} generada`, 'success');
-                    }
                 });
             }
             
@@ -950,7 +792,7 @@
             }
             
             window.showNotification = showNotification;
-            console.log('✅ UI conectada al motor');
+            console.log('✅ UI conectada con indicadores de amanecer');
         }
         
         // ============================================================
@@ -958,7 +800,7 @@
         //  ============================================================
         async function startEngine() {
             startTime = performance.now();
-            elements.text.textContent = '🚀 Iniciando motor cuántico...';
+            elements.text.textContent = '🌄 Despertando el mundo cuántico...';
             
             try {
                 if (typeof THREE === 'undefined') {
@@ -1028,19 +870,16 @@
                     return;
                 }
                 
-                elements.text.textContent = '🌍 ¡Módulos cargados! Generando mundo...';
+                elements.text.textContent = '🌄 ¡Módulos listos! Generando paisaje...';
                 elements.text.className = 'loader-text success';
-                elements.subtext.textContent = '🌲 Creando ecosistema...';
+                elements.subtext.textContent = '⛰️ Tallando montañas y valles...';
                 elements.status.textContent = '✅ Listo';
-                generationStage = '🌍 Generando terreno y ecosistema...';
+                generationStage = '⛰️ Creando paisaje de montaña...';
                 updateUI();
                 
                 console.log('🎉 Todos los módulos cargados correctamente');
                 console.log(`⏱️ Tiempo de carga: ${(performance.now() - startTime).toFixed(0)}ms`);
                 
-                // ============================================================
-                //  🚀 INICIAR MOTOR Y GENERAR MUNDO
-                //  ============================================================
                 setTimeout(() => {
                     try {
                         if (typeof CONFIG === 'undefined') {
@@ -1049,17 +888,17 @@
                                 maxEntities: 120000,
                                 targetFPS: 60,
                                 quality: 'ultra',
-                                lodDistance: 300,
+                                lodDistance: 350,
                                 waterEnabled: true,
                                 particlesEnabled: true,
                                 shadowsEnabled: true,
                                 bloomEnabled: true,
                                 ssaoEnabled: true,
                                 debug: false,
-                                worldSize: 400,
-                                terrainHeight: 30,
-                                treeDensity: 0.5,
-                                animalCount: 80
+                                worldSize: 600,
+                                terrainHeight: 50,
+                                treeDensity: 0.3,
+                                animalCount: 60
                             };
                         }
                         
@@ -1084,12 +923,12 @@
                         }
 
                         console.log('✅ Motor cuántico iniciado');
-                        generationStage = '🌍 Motor iniciado, generando mundo...';
+                        generationStage = '🌄 Motor iniciado, generando paisaje...';
                         updateUI();
                         
-                        // === ESPERAR A QUE EL MUNDO ESTÉ LISTO ===
+                        // === ESPERAR AL MUNDO ===
                         let attempts = 0;
-                        const maxAttempts = 30;
+                        const maxAttempts = 40;
                         
                         function waitForWorld() {
                             attempts++;
@@ -1097,13 +936,13 @@
                             
                             if (gameWorld && gameWorld.state && gameWorld.state.isReady) {
                                 console.log('✅ Mundo generado correctamente');
-                                generationStage = '🌍 Mundo listo! Conectando UI...';
+                                generationStage = '🌅 Amanecer cuántico listo!';
                                 updateUI();
                                 
                                 // Conectar UI
                                 wireUI(engine);
                                 
-                                // === MINIMAP: forzar actualización ===
+                                // === MINIMAP ===
                                 setTimeout(() => {
                                     const minimap = engine.getModule('minimap');
                                     if (minimap && minimap._draw) {
@@ -1112,44 +951,50 @@
                                     }
                                 }, 1000);
                                 
+                                // === AJUSTAR HORA AL AMANECER ===
+                                setTimeout(() => {
+                                    const renderer = engine.getModule('renderer');
+                                    if (renderer && renderer.setTimeOfDay) {
+                                        renderer.setTimeOfDay(0.22);
+                                        if (renderer._updateDayNight) renderer._updateDayNight();
+                                        showNotification('🌅 Amanecer cuántico iniciado', 'success');
+                                    }
+                                }, 1500);
+                                
                                 // Ocultar loading
                                 setTimeout(() => {
                                     if (elements.screen) {
                                         elements.screen.classList.add('fade-out');
                                         setTimeout(() => {
                                             elements.screen.style.display = 'none';
-                                            showNotification('🌍 Tierra Cuántica lista!', 'success');
                                         }, 800);
                                     }
                                 }, 500);
                                 
                             } else if (attempts < maxAttempts) {
-                                generationStage = `⏳ Generando mundo... (${attempts}/${maxAttempts})`;
+                                generationStage = `⏳ Generando paisaje... (${attempts}/${maxAttempts})`;
                                 updateUI();
                                 console.log(`⏳ Esperando generación del mundo (${attempts}/${maxAttempts})...`);
-                                setTimeout(waitForWorld, 500);
+                                setTimeout(waitForWorld, 600);
                             } else {
                                 console.warn('⚠️ El mundo no se generó correctamente, forzando UI');
                                 generationStage = '⚠️ Forzando inicio...';
                                 updateUI();
                                 
-                                // Forzar conexión de UI
                                 wireUI(engine);
                                 
-                                // Ocultar loading
                                 setTimeout(() => {
                                     if (elements.screen) {
                                         elements.screen.classList.add('fade-out');
                                         setTimeout(() => {
                                             elements.screen.style.display = 'none';
-                                            showNotification('🌍 Tierra Cuántica (modo forzado)', 'info');
+                                            showNotification('🌄 Amanecer Cuántico (modo forzado)', 'info');
                                         }, 800);
                                     }
                                 }, 500);
                             }
                         }
                         
-                        // Iniciar espera
                         setTimeout(waitForWorld, 1000);
                         
                     } catch (e) {
@@ -1166,7 +1011,6 @@
             }
         }
         
-        // === Iniciar ===
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', startEngine);
         } else {
