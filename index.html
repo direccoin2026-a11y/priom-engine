@@ -4,88 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0f">
-    <title>🌄 PRIOM V0.4 - Amanecer Cuántico</title>
+    <title>🌍 PRIOM V0.4 - Demo "Tierra Cuántica"</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0f; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
-        canvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
-        
-        /* ===== LOADING ===== */
-        #loading-screen {
-            position: fixed; inset: 0; background: #0a0a0f;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999; transition: opacity 0.8s ease;
-            background-image: radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08), transparent 60%),
-                              radial-gradient(ellipse at 80% 50%, rgba(6,182,212,0.08), transparent 60%);
-        }
-        #loading-screen.fade-out { opacity: 0; pointer-events: none; }
-        
-        .loader-container { text-align: center; max-width: 520px; padding: 40px 30px; animation: loaderIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        @keyframes loaderIn { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        
-        .loader-icon { font-size: 80px; display: block; margin-bottom: 12px; animation: iconPulse 2.5s ease-in-out infinite; filter: drop-shadow(0 0 40px rgba(124,58,237,0.2)); }
-        @keyframes iconPulse { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.1) rotate(5deg); } }
-        
-        .loader-title { font-size: 36px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradMove 4s ease-in-out infinite; letter-spacing: 4px; }
-        @keyframes gradMove { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        .loader-version { color: #6b7280; font-size: 13px; letter-spacing: 3px; margin-top: 4px; opacity: 0.7; }
-        
-        .loader-bar-wrapper { display: flex; align-items: center; gap: 14px; margin: 24px 0 16px; }
-        .loader-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; position: relative; }
-        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.4s ease; animation: gradMove 3s ease-in-out infinite; }
-        .loader-fill::after { content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 40px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 1.8s ease-in-out infinite; }
-        @keyframes shimmer { 0% { transform: translateX(-60px); } 100% { transform: translateX(80px); } }
-        
-        .loader-percent { color: #6b7280; font-size: 14px; font-weight: 600; min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
-        .loader-text { color: #fff; font-size: 14px; margin-top: 8px; min-height: 24px; font-weight: 500; animation: textPulse 2s ease-in-out infinite; }
-        @keyframes textPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
-        .loader-text.error { color: #ef4444 !important; }
-        .loader-text.success { color: #10b981 !important; }
-        .loader-subtext { color: #6b7280; font-size: 12px; margin-top: 4px; min-height: 20px; }
-        
-        .loader-details { display: flex; justify-content: center; gap: 16px; margin-top: 16px; font-size: 10px; color: #4b5563; font-family: 'Consolas', monospace; }
-        .loader-details span { background: rgba(255,255,255,0.02); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02); }
-        
-        .loader-particles { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
-        .loader-particles .dot { width: 8px; height: 8px; border-radius: 50%; background: #7c3aed; animation: dotFloat 1.8s ease-in-out infinite; }
-        .loader-particles .dot:nth-child(1) { animation-delay: 0s; background: #7c3aed; }
-        .loader-particles .dot:nth-child(2) { animation-delay: 0.2s; background: #06b6d4; }
-        .loader-particles .dot:nth-child(3) { animation-delay: 0.4s; background: #10b981; }
-        .loader-particles .dot:nth-child(4) { animation-delay: 0.6s; background: #f59e0b; }
-        .loader-particles .dot:nth-child(5) { animation-delay: 0.8s; background: #7c3aed; }
-        .loader-particles .dot:nth-child(6) { animation-delay: 1.0s; background: #06b6d4; }
-        .loader-particles .dot:nth-child(7) { animation-delay: 1.2s; background: #10b981; }
-        .loader-particles .dot:nth-child(8) { animation-delay: 1.4s; background: #f59e0b; }
-        @keyframes dotFloat { 0%,100% { transform: translateY(0px) scale(1); opacity: 0.3; } 50% { transform: translateY(-14px) scale(1.8); opacity: 1; } }
-        
-        .loader-footer { margin-top: 24px; font-size: 11px; color: #4b5563; letter-spacing: 1px; opacity: 0.4; }
-        .loader-footer:hover { opacity: 0.7; }
+        canvas#gameCanvas { display: block; width: 100vw; height: 100vh; background: #0a0a0f; }
         
         /* ===== HUD ===== */
         #hud {
             position: fixed; top: 16px; left: 16px;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
             border: 1px solid rgba(124,58,237,0.2); border-radius: 16px;
             padding: 14px 22px; min-width: 200px; pointer-events: none; z-index: 100;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.9), 0 0 40px rgba(124,58,237,0.05);
-            animation: hudPulse 4s ease-in-out infinite;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9);
         }
-        @keyframes hudPulse { 0%,100% { border-color: rgba(124,58,237,0.2); } 50% { border-color: rgba(124,58,237,0.5); } }
-        #hud:hover { border-color: rgba(124,58,237,0.6); transform: scale(1.02); }
-        
-        #hud .logo { font-size: 20px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: gradMove 4s ease-in-out infinite; letter-spacing: -0.5px; }
+        #hud .logo { font-size: 20px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
         #hud .subtitle { font-size: 9px; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; font-weight: 300; }
         
         .badge-container { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 12px; border-radius: 9999px; font-size: 7px; font-weight: 700; text-transform: uppercase; color: #fff; letter-spacing: 0.5px; transition: all 0.2s ease; position: relative; overflow: hidden; }
-        .badge::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent); pointer-events: none; }
-        .badge:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .badge-trinity { background: linear-gradient(135deg, #7c3aed, #f59e0b); animation: badgePulse 2s ease-in-out infinite; }
+        .badge { display: inline-flex; align-items: center; padding: 2px 12px; border-radius: 9999px; font-size: 7px; font-weight: 700; text-transform: uppercase; color: #fff; letter-spacing: 0.5px; }
+        .badge-trinity { background: linear-gradient(135deg, #7c3aed, #f59e0b); }
         .badge-meta { background: linear-gradient(135deg, #06b6d4, #0891b2); }
         .badge-ai { background: linear-gradient(135deg, #10b981, #059669); }
-        .badge-quantum { background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981); animation: badgeQuantum 3s ease-in-out infinite; }
-        @keyframes badgePulse { 0%,100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); } 50% { box-shadow: 0 0 30px rgba(124,58,237,0.5); } }
-        @keyframes badgeQuantum { 0%,100% { box-shadow: 0 0 10px rgba(124,58,237,0.2); } 33% { box-shadow: 0 0 30px rgba(6,182,212,0.3); } 66% { box-shadow: 0 0 30px rgba(16,185,129,0.3); } }
+        .badge-quantum { background: linear-gradient(135deg, #7c3aed, #06b6d4, #10b981); }
+        
+        /* ===== STATS ===== */
+        #stats-panel {
+            position: fixed; top: 16px; right: 16px;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.04); border-radius: 16px;
+            padding: 12px 16px; min-width: 170px; pointer-events: none; z-index: 100;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.9);
+            max-height: calc(100vh - 140px); overflow-y: auto;
+        }
+        #stats-panel::-webkit-scrollbar { width: 2px; }
+        #stats-panel::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 1px; }
+        #stats-panel .stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #9ca3af; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        #stats-panel .stat:last-child { border-bottom: none; }
+        #stats-panel .stat .value { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+        #stats-panel .stat .value.good { color: #10b981; }
+        #stats-panel .stat .value.warn { color: #f59e0b; }
+        #stats-panel .stat .value.bad { color: #ef4444; }
+        #stats-panel .stat .value.ai { color: #8b5cf6; }
+        #stats-panel .stat .value.ultra { color: #fbbf24; }
+        #stats-panel .stat .value.meta { color: #06b6d4; }
         
         /* ===== TIME INDICATOR ===== */
         #time-indicator {
@@ -99,57 +61,21 @@
             transition: all 0.5s ease;
         }
         #time-indicator .time-label { font-weight: 600; color: #fff; }
-        #time-indicator .time-icon { font-size: 14px; }
-        #time-indicator .weather-icon { font-size: 14px; }
-        
-        /* ===== STATS ===== */
-        #stats-panel {
-            position: fixed; top: 16px; right: 16px;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
-            border: 1px solid rgba(255,255,255,0.04); border-radius: 16px;
-            padding: 12px 16px; min-width: 170px; pointer-events: none; z-index: 100;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.9); max-height: calc(100vh - 140px); overflow-y: auto;
-        }
-        #stats-panel::-webkit-scrollbar { width: 2px; }
-        #stats-panel::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 1px; }
-        
-        #stats-panel .stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #9ca3af; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        #stats-panel .stat:last-child { border-bottom: none; }
-        #stats-panel .stat .value { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-        #stats-panel .stat .value.good { color: #10b981; }
-        #stats-panel .stat .value.warn { color: #f59e0b; }
-        #stats-panel .stat .value.bad { color: #ef4444; }
-        #stats-panel .stat .value.ai { color: #8b5cf6; }
-        #stats-panel .stat .value.ultra { color: #fbbf24; }
-        #stats-panel .stat .value.meta { color: #06b6d4; }
-        #stats-panel .stat .value.sunrise { color: #ff6b35; }
-        #stats-panel .stat .value.sunset { color: #ff8c42; }
-        #stats-panel .stat .value.night { color: #4466aa; }
-        
-        @keyframes valPulse { 0% { transform: scale(1); } 30% { transform: scale(1.15); color: #fff; } 70% { transform: scale(0.95); } 100% { transform: scale(1); } }
-        #stats-panel .stat .value.updating { animation: valPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
         /* ===== AI STATUS ===== */
         #ai-status-bar {
             position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px) saturate(1.2);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
             border: 1px solid rgba(124,58,237,0.1); border-radius: 9999px;
             padding: 8px 28px; z-index: 100; display: flex; align-items: center; gap: 18px;
             min-width: 520px; justify-content: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 60px rgba(124,58,237,0.03);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
-        #ai-status-bar:hover { border-color: rgba(124,58,237,0.25); transform: translateX(-50%) scale(1.02); }
-        
-        #ai-status-bar .ai-icon { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #f59e0b); display: flex; align-items: center; justify-content: center; font-size: 18px; animation: badgePulse 2s ease-in-out infinite; flex-shrink: 0; box-shadow: 0 0 30px rgba(124,58,237,0.1); }
-        
+        #ai-status-bar .ai-icon { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #f59e0b); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
         #ai-status-bar .ai-text { font-size: 10px; color: #9ca3af; text-align: center; }
-        #ai-status-bar .ai-text strong { color: #8b5cf6; text-shadow: 0 0 20px rgba(139,92,246,0.15); font-weight: 700; }
-        #ai-status-bar .ai-text .ai-detail { display: block; font-size: 8px; color: #6b7280; margin-top: 1px; }
-        #ai-status-bar .ai-text .world-status { font-size: 9px; color: #34d399; margin-top: 2px; }
-        
+        #ai-status-bar .ai-text strong { color: #8b5cf6; font-weight: 700; }
         #ai-status-bar .ai-progress { width: 120px; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
-        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); background-size: 300% 300%; border-radius: 2px; transition: width 0.3s ease; animation: gradMove 3s ease-in-out infinite; }
-        
+        #ai-status-bar .ai-progress .fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #06b6d4, #10b981, #f59e0b); border-radius: 2px; transition: width 0.3s ease; }
         #ai-status-bar .ai-stats { font-size: 9px; color: #6b7280; display: flex; gap: 14px; flex-shrink: 0; }
         #ai-status-bar .ai-stats .highlight { color: #8b5cf6; font-weight: 600; }
         #ai-status-bar .ai-stats .meta { color: #06b6d4; font-weight: 600; }
@@ -159,26 +85,20 @@
             position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
             z-index: 100; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
             max-width: 95vw; padding: 6px;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(12px) saturate(1.2);
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(12px);
             border-radius: 12px; border: 1px solid rgba(255,255,255,0.02);
         }
-        #controls:hover { background: rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.04); }
-        
         #controls button {
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03);
             color: #9ca3af; padding: 4px 14px; border-radius: 8px; font-size: 8px;
             font-weight: 500; cursor: pointer; transition: all 0.2s ease;
             font-family: 'Segoe UI', system-ui, sans-serif; touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent; white-space: nowrap;
+            white-space: nowrap;
         }
         #controls button:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.06); transform: translateY(-1px); color: #fff; }
         #controls button:active { transform: scale(0.95); }
-        #controls button.active { background: rgba(124,58,237,0.1); border-color: #8b5cf6; color: #8b5cf6; box-shadow: 0 0 20px rgba(124,58,237,0.04); }
-        #controls button.active:hover { background: rgba(124,58,237,0.15); box-shadow: 0 0 30px rgba(124,58,237,0.08); }
-        
-        #controls button.dual-ai { background: linear-gradient(135deg, #7c3aed, #f59e0b); border-color: transparent; color: #fff; font-weight: 700; box-shadow: 0 0 30px rgba(124,58,237,0.08); }
-        #controls button.dual-ai:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 0 50px rgba(124,58,237,0.15); }
-        #controls button.dual-ai:active { transform: scale(0.97); }
+        #controls button.active { background: rgba(124,58,237,0.1); border-color: #8b5cf6; color: #8b5cf6; }
+        #controls button.dual-ai { background: linear-gradient(135deg, #7c3aed, #f59e0b); border-color: transparent; color: #fff; font-weight: 700; }
         
         .ctrl-group { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); }
         .ctrl-group .group-label { font-size: 7px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; padding-right: 4px; }
@@ -188,7 +108,6 @@
             background: rgba(255,255,255,0.02); border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.02); flex: 1; min-width: 100px;
         }
-        .time-slider-container .time-icon { font-size: 12px; opacity: 0.5; }
         .time-slider-container input[type="range"] {
             flex: 1; height: 3px; -webkit-appearance: none; appearance: none;
             background: rgba(255,255,255,0.06); border-radius: 2px; outline: none;
@@ -197,15 +116,21 @@
         .time-slider-container input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none; width: 12px; height: 12px;
             border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #06b6d4);
-            cursor: pointer; box-shadow: 0 0 20px rgba(124,58,237,0.2);
+            cursor: pointer;
         }
-        .time-slider-container input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2); box-shadow: 0 0 30px rgba(124,58,237,0.3);
+        
+        /* ===== MINIMAP ===== */
+        #minimap-canvas {
+            position: fixed; bottom: 110px; left: 16px; z-index: 90;
+            border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3); border: 2px solid rgba(124,58,237,0.1);
+            width: 140px; height: 140px; pointer-events: none;
         }
+        #minimap-canvas:hover { border-color: rgba(124,58,237,0.3); transform: scale(1.05); }
         
         /* ===== NOTIFICACIONES ===== */
         #notifications { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 200; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 90vw; }
-        .notification { background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.12); border-radius: 10px; padding: 8px 20px; font-size: 11px; color: #fff; animation: notifIn 0.4s cubic-bezier(0.34,1.56,0.64,1), notifOut 0.4s 3.5s ease forwards; box-shadow: 0 10px 40px rgba(0,0,0,0.6); pointer-events: none; font-weight: 500; }
+        .notification { background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(124,58,237,0.12); border-radius: 10px; padding: 8px 20px; font-size: 11px; color: #fff; animation: notifIn 0.4s ease, notifOut 0.4s 3.5s ease forwards; box-shadow: 0 10px 40px rgba(0,0,0,0.6); pointer-events: none; font-weight: 500; }
         @keyframes notifIn { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes notifOut { to { opacity: 0; transform: translateY(-20px) scale(0.95); } }
         .notification.success { border-color: #10b981; color: #10b981; }
@@ -213,97 +138,40 @@
         .notification.error { border-color: #ef4444; color: #ef4444; }
         .notification.info { border-color: #06b6d4; color: #06b6d4; }
         
-        /* ===== MINIMAP ===== */
-        #minimap-canvas {
-            position: fixed; bottom: 110px; left: 16px; z-index: 90;
-            border-radius: 50%; box-shadow: 0 0 30px rgba(0,0,0,0.6), 0 0 60px rgba(124,58,237,0.03);
-            background: rgba(0,0,0,0.3); border: 2px solid rgba(124,58,237,0.1);
-            transition: all 0.3s ease; pointer-events: none;
-            width: 140px; height: 140px;
-        }
-        #minimap-canvas:hover { border-color: rgba(124,58,237,0.3); box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 80px rgba(124,58,237,0.05); transform: scale(1.05); }
-        
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             #hud { top: 10px; left: 10px; padding: 10px 14px; min-width: 140px; border-radius: 12px; }
             #hud .logo { font-size: 16px; }
-            #hud .subtitle { font-size: 7px; letter-spacing: 1px; }
-            .badge { font-size: 6px; padding: 1px 8px; }
             #stats-panel { top: 10px; right: 10px; padding: 8px 12px; min-width: 120px; border-radius: 12px; max-height: calc(100vh - 120px); }
             #stats-panel .stat { font-size: 8px; padding: 1px 0; }
-            #ai-status-bar { bottom: 70px; padding: 6px 16px; gap: 10px; min-width: auto; flex-wrap: wrap; justify-content: center; border-radius: 12px; }
+            #ai-status-bar { bottom: 70px; padding: 6px 16px; gap: 10px; min-width: auto; flex-wrap: wrap; border-radius: 12px; }
             #ai-status-bar .ai-progress { width: 60px; }
-            #ai-status-bar .ai-stats { font-size: 7px; gap: 8px; }
             #controls { bottom: 56px; gap: 3px; padding: 4px; border-radius: 8px; max-width: 98vw; }
             #controls button { padding: 3px 8px; font-size: 7px; border-radius: 4px; }
             .time-slider-container { min-width: 70px; padding: 2px 6px; }
-            #notifications { top: 60px; }
-            .notification { font-size: 10px; padding: 6px 14px; border-radius: 8px; }
             #minimap-canvas { bottom: 80px; left: 10px; width: 100px; height: 100px; }
             #time-indicator { bottom: 120px; font-size: 9px; padding: 4px 14px; gap: 10px; }
         }
-        @media (max-width: 480px) {
-            #hud .logo { font-size: 14px; }
-            #stats-panel { min-width: 100px; padding: 6px 10px; }
-            #controls button { font-size: 6px; padding: 2px 6px; }
-            #ai-status-bar .ai-text { font-size: 8px; }
-        }
-        
-        #engine-error-banner { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(180,0,0,0.92); color: #fff; font-size: 11px; padding: 8px 12px; z-index: 9998; display: none; font-family: 'Consolas', monospace; word-break: break-word; text-align: center; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
 
-    <!-- ===== LOADING ===== -->
-    <div id="loading-screen">
-        <div class="loader-container">
-            <div class="loader-icon">🌄</div>
-            <div class="loader-title">PRIOM</div>
-            <div class="loader-version">v0.4 · Amanecer Cuántico</div>
-            
-            <div class="loader-bar-wrapper">
-                <div class="loader-bar"><div class="loader-fill" id="loader-fill" style="width:0%"></div></div>
-                <div class="loader-percent" id="loader-percent">0%</div>
-            </div>
-            
-            <p class="loader-text" id="loader-text">🌄 Despertando el mundo...</p>
-            <p class="loader-subtext" id="loader-subtext">⛰️ Tallando montañas...</p>
-            
-            <div class="loader-details">
-                <span id="loader-status">⏳ Inicializando...</span>
-                <span id="loader-modules">📦 0/34</span>
-                <span id="loader-progress">🌅 Creando atmósfera...</span>
-            </div>
-            
-            <div class="loader-particles">
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-                <span class="dot"></span><span class="dot"></span>
-            </div>
-            
-            <div class="loader-footer">🌄 Amanecer Cuántico · ⛰️ Montañas Vivas · 🌨️ Nieve Realista · 🧠 Trinity AI</div>
-        </div>
-    </div>
-
     <!-- ===== HUD ===== -->
     <div id="hud">
-        <div class="logo">🌄 PRIOM V0.4</div>
-        <div class="subtitle">⛰️ Amanecer Cuántico · Montañas Vivas</div>
+        <div class="logo">🌍 PRIOM V0.4</div>
+        <div class="subtitle">🌲 Tierra Cuántica · Ecosistema Vivo</div>
         <div class="badge-container">
             <span class="badge badge-trinity">🧬 TRINITY AI</span>
             <span class="badge badge-meta">⚡ META</span>
             <span class="badge badge-ai">🎯 OPTIMIZANDO</span>
-            <span class="badge badge-quantum">🌨️ NIEVE DINÁMICA</span>
+            <span class="badge badge-quantum">🌍 MUNDO VIVO</span>
         </div>
     </div>
 
     <!-- ===== STATS ===== -->
     <div id="stats-panel">
         <div class="stat"><span>📊 FPS</span><span class="value good" id="fps">0</span></div>
-        <div class="stat"><span>⛰️ Altitud</span><span class="value meta" id="altitude">0m</span></div>
-        <div class="stat"><span>🌨️ Nieve</span><span class="value" id="snow-level">0%</span></div>
-        <div class="stat"><span>🌡️ Temperatura</span><span class="value" id="temperature">12°C</span></div>
+        <div class="stat"><span>🌳 Árboles</span><span class="value" id="trees">0</span></div>
+        <div class="stat"><span>🦌 Animales</span><span class="value" id="animals">0</span></div>
         <div class="stat"><span>💾 RAM</span><span class="value" id="ram">0 MB</span></div>
         <div class="stat"><span>⚡ Calidad</span><span class="value ultra" id="quality">ULTRA</span></div>
         <div class="stat"><span>🎯 IA Confianza</span><span class="value ai" id="confidence">100%</span></div>
@@ -315,10 +183,7 @@
         <span class="time-icon" id="time-icon">🌅</span>
         <span class="time-label" id="time-label">Amanecer</span>
         <span style="color:#4b5563;">|</span>
-        <span class="weather-icon" id="weather-icon">☀️</span>
-        <span id="weather-label" style="color:#9ca3af;">Despejado</span>
-        <span style="color:#4b5563;">|</span>
-        <span id="snow-indicator" style="color:#9ca3af;">❄️ 0%</span>
+        <span id="weather-label" style="color:#9ca3af;">☀️ Despejado</span>
     </div>
 
     <!-- ===== AI STATUS ===== -->
@@ -326,8 +191,7 @@
         <div class="ai-icon">🧠</div>
         <div class="ai-text">
             <strong id="ai-action">TRINITY AI ACTIVA</strong>
-            <span class="ai-detail" id="ai-detail">· Observando el amanecer...</span>
-            <span class="world-status" id="world-ai-status">⛰️ Montañas en calma</span>
+            <span class="ai-detail" id="ai-detail">· Explorando el mundo...</span>
         </div>
         <div class="ai-progress"><div class="fill" id="ai-progress-fill" style="width:100%"></div></div>
         <div class="ai-stats">
@@ -351,7 +215,6 @@
         </div>
         
         <button id="btn-weather">☀️ Clima</button>
-        <button id="btn-snow">❄️ Nieve</button>
         <button id="btn-reset">🔄 Reset</button>
         
         <div class="time-slider-container">
@@ -391,633 +254,255 @@
 
     <script>
     // ============================================================
-    //  🚀 SISTEMA DE CARGA Y DEMO - AMANECER CUÁNTICO
+    //  🚀 INICIAR MOTOR
     //  ============================================================
-    (function() {
-        'use strict';
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🌍 Iniciando Priom Engine...');
         
-        const totalModules = 34;
-        let loaded = 0;
-        let hasError = false;
-        let startTime = performance.now();
-        let generationStage = '🌄 Despertando el mundo...';
-        
-        const elements = {
-            fill: document.getElementById('loader-fill'),
-            percent: document.getElementById('loader-percent'),
-            text: document.getElementById('loader-text'),
-            subtext: document.getElementById('loader-subtext'),
-            status: document.getElementById('loader-status'),
-            modules: document.getElementById('loader-modules'),
-            progress: document.getElementById('loader-progress'),
-            screen: document.getElementById('loading-screen')
+        // Configurar CONFIG global
+        window.CONFIG = {
+            version: '0.4.3',
+            build: '2026.08.25',
+            maxEntities: 100000,
+            targetFPS: 60,
+            quality: 'ultra',
+            lodDistance: 300,
+            waterEnabled: true,
+            particlesEnabled: true,
+            shadowsEnabled: true,
+            bloomEnabled: true,
+            ssaoEnabled: true,
+            debug: false,
+            worldSize: 500,
+            terrainHeight: 40,
+            treeDensity: 0.35,
+            animalCount: 50
         };
         
-        function updateUI() {
-            const progress = Math.min(100, (loaded / totalModules) * 100);
-            if (elements.fill) elements.fill.style.width = progress + '%';
-            if (elements.percent) elements.percent.textContent = Math.round(progress) + '%';
-            if (elements.modules) elements.modules.textContent = `📦 ${loaded}/${totalModules}`;
-            if (elements.progress) elements.progress.textContent = generationStage;
-        }
+        // Crear motor
+        const engine = new PriomEngine({
+            qualityLevel: 'ultra',
+            autoStart: true,
+            enableThreading: false,
+            enablePredictiveAI: true,
+            enableAdaptiveQuality: true,
+            enableErrorRecovery: true
+        });
+        window.engine = engine;
         
-        function loadModule(name, checkFn, loadFn) {
-            return new Promise((resolve) => {
-                if (checkFn()) {
-                    loaded++;
-                    updateUI();
-                    console.log(`✅ ${name} ya cargado`);
-                    resolve(true);
-                    return;
-                }
-                
-                elements.text.textContent = `⏳ Cargando ${name}...`;
-                elements.status.textContent = `📦 Cargando ${name}`;
-                elements.subtext.textContent = `🔧 Inicializando ${name}...`;
-                
-                loadFn(() => {
-                    setTimeout(() => {
-                        if (checkFn()) {
-                            loaded++;
-                            updateUI();
-                            console.log(`✅ ${name} cargado (${(performance.now() - startTime).toFixed(0)}ms)`);
-                            resolve(true);
-                        } else {
-                            console.error(`❌ Error cargando ${name}`);
-                            elements.text.textContent = `❌ Error cargando ${name}`;
-                            elements.text.className = 'loader-text error';
-                            resolve(false);
-                        }
-                    }, 100);
-                });
-            });
-        }
+        // Conectar UI
+        setTimeout(() => {
+            connectUI(engine);
+        }, 1000);
         
-        function loadScript(url, callback) {
-            const script = document.createElement('script');
-            script.src = url + '&t=' + Date.now();
-            script.onload = callback;
-            script.onerror = callback;
-            document.head.appendChild(script);
+        // Notificaciones
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notifications');
+            if (!container) return;
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            container.appendChild(notif);
+            setTimeout(() => {
+                if (notif.parentNode) notif.parentNode.removeChild(notif);
+            }, 4000);
         }
+        window.showNotification = showNotification;
+    });
+    
+    // ============================================================
+    //  🔌 CONECTAR UI
+    //  ============================================================
+    function connectUI(engine) {
+        console.log('🔌 Conectando UI...');
         
-        // ============================================================
-        //  🌄 UI CONEXIÓN CON INDICADORES DE AMANECER
-        //  ============================================================
-        function wireUI(engine) {
-            console.log('🌄 Conectando UI con indicadores de amanecer...');
-            
-            // ---- Referencias UI ----
-            const hud = {
-                fps: document.getElementById('fps'),
-                altitude: document.getElementById('altitude'),
-                snowLevel: document.getElementById('snow-level'),
-                temperature: document.getElementById('temperature'),
-                ram: document.getElementById('ram'),
-                quality: document.getElementById('quality'),
-                confidence: document.getElementById('confidence'),
-                timeDisplay: document.getElementById('time-display'),
-                aiDetail: document.getElementById('ai-detail'),
-                aiConf: document.getElementById('ai-conf'),
-                aiMeta: document.getElementById('ai-meta'),
-                aiFps: document.getElementById('ai-fps'),
-                aiProgress: document.getElementById('ai-progress-fill'),
-                worldStatus: document.getElementById('world-ai-status')
-            };
-            
-            // ---- Time Indicator ----
-            const timeIcon = document.getElementById('time-icon');
-            const timeLabel = document.getElementById('time-label');
-            const weatherIcon = document.getElementById('weather-icon');
-            const weatherLabel = document.getElementById('weather-label');
-            const snowIndicator = document.getElementById('snow-indicator');
-            
-            // ---- Error Banner ----
-            const errorBanner = document.createElement('div');
-            errorBanner.id = 'engine-error-banner';
-            document.body.appendChild(errorBanner);
-            
-            // ---- Actualización de estadísticas ----
-            let lastSnowUpdate = 0;
-            
-            setInterval(() => {
-                try {
-                    const stats = engine.getStats();
-                    const ecs = engine.getModule('ecs');
-                    const renderer = engine.getModule('renderer');
-                    const worldAI = engine.getModule('worldAI');
-                    
-                    if (hud.fps) hud.fps.textContent = stats.fps || 0;
-                    if (hud.aiFps) hud.aiFps.textContent = stats.fps || 0;
-                    
-                    // Altitud máxima (simulada)
-                    if (hud.altitude) {
-                        const maxAlt = Math.floor(150 + Math.sin(performance.now() * 0.0001) * 30);
-                        hud.altitude.textContent = maxAlt + 'm';
-                    }
-                    
-                    // Nieve (simulada con WorldAI)
-                    if (hud.snowLevel) {
-                        let snow = 0;
-                        if (worldAI) {
-                            const ws = worldAI.getStatus();
-                            snow = ws.season === 'invierno' ? 60 + Math.random() * 30 : 
-                                   ws.season === 'otoño' ? 20 + Math.random() * 20 : 
-                                   ws.season === 'primavera' ? 10 + Math.random() * 15 : 
-                                   Math.random() * 5;
-                        }
-                        hud.snowLevel.textContent = Math.round(snow) + '%';
-                        hud.snowLevel.className = 'value' + (snow > 60 ? ' good' : snow > 30 ? ' meta' : '');
-                    }
-                    
-                    // Temperatura
-                    if (hud.temperature) {
-                        const renderer = engine.getModule('renderer');
-                        let temp = 12;
-                        if (renderer && renderer.dayNight) {
-                            const time = renderer.dayNight.time || 0.5;
-                            const sunHeight = Math.sin(time * Math.PI * 2);
-                            temp = 15 + sunHeight * 12;
-                            // Efecto de nieve
-                            if (hud.snowLevel) {
-                                const snow = parseInt(hud.snowLevel.textContent) || 0;
-                                temp -= snow * 0.15;
-                            }
-                        }
-                        hud.temperature.textContent = Math.round(temp) + '°C';
-                        hud.temperature.className = 'value' + (temp > 20 ? ' good' : temp > 10 ? ' meta' : '');
-                    }
-                    
-                    // Memoria
-                    if (hud.ram) {
-                        const mb = stats.renderer ? Math.round((stats.renderer.vram || 0) / (1024 * 1024)) : 0;
-                        hud.ram.textContent = mb + ' MB';
-                    }
-                    
-                    // Confianza IA
-                    if (hud.confidence) {
-                        const c = engine.getModule('optimizerAI');
-                        if (c && typeof c.getStatus === 'function') {
-                            const st = c.getStatus();
-                            const conf = Math.round((st.confidence || 1) * 100);
-                            hud.confidence.textContent = conf + '%';
-                            if (hud.aiConf) hud.aiConf.textContent = conf + '%';
-                        }
-                    }
-                    
-                    // Meta AI
-                    const metaAI = engine.getModule('metaAI');
-                    if (metaAI && typeof metaAI.getStatus === 'function') {
-                        const mstat = metaAI.getStatus();
-                        if (hud.aiMeta) hud.aiMeta.textContent = Math.round((mstat.confidence || 1) * 100) + '%';
-                    }
-                    
-                    // Detalles IA
-                    if (hud.aiDetail) {
-                        hud.aiDetail.textContent = '· ' + stats.state.status + ' · frame ' + stats.state.frameCount;
-                    }
-                    
-                    // Mundo AI
-                    if (worldAI && hud.worldStatus) {
-                        const ws = worldAI.getStatus();
-                        hud.worldStatus.textContent = `⛰️ ${ws.season} · 🔥${ws.activeFires} · 🌱${ws.populationGrowth}`;
-                    }
-                    
-                    // Calidad
-                    if (hud.quality) {
-                        const q = stats.quality || 'ultra';
-                        hud.quality.textContent = q.toUpperCase();
-                        hud.quality.className = 'value ultra';
-                    }
-                    
-                    // Hora y Time Indicator
-                    if (hud.timeDisplay && renderer && renderer.dayNight) {
-                        const time = renderer.dayNight.time || 0.5;
-                        const hours = Math.floor(time * 24);
-                        const mins = Math.floor((time * 24 - hours) * 60);
-                        hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-                        
-                        // Time Indicator
-                        const sunHeight = Math.sin(time * Math.PI * 2);
-                        const isNight = sunHeight < -0.3;
-                        const isSunrise = sunHeight > -0.3 && sunHeight < 0.3 && sunHeight > 0;
-                        const isSunset = sunHeight > -0.3 && sunHeight < 0.3 && sunHeight < 0;
-                        const isDay = sunHeight > 0.3;
-                        
-                        let icon = '🌅', label = 'Amanecer';
-                        if (isNight) { icon = '🌙'; label = 'Noche'; }
-                        else if (isSunrise) { icon = '🌅'; label = 'Amanecer'; }
-                        else if (isSunset) { icon = '🌇'; label = 'Atardecer'; }
-                        else if (isDay) { icon = '☀️'; label = 'Día'; }
-                        
-                        if (timeIcon) timeIcon.textContent = icon;
-                        if (timeLabel) timeLabel.textContent = label;
-                        
-                        // Clima
-                        const weather = renderer.weatherType || 'clear';
-                        const weatherMap = {
-                            clear: { icon: '☀️', label: 'Despejado' },
-                            cloudy: { icon: '⛅', label: 'Nublado' },
-                            rain: { icon: '🌧️', label: 'Lluvia' },
-                            snow: { icon: '❄️', label: 'Nieve' },
-                            stormy: { icon: '⛈️', label: 'Tormenta' }
-                        };
-                        const w = weatherMap[weather] || weatherMap.clear;
-                        if (weatherIcon) weatherIcon.textContent = w.icon;
-                        if (weatherLabel) weatherLabel.textContent = w.label;
-                        
-                        // Nieve
-                        if (snowIndicator) {
-                            const snow = hud.snowLevel ? parseInt(hud.snowLevel.textContent) || 0 : 0;
-                            snowIndicator.textContent = `❄️ ${Math.round(snow)}%`;
-                        }
-                    }
-                    
-                    // Progreso IA
-                    if (hud.aiProgress) {
-                        const c = engine.getModule('optimizerAI');
-                        if (c && typeof c.getStatus === 'function') {
-                            const st = c.getStatus();
-                            const progress = Math.min(100, (st.confidence || 0.5) * 100);
-                            hud.aiProgress.style.width = progress + '%';
-                        }
-                    }
-                    
-                    // Error banner
-                    if (engine._lastLoopError) {
-                        errorBanner.textContent = '⚠️ Loop error: ' + engine._lastLoopError;
-                        errorBanner.style.display = 'block';
-                    } else if (engine.hasError && engine.hasError()) {
-                        const err = engine.getError();
-                        errorBanner.textContent = '⚠️ Init error: ' + (err ? err.message : 'desconocido');
-                        errorBanner.style.display = 'block';
-                    } else {
-                        errorBanner.style.display = 'none';
-                    }
-                    
-                    document.querySelectorAll('#stats-panel .stat .value').forEach(el => {
-                        el.classList.remove('updating');
-                        void el.offsetWidth;
-                        el.classList.add('updating');
-                    });
-                    
-                } catch (e) {
-                    // Silencioso
-                }
-            }, 300);
-            
-            // ---- Botones ----
-            const qualityButtons = {
-                'btn-low': 'low',
-                'btn-medium': 'medium',
-                'btn-high': 'high',
-                'btn-ultra': 'ultra',
-                'btn-quantum': 'quantum'
-            };
-            
-            function setActiveButton(activeId) {
-                const ids = ['btn-dual', ...Object.keys(qualityButtons)];
-                ids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.toggle('active', id === activeId);
-                });
-            }
-            
-            const dualBtn = document.getElementById('btn-dual');
-            if (dualBtn) {
-                dualBtn.addEventListener('click', () => {
-                    engine.manualQuality = false;
-                    engine.setQuality('ultra');
-                    setActiveButton('btn-dual');
-                    showNotification('🧠 Trinity AI activada', 'success');
-                });
-            }
-            
-            Object.keys(qualityButtons).forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                if (!btn) return;
-                btn.addEventListener('click', () => {
-                    engine.manualQuality = true;
-                    engine.setQuality(qualityButtons[btnId]);
-                    if (hud.quality) hud.quality.textContent = qualityButtons[btnId].toUpperCase();
-                    setActiveButton(btnId);
-                    showNotification(`⚡ Calidad: ${qualityButtons[btnId].toUpperCase()}`, 'info');
-                });
-            });
-            
-            // ---- Time Slider ----
-            const timeSlider = document.getElementById('time-slider');
-            if (timeSlider) {
-                timeSlider.addEventListener('input', (e) => {
-                    const renderer = engine.getModule('renderer');
-                    const value = parseFloat(e.target.value);
-                    if (renderer && renderer.setTimeOfDay) {
-                        renderer.setTimeOfDay(value);
-                        if (renderer._updateDayNight) renderer._updateDayNight();
-                    }
-                });
-            }
-            
-            // ---- Clima ----
-            const weatherBtn = document.getElementById('btn-weather');
-            if (weatherBtn) {
-                const cycle = ['clear', 'cloudy', 'rain', 'snow', 'stormy'];
-                const labels = { clear: '☀️ Claro', cloudy: '⛅ Nublado', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
-                let idx = 0;
-                weatherBtn.addEventListener('click', () => {
-                    idx = (idx + 1) % cycle.length;
-                    const renderer = engine.getModule('renderer');
-                    if (renderer && renderer.setWeather) {
-                        renderer.setWeather(cycle[idx]);
-                        // Forzar actualización del clima en WorldAI
-                        const worldAI = engine.getModule('worldAI');
-                        if (worldAI && worldAI.setWeather) {
-                            worldAI.setWeather(cycle[idx], true);
-                        }
-                    }
-                    weatherBtn.textContent = labels[cycle[idx]];
-                    showNotification(`🌤️ Clima: ${labels[cycle[idx]]}`, 'info');
-                });
-            }
-            
-            // ---- Nieve (efecto especial) ----
-            const snowBtn = document.getElementById('btn-snow');
-            if (snowBtn) {
-                let snowActive = false;
-                snowBtn.addEventListener('click', () => {
-                    snowActive = !snowActive;
-                    snowBtn.textContent = snowActive ? '❄️ Nieve ON' : '❄️ Nieve';
-                    snowBtn.classList.toggle('active', snowActive);
-                    
-                    const renderer = engine.getModule('renderer');
-                    if (renderer) {
-                        if (snowActive) {
-                            renderer.setWeather('snow');
-                            showNotification('❄️ Nieve activada', 'success');
-                        } else {
-                            renderer.setWeather('clear');
-                            showNotification('☀️ Nieve desactivada', 'info');
-                        }
-                    }
-                });
-            }
-            
-            // ---- Reset ----
-            const resetBtn = document.getElementById('btn-reset');
-            if (resetBtn) {
-                resetBtn.addEventListener('click', () => {
-                    engine.manualQuality = false;
-                    engine.setQuality('ultra');
-                    setActiveButton('btn-dual');
-                    engine.reset();
-                    showNotification('🔄 Motor reiniciado', 'warning');
-                });
-            }
-            
-            // ---- Notificaciones ----
-            function showNotification(message, type = 'info') {
-                const container = document.getElementById('notifications');
-                if (!container) return;
-                
-                const notif = document.createElement('div');
-                notif.className = `notification ${type}`;
-                notif.textContent = message;
-                container.appendChild(notif);
-                
-                setTimeout(() => {
-                    if (notif.parentNode) {
-                        notif.parentNode.removeChild(notif);
-                    }
-                }, 4000);
-            }
-            
-            window.showNotification = showNotification;
-            console.log('✅ UI conectada con indicadores de amanecer');
-        }
+        // ---- Referencias ----
+        const hud = {
+            fps: document.getElementById('fps'),
+            trees: document.getElementById('trees'),
+            animals: document.getElementById('animals'),
+            ram: document.getElementById('ram'),
+            quality: document.getElementById('quality'),
+            confidence: document.getElementById('confidence'),
+            timeDisplay: document.getElementById('time-display'),
+            timeLabel: document.getElementById('time-label'),
+            timeIcon: document.getElementById('time-icon'),
+            weatherLabel: document.getElementById('weather-label'),
+            aiFps: document.getElementById('ai-fps'),
+            aiConf: document.getElementById('ai-conf'),
+            aiMeta: document.getElementById('ai-meta'),
+            aiProgress: document.getElementById('ai-progress-fill'),
+            aiDetail: document.getElementById('ai-detail')
+        };
         
-        // ============================================================
-        //  🚀 INICIAR MOTOR
-        //  ============================================================
-        async function startEngine() {
-            startTime = performance.now();
-            elements.text.textContent = '🌄 Despertando el mundo cuántico...';
-            
+        // ---- Actualización de estadísticas ----
+        setInterval(() => {
             try {
-                if (typeof THREE === 'undefined') {
-                    elements.text.textContent = '❌ THREE.js no cargado';
-                    elements.text.className = 'loader-text error';
-                    return;
+                const stats = engine.getStats();
+                const state = stats.state;
+                
+                if (hud.fps) hud.fps.textContent = state.fps || 0;
+                if (hud.aiFps) hud.aiFps.textContent = state.fps || 0;
+                if (hud.trees) hud.trees.textContent = state.treesCount || 0;
+                if (hud.animals) hud.animals.textContent = state.animalsCount || 0;
+                if (hud.ram) hud.ram.textContent = Math.round((state.memoryUsage || 0) / (1024 * 1024)) + ' MB';
+                if (hud.quality) hud.quality.textContent = (state.qualityLevel || 'ultra').toUpperCase();
+                
+                // Confianza IA
+                const optimizer = engine.getModule('optimizerAI');
+                if (optimizer && optimizer.getStatus) {
+                    const status = optimizer.getStatus();
+                    const conf = Math.round((status.confidence || 1) * 100);
+                    if (hud.confidence) hud.confidence.textContent = conf + '%';
+                    if (hud.aiConf) hud.aiConf.textContent = conf + '%';
                 }
-                loaded++;
-                updateUI();
-                console.log('✅ THREE.js cargado:', THREE.REVISION);
                 
-                const modules = [
-                    { name: 'Config', check: () => typeof CONFIG !== 'undefined', url: 'js/core/Config.js?v=20260823' },
-                    { name: 'HardwareDetector', check: () => typeof HardwareDetector !== 'undefined', url: 'js/core/HardwareDetector.js?v=20260823' },
-                    { name: 'PersistentMemory', check: () => typeof PersistentMemory !== 'undefined', url: 'js/core/PersistentMemory.js?v=20260823' },
-                    { name: 'SoaManager', check: () => typeof SoaManager !== 'undefined', url: 'js/ecs/SoaManager.js?v=20260823' },
-                    { name: 'OptimizerAI', check: () => typeof OptimizerAI !== 'undefined', url: 'js/ai/OptimizerAI.js?v=20260823' },
-                    { name: 'MetaOptimizerAI', check: () => typeof MetaOptimizerAI !== 'undefined', url: 'js/ai/MetaOptimizerAI.js?v=20260823' },
-                    { name: 'MaxRenderer', check: () => typeof MaxRenderer !== 'undefined', url: 'js/renderer/MaxRenderer.js?v=20260823' },
-                    { name: 'ComplexGeometryLab', check: () => typeof ComplexGeometryLab !== 'undefined', url: 'js/renderer/ComplexGeometryLab.js?v=20260823' },
-                    { name: 'TerrainGenerator', check: () => typeof TerrainGenerator !== 'undefined', url: 'js/game/TerrainGenerator.js?v=20260823' },
-                    { name: 'EntityFactory', check: () => typeof EntityFactory !== 'undefined', url: 'js/game/EntityFactory.js?v=20260823' },
-                    { name: 'GameWorld', check: () => typeof GameWorld !== 'undefined', url: 'js/game/GameWorld.js?v=20260823' },
-                    { name: 'MaterialLibrary', check: () => typeof MaterialLibrary !== 'undefined', url: 'js/renderer/materials/MaterialLibrary.js?v=20260823' },
-                    { name: 'TextureFactory', check: () => typeof TextureFactory !== 'undefined', url: 'js/renderer/textures/TextureFactory.js?v=20260823' },
-                    { name: 'SkySystem', check: () => typeof SkySystem !== 'undefined', url: 'js/renderer/environment/SkySystem.js?v=20260823' },
-                    { name: 'WaterSystem', check: () => typeof WaterSystem !== 'undefined', url: 'js/renderer/environment/WaterSystem.js?v=20260823' },
-                    { name: 'WeatherFX', check: () => typeof WeatherFX !== 'undefined', url: 'js/renderer/environment/WeatherFX.js?v=20260823' },
-                    { name: 'AnimationSystem', check: () => typeof AnimationSystem !== 'undefined', url: 'js/renderer/vfx/AnimationSystem.js?v=20260823' },
-                    { name: 'VegetationPlacer', check: () => typeof VegetationPlacer !== 'undefined', url: 'js/game/VegetationPlacer.js?v=20260823' },
-                    { name: 'ParticleSystem', check: () => typeof ParticleSystem !== 'undefined', url: 'js/renderer/vfx/ParticleSystem.js?v=20260823' },
-                    { name: 'GodRays', check: () => typeof GodRays !== 'undefined', url: 'js/renderer/vfx/GodRays.js?v=20260823' },
-                    { name: 'AlpineDecor', check: () => typeof AlpineDecor !== 'undefined', url: 'js/game/AlpineDecor.js?v=20260823' },
-                    { name: 'WorldAI', check: () => typeof WorldAI !== 'undefined', url: 'js/ai/WorldAI.js?v=20260823' },
-                    { name: 'AudioSystem', check: () => typeof AudioSystem !== 'undefined', url: 'js/audio/AudioSystem.js?v=20260823' },
-                    { name: 'ChunkManager', check: () => typeof ChunkManager !== 'undefined', url: 'js/engine/ChunkManager.js?v=20260823' },
-                    { name: 'PostProcessingExtra', check: () => typeof PostProcessing !== 'undefined', url: 'js/renderer/PostProcessing.js?v=20260823' },
-                    { name: 'DynamicResolutionController', check: () => typeof DynamicResolutionController !== 'undefined', url: 'js/renderer/DynamicResolutionController.js?v=20260823' },
-                    { name: 'InputController', check: () => typeof InputController !== 'undefined', url: 'js/input/InputController.js?v=20260823' },
-                    { name: 'ForestDecor', check: () => typeof ForestDecor !== 'undefined', url: 'js/game/ForestDecor.js?v=20260823' },
-                    { name: 'Editor', check: () => typeof Editor !== 'undefined', url: 'js/editor/Editor.js?v=20260823' },
-                    { name: 'WorldSerializer', check: () => typeof WorldSerializer !== 'undefined', url: 'js/editor/WorldSerializer.js?v=20260823' },
-                    { name: 'Minimap', check: () => typeof Minimap !== 'undefined', url: 'js/ui/Minimap.js?v=20260823' },
-                    { name: 'Helpers', check: () => typeof Helpers !== 'undefined', url: 'js/utils/Helpers.js?v=20260823' },
-                    { name: 'Profiler', check: () => typeof Profiler !== 'undefined' && typeof Profiler.sample === 'function', url: 'js/utils/Profiler.js?v=20260823' },
-                    { name: 'PriomEngine', check: () => typeof PriomEngine !== 'undefined', url: 'js/engine/PriomEngine.js?v=20260823' }
-                ];
-                
-                for (const mod of modules) {
-                    if (hasError) break;
+                // Hora
+                const renderer = engine.getModule('renderer');
+                if (renderer && renderer.dayNight && hud.timeDisplay) {
+                    const time = renderer.dayNight.time || 0.5;
+                    const hours = Math.floor(time * 24);
+                    const mins = Math.floor((time * 24 - hours) * 60);
+                    hud.timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
                     
-                    const result = await loadModule(
-                        mod.name,
-                        mod.check,
-                        (callback) => loadScript(mod.url, callback)
-                    );
-                    
-                    if (!result) {
-                        hasError = true;
-                        break;
+                    // Time icon
+                    const sunHeight = Math.sin(time * Math.PI * 2);
+                    if (sunHeight < -0.3) {
+                        if (hud.timeIcon) hud.timeIcon.textContent = '🌙';
+                        if (hud.timeLabel) hud.timeLabel.textContent = 'Noche';
+                    } else if (sunHeight < 0.3 && sunHeight > 0) {
+                        if (hud.timeIcon) hud.timeIcon.textContent = '🌅';
+                        if (hud.timeLabel) hud.timeLabel.textContent = 'Amanecer';
+                    } else if (sunHeight < 0.3 && sunHeight < 0) {
+                        if (hud.timeIcon) hud.timeIcon.textContent = '🌇';
+                        if (hud.timeLabel) hud.timeLabel.textContent = 'Atardecer';
+                    } else {
+                        if (hud.timeIcon) hud.timeIcon.textContent = '☀️';
+                        if (hud.timeLabel) hud.timeLabel.textContent = 'Día';
                     }
                 }
                 
-                if (hasError) {
-                    elements.text.textContent = '❌ Error cargando módulos. Recarga la página.';
-                    elements.text.className = 'loader-text error';
-                    return;
+                // Clima
+                const weatherFX = engine.getModule('weatherFX');
+                if (weatherFX && hud.weatherLabel) {
+                    const weather = weatherFX.weatherType || 'clear';
+                    const map = { clear: '☀️ Despejado', cloudy: '⛅ Nublado', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
+                    hud.weatherLabel.textContent = map[weather] || '☀️ Despejado';
                 }
                 
-                elements.text.textContent = '🌄 ¡Módulos listos! Generando paisaje...';
-                elements.text.className = 'loader-text success';
-                elements.subtext.textContent = '⛰️ Tallando montañas y valles...';
-                elements.status.textContent = '✅ Listo';
-                generationStage = '⛰️ Creando paisaje de montaña...';
-                updateUI();
+                // Progreso IA
+                if (optimizer && optimizer.getStatus && hud.aiProgress) {
+                    const status = optimizer.getStatus();
+                    const progress = Math.min(100, (status.confidence || 0.5) * 100);
+                    hud.aiProgress.style.width = progress + '%';
+                }
                 
-                console.log('🎉 Todos los módulos cargados correctamente');
-                console.log(`⏱️ Tiempo de carga: ${(performance.now() - startTime).toFixed(0)}ms`);
+                // Detalle IA
+                if (hud.aiDetail) {
+                    hud.aiDetail.textContent = '· ' + state.status + ' · frame ' + state.frameCount;
+                }
                 
+            } catch (e) {}
+        }, 300);
+        
+        // ---- Botones ----
+        const qualityButtons = {
+            'btn-low': 'low',
+            'btn-medium': 'medium',
+            'btn-high': 'high',
+            'btn-ultra': 'ultra',
+            'btn-quantum': 'quantum'
+        };
+        
+        function setActiveButton(activeId) {
+            const ids = ['btn-dual', ...Object.keys(qualityButtons)];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('active', id === activeId);
+            });
+        }
+        
+        const dualBtn = document.getElementById('btn-dual');
+        if (dualBtn) {
+            dualBtn.addEventListener('click', () => {
+                engine.manualQuality = false;
+                engine.setQuality('ultra');
+                setActiveButton('btn-dual');
+                showNotification('🧠 Trinity AI activada', 'success');
+            });
+        }
+        
+        Object.keys(qualityButtons).forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.addEventListener('click', () => {
+                engine.manualQuality = true;
+                engine.setQuality(qualityButtons[btnId]);
+                setActiveButton(btnId);
+                showNotification(`⚡ Calidad: ${qualityButtons[btnId].toUpperCase()}`, 'info');
+            });
+        });
+        
+        // ---- Time Slider ----
+        const timeSlider = document.getElementById('time-slider');
+        if (timeSlider) {
+            timeSlider.addEventListener('input', (e) => {
+                const renderer = engine.getModule('renderer');
+                const value = parseFloat(e.target.value);
+                if (renderer && renderer.setTimeOfDay) {
+                    renderer.setTimeOfDay(value);
+                    if (renderer._updateDayNight) renderer._updateDayNight();
+                }
+            });
+        }
+        
+        // ---- Clima ----
+        const weatherBtn = document.getElementById('btn-weather');
+        if (weatherBtn) {
+            const cycle = ['clear', 'cloudy', 'rain', 'snow', 'stormy'];
+            const labels = { clear: '☀️ Claro', cloudy: '⛅ Nublado', rain: '🌧️ Lluvia', snow: '❄️ Nieve', stormy: '⛈️ Tormenta' };
+            let idx = 0;
+            weatherBtn.addEventListener('click', () => {
+                idx = (idx + 1) % cycle.length;
+                const weatherFX = engine.getModule('weatherFX');
+                if (weatherFX && weatherFX.setWeather) {
+                    weatherFX.setWeather(cycle[idx]);
+                }
+                weatherBtn.textContent = labels[cycle[idx]];
+                showNotification(`🌤️ Clima: ${labels[cycle[idx]]}`, 'info');
+            });
+        }
+        
+        // ---- Reset ----
+        const resetBtn = document.getElementById('btn-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                engine.manualQuality = false;
+                engine.setQuality('ultra');
+                setActiveButton('btn-dual');
+                engine.reset();
+                showNotification('🔄 Motor reiniciado', 'warning');
                 setTimeout(() => {
-                    try {
-                        if (typeof CONFIG === 'undefined') {
-                            window.CONFIG = {
-                                version: '0.4.0',
-                                maxEntities: 120000,
-                                targetFPS: 60,
-                                quality: 'ultra',
-                                lodDistance: 350,
-                                waterEnabled: true,
-                                particlesEnabled: true,
-                                shadowsEnabled: true,
-                                bloomEnabled: true,
-                                ssaoEnabled: true,
-                                debug: false,
-                                worldSize: 600,
-                                terrainHeight: 50,
-                                treeDensity: 0.3,
-                                animalCount: 60
-                            };
-                        }
-                        
-                        // === CREAR EL MOTOR ===
-                        const engine = new PriomEngine({
-                            qualityLevel: 'ultra',
-                            enableThreading: true,
-                            enablePredictiveAI: true,
-                            enableAdaptiveQuality: true,
-                            enablePerformanceBudget: true,
-                            enableErrorRecovery: true,
-                            autoStart: true
-                        });
-                        window.engine = engine;
-
-                        if (engine.hasError()) {
-                            const err = engine.getError();
-                            console.error('❌ Error:', err);
-                            elements.text.textContent = '❌ Error: ' + (err ? err.message : 'desconocido');
-                            elements.text.className = 'loader-text error';
-                            return;
-                        }
-
-                        console.log('✅ Motor cuántico iniciado');
-                        generationStage = '🌄 Motor iniciado, generando paisaje...';
-                        updateUI();
-                        
-                        // === ESPERAR AL MUNDO ===
-                        let attempts = 0;
-                        const maxAttempts = 40;
-                        
-                        function waitForWorld() {
-                            attempts++;
-                            const gameWorld = engine.getModule('gameWorld');
-                            
-                            if (gameWorld && gameWorld.state && gameWorld.state.isReady) {
-                                console.log('✅ Mundo generado correctamente');
-                                generationStage = '🌅 Amanecer cuántico listo!';
-                                updateUI();
-                                
-                                // Conectar UI
-                                wireUI(engine);
-                                
-                                // === MINIMAP ===
-                                setTimeout(() => {
-                                    const minimap = engine.getModule('minimap');
-                                    if (minimap && minimap._draw) {
-                                        minimap._draw();
-                                        console.log('🗺️ Minimap actualizado');
-                                    }
-                                }, 1000);
-                                
-                                // === AJUSTAR HORA AL AMANECER ===
-                                setTimeout(() => {
-                                    const renderer = engine.getModule('renderer');
-                                    if (renderer && renderer.setTimeOfDay) {
-                                        renderer.setTimeOfDay(0.22);
-                                        if (renderer._updateDayNight) renderer._updateDayNight();
-                                        showNotification('🌅 Amanecer cuántico iniciado', 'success');
-                                    }
-                                }, 1500);
-                                
-                                // Ocultar loading
-                                setTimeout(() => {
-                                    if (elements.screen) {
-                                        elements.screen.classList.add('fade-out');
-                                        setTimeout(() => {
-                                            elements.screen.style.display = 'none';
-                                        }, 800);
-                                    }
-                                }, 500);
-                                
-                            } else if (attempts < maxAttempts) {
-                                generationStage = `⏳ Generando paisaje... (${attempts}/${maxAttempts})`;
-                                updateUI();
-                                console.log(`⏳ Esperando generación del mundo (${attempts}/${maxAttempts})...`);
-                                setTimeout(waitForWorld, 600);
-                            } else {
-                                console.warn('⚠️ El mundo no se generó correctamente, forzando UI');
-                                generationStage = '⚠️ Forzando inicio...';
-                                updateUI();
-                                
-                                wireUI(engine);
-                                
-                                setTimeout(() => {
-                                    if (elements.screen) {
-                                        elements.screen.classList.add('fade-out');
-                                        setTimeout(() => {
-                                            elements.screen.style.display = 'none';
-                                            showNotification('🌄 Amanecer Cuántico (modo forzado)', 'info');
-                                        }, 800);
-                                    }
-                                }, 500);
-                            }
-                        }
-                        
-                        setTimeout(waitForWorld, 1000);
-                        
-                    } catch (e) {
-                        console.error('❌ Error fatal:', e);
-                        elements.text.textContent = '❌ Error: ' + e.message;
-                        elements.text.className = 'loader-text error';
-                    }
+                    engine._generateWorld();
                 }, 500);
-                
-            } catch (e) {
-                console.error('❌ Error:', e);
-                elements.text.textContent = '❌ Error: ' + e.message;
-                elements.text.className = 'loader-text error';
-            }
+            });
         }
         
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startEngine);
-        } else {
-            startEngine();
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notifications');
+            if (!container) return;
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            container.appendChild(notif);
+            setTimeout(() => {
+                if (notif.parentNode) notif.parentNode.removeChild(notif);
+            }, 4000);
         }
+        window.showNotification = showNotification;
         
-    })();
+        console.log('✅ UI conectada');
+    }
     </script>
 
 </body>
