@@ -173,6 +173,25 @@
                 this.renderer.toneMappingExposure = 1.5;
                 this.renderer.outputEncoding = THREE.sRGBEncoding;
                 this.renderer.info.autoReset = false;
+
+                // ===== DETECCIÓN DE PÉRDIDA DE CONTEXTO WEBGL =====
+                // En móvil, si la escena pide demasiada VRAM/GPU, el navegador
+                // mata el contexto silenciosamente: el bucle de renderizado
+                // sigue corriendo (FPS, HUD, stats siguen actualizándose) pero
+                // la GPU deja de dibujar -> pantalla negra sin ningún error JS.
+                this.contextLost = false;
+                this.canvas.addEventListener('webglcontextlost', (e) => {
+                    e.preventDefault();
+                    this.contextLost = true;
+                    console.error('💀 CONTEXTO WEBGL PERDIDO — la GPU descartó el contexto (probable sobrecarga de memoria/shaders). Intentando recuperar...');
+                    if (window.__priomOnContextLost) window.__priomOnContextLost();
+                }, false);
+                this.canvas.addEventListener('webglcontextrestored', () => {
+                    this.contextLost = false;
+                    console.warn('♻️ Contexto WebGL restaurado, reconstruyendo escena...');
+                    if (window.__priomOnContextRestored) window.__priomOnContextRestored();
+                    try { this._init(); } catch (e) { console.error('Fallo al reconstruir tras restaurar contexto', e); }
+                }, false);
                 
                 // ===== DRS CONTROLLER =====
                 try {
