@@ -991,40 +991,56 @@
                     this.composer = new THREE.EffectComposer(this.renderer);
                     const renderPass = new THREE.RenderPass(this.scene, this.camera);
                     this.composer.addPass(renderPass);
-                    
+
                     // ===== SSAO =====
-                    if (THREE.SSAOPass) {
-                        try {
-                            this.ssaoPass = new THREE.SSAOPass(
-                                this.scene, this.camera,
-                                window.innerWidth, window.innerHeight
-                            );
-                            this.ssaoPass.kernelRadius = 8;
-                            this.ssaoPass.minDistance = 0.001;
-                            this.ssaoPass.maxDistance = 0.15;
-                            this.composer.addPass(this.ssaoPass);
-                            console.log('🌑 SSAO activado');
-                        } catch (ssaoErr) {
-                            console.warn('⚠️ SSAO no disponible:', ssaoErr);
-                        }
-                    }
-                    
+                    // NOTA: SSAOPass (three@0.147 examples) es muy propenso a
+                    // producir un frame completamente negro cuando la escena
+                    // combina InstancedMesh (pasto), ShaderMaterial custom
+                    // (cielo) y materiales transparentes — su render de
+                    // normales/profundidad falla en silencio (sin lanzar
+                    // excepción JS) y deja el framebuffer en negro.
+                    // Queda desactivado por defecto; se puede reactivar desde
+                    // consola con `engine.getModule('renderer')._enableSSAO()`
+                    // una vez confirmado que el resto de la escena se ve bien.
+                    this.ssaoPass = null;
+
                     // ===== BLOOM =====
                     this.bloomPass = new THREE.UnrealBloomPass(
                         new THREE.Vector2(window.innerWidth, window.innerHeight),
                         0.65, 0.55, 0.8
                     );
                     this.composer.addPass(this.bloomPass);
-                    
+
                     // ===== GOD RAYS =====
                     try {
                         if (window.GodRays) {
                             this.godRaysPass = window.GodRays.create();
-                            this.composer.addPass(this.godRaysPass);
+                            if (this.godRaysPass) this.composer.addPass(this.godRaysPass);
                         }
                     } catch (e) { /* silencioso */ }
-                    
-                    // ===== CINEMATIC =====
+
+                    // ===== FXAA =====
+                    try {
+                        if (window.PostProcessing) {
+                            this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
+                            if (this.fxaaPass) this.composer.addPass(this.fxaaPass);
+                        }
+                    } catch (e) { /* silencioso */ }
+
+                    // ===== DOF (desactivado por defecto, disponible bajo demanda) =====
+                    try {
+                        if (window.PostProcessing) {
+                            this.dofPass = window.PostProcessing.addDepthOfField(
+                                this.composer, this.scene, this.camera, { focus: 45 }
+                            );
+                            if (this.dofPass) {
+                                this.dofPass.enabled = false;
+                                this.composer.addPass(this.dofPass);
+                            }
+                        }
+                    } catch (e) { /* silencioso */ }
+
+                    // ===== CINEMATIC (grano + viñeta) — SIEMPRE el último pase =====
                     const cinematicShader = {
                         uniforms: {
                             tDiffuse: { value: null },
@@ -1062,32 +1078,53 @@
                     };
                     this.cinematicPass = new THREE.ShaderPass(cinematicShader);
                     this.composer.addPass(this.cinematicPass);
-                    
-                    // ===== FXAA =====
-                    try {
-                        if (window.PostProcessing) {
-                            this.fxaaPass = window.PostProcessing.addFXAA(this.composer, this.renderer);
-                        }
-                    } catch (e) { /* silencioso */ }
-                    
-                    // ===== DOF =====
-                    try {
-                        if (window.PostProcessing) {
-                            this.dofPass = window.PostProcessing.addDepthOfField(
-                                this.composer, this.scene, this.camera, { focus: 45 }
-                            );
-                            if (this.dofPass) this.dofPass.enabled = false;
-                        }
-                    } catch (e) { /* silencioso */ }
-                    
+
+                    // Garantía extra: forzar explícitamente que el último pase
+                    // pinte a pantalla, sin depender solo del comportamiento
+                    // automático de EffectComposer (que puede fallar si algún
+                    // pase intermedio quedó deshabilitado).
+                    const allPasses = this.composer.passes;
+                    for (const p of allPasses) p.renderToScreen = false;
+                    allPasses[allPasses.length - 1].renderToScreen = true;
+
                     this.bloomAvailable = true;
-                    console.log('✨ Bloom real activado');
+                    console.log('✨ Post-procesado activado (SSAO desactivado por estabilidad)');
                 } else {
                     console.warn('⚠️ Post-procesado no disponible');
                 }
             } catch (e) {
                 console.warn('⚠️ Error al configurar post-procesado:', e);
                 this.bloomAvailable = false;
+            }
+        }
+
+        // ============================================================
+        //  🌑 SSAO bajo demanda (desactivado por defecto, ver _setupPostProcessing)
+        // ============================================================
+        _enableSSAO() {
+            try {
+                if (!THREE.SSAOPass || !this.composer) {
+                    console.warn('⚠️ SSAOPass no disponible');
+                    return;
+                }
+                this.ssaoPass = new THREE.SSAOPass(this.scene, this.camera, window.innerWidth, window.innerHeight);
+                this.ssaoPass.kernelRadius = 8;
+                this.ssaoPass.minDistance = 0.001;
+                this.ssaoPass.maxDistance = 0.15;
+                // Insertar justo después del RenderPass (índice 0)
+                this.composer.passes.splice(1, 0, this.ssaoPass);
+                console.log('🌑 SSAO activado manualmente — si la pantalla se pone negra, ejecuta engine.getModule("renderer")._disableSSAO()');
+            } catch (e) {
+                console.warn('⚠️ No se pudo activar SSAO:', e);
+            }
+        }
+
+        _disableSSAO() {
+            if (this.ssaoPass && this.composer) {
+                const idx = this.composer.passes.indexOf(this.ssaoPass);
+                if (idx >= 0) this.composer.passes.splice(idx, 1);
+                this.ssaoPass = null;
+                console.log('🌑 SSAO desactivado');
             }
         }
         
