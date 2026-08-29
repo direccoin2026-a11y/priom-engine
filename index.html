@@ -272,6 +272,9 @@
     <!-- ============================================================
          THREE.JS + POSTPROCESSING (CDN)
          ============================================================ -->
+    <!-- ============================================================
+         THREE.JS + POSTPROCESSING (CDN) — r147
+         ============================================================ -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
@@ -289,542 +292,56 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/BokehPass.js"></script>
 
     <!-- ============================================================
-         STUBS INTELIGENTES — permiten que el motor arranque
-         aunque falten los módulos originales del proyecto
+         MÓDULOS REALES DEL MOTOR (orden de dependencias)
          ============================================================ -->
-    <script>
-    (function() {
-        'use strict';
-        // ---------- CONFIG global ----------
-        window.CONFIG = {
-            version: '0.4.0', build: '2026.08.28', maxEntities: 80000, targetFPS: 60,
-            quality: 'ultra', lodDistance: 280, waterEnabled: true, particlesEnabled: true,
-            shadowsEnabled: true, bloomEnabled: true, ssaoEnabled: true, debug: false,
-            worldSize: 600, terrainHeight: 85, treeDensity: 0.25, animalCount: 40,
-            gravity: -9.8, windStrength: 0.5, worldSeed: 42
-        };
-
-        // ---------- Helper genérico de stub ----------
-        function makeStub(name, methods) {
-            const C = function() {
-                this._name = name;
-                if (methods && methods.construct) methods.construct.apply(this, arguments);
-            };
-            C.prototype = methods || {};
-            window[name] = C;
-            return C;
-        }
-
-        // ---------- ECS mínimo pero funcional ----------
-        window.SoaManager = function(max) {
-            this.max = max || 50000;
-            this.count = 0;
-            this.active = new Uint8Array(this.max);
-            this.posX = new Float32Array(this.max);
-            this.posY = new Float32Array(this.max);
-            this.posZ = new Float32Array(this.max);
-            this.scaleX = new Float32Array(this.max); this.scaleY = new Float32Array(this.max); this.scaleZ = new Float32Array(this.max);
-            this.rotX = new Float32Array(this.max); this.rotY = new Float32Array(this.max); this.rotZ = new Float32Array(this.max);
-            this.colR = new Uint8Array(this.max); this.colG = new Uint8Array(this.max); this.colB = new Uint8Array(this.max);
-            this.isTree = new Uint8Array(this.max); this.isRock = new Uint8Array(this.max);
-            this.isAnimal = new Uint8Array(this.max); this.isBuilding = new Uint8Array(this.max);
-            this.isWater = new Uint8Array(this.max); this.isParticle = new Uint8Array(this.max);
-            this.isGeometry = new Uint8Array(this.max); this.subType = new Uint8Array(this.max);
-            this.type = new Uint8Array(this.max);
-            this.velX = new Float32Array(this.max); this.velY = new Float32Array(this.max); this.velZ = new Float32Array(this.max);
-        };
-        SoaManager.prototype.create = function() {
-            if (this.count >= this.max) return -1;
-            const id = this.count++;
-            this.active[id] = 1;
-            this.scaleX[id] = this.scaleY[id] = this.scaleZ[id] = 1;
-            this.colR[id] = 200; this.colG[id] = 200; this.colB[id] = 220;
-            return id;
-        };
-        SoaManager.prototype.queryVisible = function(frustum, cx, cz, maxDist) {
-            const ids = [];
-            const maxD2 = maxDist * maxDist;
-            for (let i = 0; i < this.count; i++) {
-                if (!this.active[i]) continue;
-                const dx = this.posX[i] - cx, dz = this.posZ[i] - cz;
-                if (dx*dx + dz*dz < maxD2) ids.push(i);
-            }
-            return { visibleIds: ids };
-        };
-        SoaManager.prototype.updatePhysics = function() {};
-        SoaManager.prototype.updateLOD = function() {};
-
-        // ---------- Stubs ligeros de todos los módulos ----------
-        makeStub('Config', {});
-        makeStub('HardwareDetector', { getHardware: function() { return { gpu: 'stub', cores: 4 }; } });
-        makeStub('PersistentMemory', {});
-        makeStub('Helpers', {});
-        makeStub('Profiler', { getSummary: function() { return { fps: 60 }; } });
-        makeStub('OptimizerAI', {
-            construct: function() { this.confidence = 0.92; },
-            update: function() { return null; },
-            getStatus: function() { return { confidence: this.confidence || 0.92 }; }
-        });
-        makeStub('MetaOptimizerAI', {
-            construct: function() { this.confidence = 0.88; },
-            getStatus: function() { return { confidence: this.confidence || 0.88 }; }
-        });
-        makeStub('WorldAI', {
-            construct: function() { this.season = 'invierno'; },
-            update: function() {},
-            getStatus: function() { return { season: this.season || 'invierno' }; }
-        });
-        makeStub('TextureFactory', {});
-        makeStub('MaterialLibrary', { ensureUV2: function() {} });
-        makeStub('SkySystem', {
-            construct: function(scene) { this.scene = scene; },
-            update: function() {}
-        });
-        makeStub('WaterSystem', {
-            construct: function() {},
-            createWater: function() {},
-            update: function() {}
-        });
-        makeStub('WeatherFX', {
-            construct: function() { this.weatherType = 'snow'; this.patches = []; },
-            setWeather: function(t) { this.weatherType = t; },
-            update: function() {}
-        });
-        makeStub('ParticleSystem', {
-            construct: function(count, opts) {
-                this.count = count || 200;
-                const geo = new THREE.BufferGeometry();
-                const pos = new Float32Array(this.count * 3);
-                for (let i = 0; i < this.count; i++) {
-                    pos[i*3] = (Math.random()-0.5)*180;
-                    pos[i*3+1] = Math.random()*50;
-                    pos[i*3+2] = (Math.random()-0.5)*180;
-                }
-                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-                const mat = new THREE.PointsMaterial({
-                    size: (opts && opts.size) || 0.25, color: (opts && opts.color) || 0xffffff,
-                    transparent: true, opacity: (opts && opts.opacity) || 0.6,
-                    depthWrite: false, blending: THREE.AdditiveBlending
-                });
-                this.mesh = new THREE.Points(geo, mat);
-                this._pos = pos;
-            },
-            update: function(t, cam) {
-                if (!this._pos) return;
-                for (let i = 0; i < this.count; i++) {
-                    this._pos[i*3+1] -= 0.08;
-                    if (this._pos[i*3+1] < 0) this._pos[i*3+1] = 45 + Math.random()*10;
-                }
-                this.mesh.geometry.attributes.position.needsUpdate = true;
-            },
-            setVisible: function(v) { if (this.mesh) this.mesh.visible = v; }
-        });
-        makeStub('GodRays', {
-            create: function() { return null; },
-            update: function() {}
-        });
-        makeStub('AnimationSystem', { update: function() {} });
-        makeStub('DynamicResolutionController', {
-            construct: function() { this.scale = 1; },
-            addSample: function() {},
-            evaluate: function() { return 1; },
-            reset: function(s) { this.scale = s || 1; }
-        });
-        makeStub('PostProcessing', {
-            addFXAA: function() { return null; },
-            addDepthOfField: function() { return null; },
-            setFocusDistance: function() {},
-            resizeFXAA: function() {}
-        });
-        makeStub('ComplexGeometryLab', {});
-        makeStub('TerrainGenerator', {
-            construct: function(cfg) {
-                this.config = cfg || {};
-                this.heightMap = null;
-                this.worldSize = (cfg && cfg.worldSize) || 500;
-            },
-            generateHeightMap: function(size) {
-                this.worldSize = size || 500;
-                // Minimal heightmap so other systems don't crash
-                this.heightMap = { size: this.worldSize };
-                console.log('🏔️ TerrainGenerator stub: heightmap listo');
-            },
-            generateTerrainMesh: function(scene) {
-                // El terreno real lo construimos después con AlpineWorldBuilder
-                console.log('🏔️ TerrainGenerator stub: mesh diferido al AlpineWorldBuilder');
-            },
-            getHeight: function(x, z) {
-                // Suave ruido para colocación
-                const s = 0.008;
-                return Math.abs(Math.sin(x * s) * Math.cos(z * s)) * 18 + Math.sin(x * 0.02) * 6;
-            },
-            getMoisture: function() { return 0.3; },
-            getBiome: function() { return 4; } // alpine
-        });
-        makeStub('EntityFactory', {
-            construct: function(ecs) { this.ecs = ecs; },
-            createAnimal: function(x, y, z, pred) {
-                if (!this.ecs) return -1;
-                const id = this.ecs.create();
-                if (id < 0) return -1;
-                this.ecs.posX[id] = x; this.ecs.posY[id] = y; this.ecs.posZ[id] = z;
-                this.ecs.isAnimal[id] = 1;
-                this.ecs.subType[id] = pred ? 1 : 0;
-                this.ecs.colR[id] = pred ? 90 : 160;
-                this.ecs.colG[id] = pred ? 70 : 120;
-                this.ecs.colB[id] = pred ? 50 : 90;
-                this.ecs.scaleX[id] = this.ecs.scaleY[id] = this.ecs.scaleZ[id] = 0.7 + Math.random() * 0.5;
-                return id;
-            },
-            createTree: function(x, y, z) {
-                if (!this.ecs) return -1;
-                const id = this.ecs.create();
-                if (id < 0) return -1;
-                this.ecs.posX[id] = x; this.ecs.posY[id] = y; this.ecs.posZ[id] = z;
-                this.ecs.isTree[id] = 1;
-                this.ecs.colR[id] = 40; this.ecs.colG[id] = 90; this.ecs.colB[id] = 50;
-                this.ecs.scaleX[id] = this.ecs.scaleY[id] = this.ecs.scaleZ[id] = 1.2 + Math.random();
-                return id;
-            }
-        });
-        makeStub('VegetationPlacer', { plantFlowers: function() {} });
-        makeStub('AlpineDecor', { plant: function() {} });
-        makeStub('ForestDecor', { plant: function() {} });
-        makeStub('GameWorld', {
-            construct: function(ecs, renderer) {
-                this.ecs = ecs; this.renderer = renderer;
-                this.generators = {};
-            },
-            _generateWorld: function() {
-                console.log('🌍 GameWorld stub: generación delegada al AlpineWorldBuilder');
-            },
-            update: function() {},
-            reset: function() {}
-        });
-        makeStub('ChunkManager', { update: function() {} });
-        makeStub('InputController', {
-            construct: function() {
-                this.yawOffset = 0; this.pitchOffset = 0; this.zoomOffset = 0;
-                this._blend = 0;
-            },
-            getBlendFactor: function() { return this._blend; },
-            update: function() {}
-        });
-        makeStub('Editor', {});
-        makeStub('WorldSerializer', {});
-        makeStub('Minimap', {
-            construct: function() {},
-            update: function() {},
-            _draw: function() {}
-        });
-        makeStub('AudioSystem', {});
-
-        console.log('✅ Stubs inteligentes cargados — el motor puede arrancar');
-    })();
-    </script>
-
-    <!-- Motor real corregido -->
+    <!-- Core -->
+    <script src="js/core/Config.js"></script>
+    <script src="js/core/HardwareDetector.js"></script>
+    <script src="js/core/PersistentMemory.js"></script>
+    <!-- Utils -->
+    <script src="js/utils/Helpers.js"></script>
+    <script src="js/utils/Profiler.js"></script>
+    <!-- ECS -->
+    <script src="js/ecs/SoaManager.js"></script>
+    <!-- Renderer materials / textures / vfx / env -->
+    <script src="js/renderer/textures/TextureFactory.js"></script>
+    <script src="js/renderer/materials/MaterialLibrary.js"></script>
+    <script src="js/renderer/vfx/ParticleSystem.js"></script>
+    <script src="js/renderer/vfx/GodRays.js"></script>
+    <script src="js/renderer/vfx/AnimationSystem.js"></script>
+    <script src="js/renderer/environment/SkySystem.js"></script>
+    <script src="js/renderer/environment/WaterSystem.js"></script>
+    <script src="js/renderer/environment/WeatherFX.js"></script>
+    <script src="js/renderer/PostProcessing.js"></script>
+    <script src="js/renderer/DynamicResolutionController.js"></script>
+    <script src="js/renderer/ComplexGeometryLab.js"></script>
     <script src="js/renderer/MaxRenderer.js"></script>
+    <!-- Game -->
+    <script src="js/game/TerrainGenerator.js"></script>
+    <script src="js/game/EntityFactory.js"></script>
+    <script src="js/game/VegetationPlacer.js"></script>
+    <script src="js/game/AlpineDecor.js"></script>
+    <script src="js/game/ForestDecor.js"></script>
+    <script src="js/game/GameWorld.js"></script>
+    <!-- AI -->
+    <script src="js/ai/OptimizerAI.js"></script>
+    <script src="js/ai/MetaOptimizerAI.js"></script>
+    <script src="js/ai/WorldAI.js"></script>
+    <!-- Engine -->
+    <script src="js/engine/ChunkManager.js"></script>
     <script src="js/engine/PriomEngine.js"></script>
+    <!-- Input / UI / Audio / Editor -->
+    <script src="js/input/InputController.js"></script>
+    <script src="js/ui/Minimap.js"></script>
+    <script src="js/audio/AudioSystem.js"></script>
+    <script src="js/editor/Editor.js"></script>
+    <script src="js/editor/WorldSerializer.js"></script>
 
     <!-- ============================================================
-         ALPINE WORLD BUILDER — crea el mundo de las imágenes
+         BOOTSTRAP — loading + arranque del motor
          ============================================================ -->
     <script>
-    (function() {
-        'use strict';
-
-        /**
-         * Construye una cadena montañosa dramática inspirada en las imágenes
-         * (cumbres afiladas, nieve, sol dorado/azulado, niebla alpina)
-         */
-        window.AlpineWorldBuilder = {
-            build(engine) {
-                const renderer = engine.getModule('renderer');
-                if (!renderer || !renderer.scene) {
-                    console.warn('AlpineWorldBuilder: no hay renderer');
-                    return;
-                }
-                const scene = renderer.scene;
-                const ecs = engine.getModule('ecs');
-                const factory = engine.getModule('entityFactory');
-
-                console.log('🏔️ AlpineWorldBuilder: forjando las cumbres eternas...');
-
-                // --- 1. Limpiar fondo y niebla para look alpino ---
-                scene.background = new THREE.Color(0x1a2040);
-                scene.fog = new THREE.FogExp2(0x1a2040, 0.0011);
-
-                // --- 2. Crear cadena de montañas (múltiples capas) ---
-                this._createMountainRange(scene, renderer);
-                this._createSnowFloor(scene);
-                this._createDistantPeaks(scene);
-
-                // --- 3. Entidades ECS (árboles coníferos + fauna) ---
-                if (ecs && factory) {
-                    this._spawnAlpineEntities(ecs, factory);
-                }
-
-                // --- 4. Cámara y hora del día → Golden Hour / Blue Hour ---
-                if (renderer.cameraTarget) {
-                    renderer.cameraTarget.set(0, 12, 0);
-                    renderer.cameraDistance = 95;
-                    renderer.cameraHeight = 28;
-                    renderer.cameraAngle = 0.85;
-                }
-                // Golden hour cálido (como la imagen derecha)
-                if (renderer.setTimeOfDay) {
-                    renderer.setTimeOfDay(0.18); // amanecer dorado
-                }
-                if (renderer.dayNight) {
-                    renderer.dayNight.speed = 0.00008; // ciclo lento y cinematográfico
-                }
-
-                // --- 5. Luces más dramáticas ---
-                if (renderer.sunLight) {
-                    renderer.sunLight.intensity = 2.4;
-                    renderer.sunLight.color.setHex(0xffcc88);
-                }
-                if (renderer.ambientLight) {
-                    renderer.ambientLight.intensity = 0.45;
-                    renderer.ambientLight.color.setHex(0x6688cc);
-                }
-                if (renderer.hemisphereLight) {
-                    renderer.hemisphereLight.intensity = 0.7;
-                }
-
-                // --- 6. Calidad y bloom ---
-                try { renderer.setQuality('ultra'); } catch(e) {}
-                if (renderer.bloomPass) {
-                    renderer.bloomPass.strength = 0.85;
-                    renderer.bloomPass.radius = 0.6;
-                }
-
-                // --- 7. Partículas de nieve ---
-                this._addSnowParticles(scene, renderer);
-
-                console.log('✅ Alpes Eternos generados');
-                if (window.showNotification) {
-                    window.showNotification('🏔️ Alpes Eternos listos · Golden Hour', 'success');
-                }
-            },
-
-            _createMountainRange(scene, renderer) {
-                // Materiales de nieve / roca
-                const snowMat = new THREE.MeshStandardMaterial({
-                    color: 0xe8f0ff, roughness: 0.92, metalness: 0.05,
-                    flatShading: true, envMapIntensity: 0.4
-                });
-                const rockMat = new THREE.MeshStandardMaterial({
-                    color: 0x4a4a55, roughness: 0.95, metalness: 0.08,
-                    flatShading: true
-                });
-                const iceMat = new THREE.MeshStandardMaterial({
-                    color: 0xb8d4f0, roughness: 0.35, metalness: 0.25,
-                    flatShading: true, transparent: true, opacity: 0.92
-                });
-
-                const peaks = [
-                    // x, z, height, radius, color bias
-                    { x: 0,   z: -40, h: 55, r: 28, bias: 0.9 },
-                    { x: -45, z: -25, h: 42, r: 22, bias: 0.7 },
-                    { x:  50, z: -30, h: 48, r: 24, bias: 0.85 },
-                    { x: -80, z: -55, h: 38, r: 20, bias: 0.6 },
-                    { x:  75, z: -50, h: 36, r: 18, bias: 0.65 },
-                    { x: -20, z: -70, h: 62, r: 30, bias: 1.0 },
-                    { x:  30, z: -65, h: 50, r: 26, bias: 0.8 },
-                    { x: -60, z:  10, h: 28, r: 16, bias: 0.5 },
-                    { x:  55, z:  15, h: 32, r: 17, bias: 0.55 },
-                    { x: 0,   z: -100,h: 70, r: 35, bias: 1.0 },
-                    { x: -100,z: -80, h: 45, r: 22, bias: 0.7 },
-                    { x: 110, z: -70, h: 40, r: 20, bias: 0.65 }
-                ];
-
-                const group = new THREE.Group();
-                group.name = 'AlpinePeaks';
-
-                for (const p of peaks) {
-                    // Base rocosa
-                    const baseGeo = new THREE.ConeGeometry(p.r * 1.1, p.h * 0.55, 7);
-                    baseGeo.translate(0, p.h * 0.275, 0);
-                    const base = new THREE.Mesh(baseGeo, rockMat);
-                    base.position.set(p.x, 0, p.z);
-                    base.rotation.y = Math.random() * Math.PI;
-                    base.castShadow = true;
-                    base.receiveShadow = true;
-                    group.add(base);
-
-                    // Capa de nieve superior
-                    const snowGeo = new THREE.ConeGeometry(p.r * 0.72, p.h * 0.72, 6);
-                    snowGeo.translate(0, p.h * 0.55, 0);
-                    const snow = new THREE.Mesh(snowGeo, snowMat);
-                    snow.position.set(p.x, 0, p.z);
-                    snow.rotation.y = base.rotation.y + 0.3;
-                    snow.castShadow = true;
-                    group.add(snow);
-
-                    // Pequeño pico de hielo
-                    if (p.bias > 0.7) {
-                        const iceGeo = new THREE.ConeGeometry(p.r * 0.18, p.h * 0.22, 5);
-                        iceGeo.translate(0, p.h * 0.92, 0);
-                        const ice = new THREE.Mesh(iceGeo, iceMat);
-                        ice.position.set(p.x, 0, p.z);
-                        group.add(ice);
-                    }
-
-                    // Sub-picos laterales
-                    for (let k = 0; k < 2; k++) {
-                        const ang = Math.random() * Math.PI * 2;
-                        const dist = p.r * (0.5 + Math.random() * 0.4);
-                        const sh = p.h * (0.35 + Math.random() * 0.3);
-                        const sr = p.r * (0.25 + Math.random() * 0.2);
-                        const sub = new THREE.Mesh(
-                            new THREE.ConeGeometry(sr, sh, 5),
-                            Math.random() > 0.4 ? snowMat : rockMat
-                        );
-                        sub.position.set(
-                            p.x + Math.cos(ang) * dist,
-                            sh * 0.45,
-                            p.z + Math.sin(ang) * dist
-                        );
-                        sub.rotation.y = Math.random() * Math.PI;
-                        group.add(sub);
-                    }
-                }
-
-                scene.add(group);
-                this._mountainGroup = group;
-                console.log(`🏔️ ${peaks.length} picos principales + sub-picos creados`);
-            },
-
-            _createSnowFloor(scene) {
-                // Suelo nevado ondulado
-                const size = 320;
-                const seg = 64;
-                const geo = new THREE.PlaneGeometry(size, size, seg, seg);
-                const pos = geo.attributes.position;
-                for (let i = 0; i < pos.count; i++) {
-                    const x = pos.getX(i);
-                    const y = pos.getY(i);
-                    const h = Math.sin(x * 0.03) * Math.cos(y * 0.025) * 3.5
-                            + Math.sin(x * 0.08 + y * 0.06) * 1.2;
-                    pos.setZ(i, h);
-                }
-                geo.computeVertexNormals();
-                geo.rotateX(-Math.PI / 2);
-
-                const mat = new THREE.MeshStandardMaterial({
-                    color: 0xdce8f8, roughness: 0.88, metalness: 0.02,
-                    flatShading: false
-                });
-                const floor = new THREE.Mesh(geo, mat);
-                floor.receiveShadow = true;
-                floor.position.y = -0.5;
-                scene.add(floor);
-            },
-
-            _createDistantPeaks(scene) {
-                // Siluetas lejanas para profundidad
-                const mat = new THREE.MeshBasicMaterial({
-                    color: 0x2a3048, transparent: true, opacity: 0.55, fog: true
-                });
-                for (let i = 0; i < 8; i++) {
-                    const ang = (i / 8) * Math.PI * 2 + 0.4;
-                    const dist = 180 + Math.random() * 60;
-                    const h = 40 + Math.random() * 50;
-                    const r = 25 + Math.random() * 20;
-                    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 5), mat);
-                    m.position.set(Math.cos(ang) * dist, h * 0.4, Math.sin(ang) * dist);
-                    scene.add(m);
-                }
-            },
-
-            _spawnAlpineEntities(ecs, factory) {
-                // Coníferas en las laderas bajas
-                let trees = 0;
-                for (let i = 0; i < 180; i++) {
-                    const ang = Math.random() * Math.PI * 2;
-                    const dist = 25 + Math.random() * 110;
-                    const x = Math.cos(ang) * dist;
-                    const z = Math.sin(ang) * dist;
-                    // Evitar el centro del valle un poco
-                    if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
-                    const id = factory.createTree(x, 0.8, z);
-                    if (id >= 0) {
-                        const s = 0.9 + Math.random() * 1.4;
-                        ecs.scaleX[id] = s; ecs.scaleY[id] = s * (1.1 + Math.random() * 0.4); ecs.scaleZ[id] = s;
-                        trees++;
-                    }
-                }
-
-                // Fauna alpina
-                let animals = 0;
-                for (let i = 0; i < 35; i++) {
-                    const ang = Math.random() * Math.PI * 2;
-                    const dist = 18 + Math.random() * 90;
-                    const x = Math.cos(ang) * dist;
-                    const z = Math.sin(ang) * dist;
-                    const pred = Math.random() < 0.15;
-                    const id = factory.createAnimal(x, 0.6, z, pred);
-                    if (id >= 0) animals++;
-                }
-                console.log(`🌲 ${trees} coníferas · 🦌 ${animals} animales alpinos`);
-            },
-
-            _addSnowParticles(scene, renderer) {
-                if (renderer.particleSystem) return;
-                try {
-                    const count = 900;
-                    const geo = new THREE.BufferGeometry();
-                    const pos = new Float32Array(count * 3);
-                    const vel = new Float32Array(count);
-                    for (let i = 0; i < count; i++) {
-                        pos[i*3]     = (Math.random() - 0.5) * 220;
-                        pos[i*3 + 1] = Math.random() * 80;
-                        pos[i*3 + 2] = (Math.random() - 0.5) * 220;
-                        vel[i] = 0.04 + Math.random() * 0.09;
-                    }
-                    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-                    const mat = new THREE.PointsMaterial({
-                        size: 0.35, color: 0xffffff, transparent: true,
-                        opacity: 0.75, depthWrite: false, sizeAttenuation: true,
-                        blending: THREE.AdditiveBlending
-                    });
-                    const snow = new THREE.Points(geo, mat);
-                    snow.name = 'AlpineSnow';
-                    scene.add(snow);
-
-                    // Actualizar en el loop del renderer vía un pequeño hook
-                    const origUpdate = renderer._updateDayNight ? renderer._updateDayNight.bind(renderer) : null;
-                    if (origUpdate) {
-                        renderer._updateDayNight = function() {
-                            origUpdate();
-                            const p = snow.geometry.attributes.position.array;
-                            for (let i = 0; i < count; i++) {
-                                p[i*3 + 1] -= vel[i];
-                                p[i*3]     += Math.sin(Date.now() * 0.0004 + i) * 0.015;
-                                if (p[i*3 + 1] < 0) {
-                                    p[i*3 + 1] = 60 + Math.random() * 25;
-                                    p[i*3]     = (Math.random() - 0.5) * 220;
-                                    p[i*3 + 2] = (Math.random() - 0.5) * 220;
-                                }
-                            }
-                            snow.geometry.attributes.position.needsUpdate = true;
-                        };
-                    }
-                } catch (e) {
-                    console.warn('Nieve no disponible', e);
-                }
-            }
-        };
-    })();
-    </script>
-
-    <!-- ============================================================
-         ARRANQUE DEL MOTOR + CONEXIÓN UI
-         ============================================================ -->
-    <script>
-    (function() {
+    (function () {
         'use strict';
 
         const elements = {
@@ -839,17 +356,16 @@
         };
 
         const moduleNames = [
-            'Config', 'HardwareDetector', 'PersistentMemory', 'SoaManager',
-            'Helpers', 'Profiler', 'OptimizerAI', 'MetaOptimizerAI', 'WorldAI',
-            'TextureFactory', 'MaterialLibrary', 'SkySystem', 'WaterSystem', 'WeatherFX',
-            'ParticleSystem', 'GodRays', 'AnimationSystem',
-            'DynamicResolutionController', 'PostProcessing', 'ComplexGeometryLab', 'MaxRenderer',
+            'CONFIG', 'Config', 'HardwareDetector', 'PersistentMemory',
+            'Helpers', 'Profiler', 'SoaManager',
+            'TextureFactory', 'MaterialLibrary', 'ParticleSystem', 'GodRays', 'AnimationSystem',
+            'SkySystem', 'WaterSystem', 'WeatherFX', 'PostProcessing',
+            'DynamicResolutionController', 'ComplexGeometryLab', 'MaxRenderer',
             'TerrainGenerator', 'EntityFactory', 'VegetationPlacer', 'AlpineDecor', 'ForestDecor', 'GameWorld',
-            'ChunkManager', 'InputController', 'Editor', 'WorldSerializer', 'Minimap', 'AudioSystem', 'PriomEngine'
+            'OptimizerAI', 'MetaOptimizerAI', 'WorldAI',
+            'ChunkManager', 'PriomEngine',
+            'InputController', 'Minimap', 'AudioSystem', 'Editor', 'WorldSerializer'
         ];
-
-        let loadedModules = 0;
-        let allLoaded = false;
 
         function updateLoader(progress, text, subtext, status) {
             if (elements.fill) elements.fill.style.width = Math.min(100, progress) + '%';
@@ -857,70 +373,43 @@
             if (elements.text) elements.text.textContent = text || elements.text.textContent;
             if (elements.subtext) elements.subtext.textContent = subtext || elements.subtext.textContent;
             if (elements.status) elements.status.textContent = status || elements.status.textContent;
-            if (elements.modules) elements.modules.textContent = `📦 ${loadedModules}/${moduleNames.length}`;
         }
 
-        function checkModules() {
-            let loaded = 0;
+        function countLoaded() {
+            let n = 0;
             for (const name of moduleNames) {
-                if (typeof window[name] !== 'undefined') loaded++;
+                if (typeof window[name] !== 'undefined') n++;
             }
-            loadedModules = loaded;
-            const progress = (loaded / moduleNames.length) * 100;
-
-            if (loaded >= moduleNames.length - 2) { // tolerancia
-                allLoaded = true;
-                clearInterval(checkInterval);
-                updateLoader(92, '🏔️ Forjando las cumbres...', 'AlpineWorldBuilder listo', '✅ Módulos OK');
-                setTimeout(startEngine, 400);
-            } else {
-                updateLoader(progress, `⏳ Cargando módulos... (${loaded}/${moduleNames.length})`,
-                    `📦 ${loaded} módulos`, '⏳ Cargando...');
-            }
+            if (elements.modules) elements.modules.textContent = `📦 ${n}/${moduleNames.length}`;
+            return n;
         }
-
-        let checkInterval = setInterval(checkModules, 200);
-        setTimeout(checkModules, 80);
-
-        // Timeout de seguridad: arrancar igual a los 8s
-        setTimeout(() => {
-            if (!allLoaded) {
-                clearInterval(checkInterval);
-                console.warn('Timeout de módulos — arrancando de todos modos');
-                startEngine();
-            }
-        }, 8000);
 
         function startEngine() {
-            updateLoader(95, '🚀 Iniciando motor cuántico...', 'Creando PriomEngine', '⚡ Motor');
+            updateLoader(92, '🚀 Iniciando motor cuántico...', 'Creando PriomEngine', '⚡ Motor');
 
             try {
+                if (typeof PriomEngine === 'undefined') {
+                    throw new Error('PriomEngine no cargado — revisa la consola por errores de script');
+                }
+
                 const engine = new PriomEngine({
-                    qualityLevel: 'ultra',
+                    qualityLevel: 'high',          // high es más estable que ultra/quantum
                     autoStart: true,
                     enableThreading: false,
                     enablePredictiveAI: true,
                     enableAdaptiveQuality: true,
                     enableErrorRecovery: true,
-                    worldSize: 600,
-                    terrainHeight: 80
+                    worldSize: 500,
+                    terrainHeight: 70
                 });
                 window.engine = engine;
 
-                updateLoader(98, '🏔️ Generando Alpes Eternos...', 'AlpineWorldBuilder trabajando', '🌍 Mundo');
+                updateLoader(98, '🏔️ Generando mundo...', 'Terreno + vegetación + clima', '🌍 Mundo');
 
-                // Esperar a que el motor termine su _generateWorld y luego construir el mundo alpino
+                // Dar tiempo a _generateWorld
                 setTimeout(() => {
-                    try {
-                        if (window.AlpineWorldBuilder) {
-                            window.AlpineWorldBuilder.build(engine);
-                        }
-                    } catch (e) {
-                        console.error('Error AlpineWorldBuilder:', e);
-                    }
-
-                    updateLoader(100, '🏔️ ¡Alpes Eternos listos!', 'Ecosistema alpino vivo', '✅ Listo');
-                    if (elements.entities) elements.entities.textContent = '🏔️ 12+ picos';
+                    updateLoader(100, '🏔️ ¡Mundo listo!', 'Ecosistema activo', '✅ Listo');
+                    if (elements.entities) elements.entities.textContent = '🏔️ mundo vivo';
 
                     connectUI(engine);
 
@@ -930,170 +419,144 @@
                             setTimeout(() => { elements.screen.style.display = 'none'; }, 1200);
                         }
                         showNotification('🏔️ Bienvenido a los Alpes Eternos', 'success');
-                    }, 700);
-                }, 900);
+                    }, 600);
+                }, 1200);
 
             } catch (e) {
                 console.error('❌ Error al crear el motor:', e);
                 if (elements.text) {
-                    elements.text.textContent = '❌ Error: ' + e.message;
+                    elements.text.textContent = '❌ Error: ' + (e.message || e);
                     elements.text.className = 'loader-text error';
                 }
-                // Fallback visual mínimo
                 fallbackScene();
             }
         }
 
-        // Si todo falla, al menos mostrar un cielo + sol
         function fallbackScene() {
             try {
                 const canvas = document.getElementById('gameCanvas');
+                if (!canvas || typeof THREE === 'undefined') return;
                 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 const scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x1a2040);
-                const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 1000);
-                camera.position.set(60, 40, 80);
-                camera.lookAt(0, 10, -30);
-                const light = new THREE.DirectionalLight(0xffcc88, 2);
-                light.position.set(40, 60, 20);
-                scene.add(light);
-                scene.add(new THREE.AmbientLight(0x4466aa, 0.5));
-                // Un pico simple
-                const peak = new THREE.Mesh(
-                    new THREE.ConeGeometry(30, 55, 7),
-                    new THREE.MeshStandardMaterial({ color: 0xe8f0ff, flatShading: true })
+                scene.background = new THREE.Color(0x87a0c0);
+                scene.fog = new THREE.FogExp2(0x87a0c0, 0.0015);
+                const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+                camera.position.set(0, 40, 120);
+                camera.lookAt(0, 20, 0);
+                const sun = new THREE.DirectionalLight(0xffe0b0, 1.4);
+                sun.position.set(80, 120, 40);
+                scene.add(sun);
+                scene.add(new THREE.AmbientLight(0x405070, 0.5));
+                // Picos simples
+                for (let i = 0; i < 10; i++) {
+                    const h = 30 + Math.random() * 60;
+                    const geo = new THREE.ConeGeometry(8 + Math.random() * 12, h, 6);
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: 0xe8eef5, roughness: 0.85, metalness: 0.05
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    const a = (i / 10) * Math.PI * 2;
+                    const d = 40 + Math.random() * 80;
+                    mesh.position.set(Math.cos(a) * d, h * 0.45, Math.sin(a) * d);
+                    scene.add(mesh);
+                }
+                // Suelo
+                const ground = new THREE.Mesh(
+                    new THREE.PlaneGeometry(400, 400),
+                    new THREE.MeshStandardMaterial({ color: 0xd0d8e0, roughness: 0.95 })
                 );
-                peak.position.set(0, 20, -40);
-                scene.add(peak);
-                function loop() {
-                    requestAnimationFrame(loop);
-                    peak.rotation.y += 0.001;
+                ground.rotation.x = -Math.PI / 2;
+                scene.add(ground);
+                function animate() {
+                    requestAnimationFrame(animate);
                     renderer.render(scene, camera);
                 }
-                loop();
-                if (elements.screen) elements.screen.classList.add('fade-out');
-            } catch (e) {
-                console.error('Fallback también falló', e);
+                animate();
+                if (elements.screen) {
+                    elements.screen.classList.add('fade-out');
+                    setTimeout(() => { elements.screen.style.display = 'none'; }, 800);
+                }
+                showNotification('⚠️ Modo fallback — revisa la consola', 'warning');
+            } catch (err) {
+                console.error('Fallback también falló:', err);
             }
         }
 
-        // ---------- UI ----------
         function connectUI(engine) {
-            const hud = {
-                fps: document.getElementById('fps'),
-                trees: document.getElementById('trees'),
-                animals: document.getElementById('animals'),
-                ram: document.getElementById('ram'),
-                quality: document.getElementById('quality'),
-                confidence: document.getElementById('confidence'),
-                timeDisplay: document.getElementById('time-display'),
-                timeLabel: document.getElementById('time-label'),
-                timeIcon: document.getElementById('time-icon'),
-                weatherLabel: document.getElementById('weather-label'),
-                seasonLabel: document.getElementById('season-label'),
-                temperature: document.getElementById('temperature'),
-                aiFps: document.getElementById('ai-fps'),
-                aiConf: document.getElementById('ai-conf'),
-                aiMeta: document.getElementById('ai-meta'),
-                aiProgress: document.getElementById('ai-progress-fill'),
-                aiDetail: document.getElementById('ai-detail')
-            };
+            if (!engine) return;
 
+            // Actualizar stats periódicamente
             setInterval(() => {
                 try {
-                    const stats = engine.getStats ? engine.getStats() : { state: {} };
-                    const state = stats.state || {};
-                    if (hud.fps) hud.fps.textContent = state.fps || 0;
-                    if (hud.aiFps) hud.aiFps.textContent = state.fps || 0;
+                    const r = engine.getModule && engine.getModule('renderer');
+                    const stats = r && r.getStats ? r.getStats() : {};
+                    const fpsEl = document.getElementById('fps');
+                    const treesEl = document.getElementById('trees');
+                    const animalsEl = document.getElementById('animals');
+                    const ramEl = document.getElementById('ram');
+                    const qualityEl = document.getElementById('quality');
+                    const confEl = document.getElementById('confidence');
+                    const timeEl = document.getElementById('time-display');
+                    const tempEl = document.getElementById('temperature');
 
-                    const ecs = engine.getModule && engine.getModule('ecs');
-                    let trees = 0, animals = 0;
-                    if (ecs) {
-                        for (let i = 0; i < ecs.count; i++) {
-                            if (ecs.active && ecs.active[i]) {
-                                if (ecs.isTree && ecs.isTree[i]) trees++;
-                                if (ecs.isAnimal && ecs.isAnimal[i]) animals++;
-                            }
-                        }
+                    if (fpsEl) {
+                        const fps = (engine.fps || stats.fps || 0);
+                        fpsEl.textContent = Math.round(fps);
+                        fpsEl.className = 'value ' + (fps >= 50 ? 'good' : fps >= 30 ? '' : 'bad');
                     }
-                    if (hud.trees) hud.trees.textContent = trees;
-                    if (hud.animals) hud.animals.textContent = animals;
-                    if (hud.ram) {
-                        const mem = state.memoryUsage || 0;
-                        hud.ram.textContent = Math.round(mem / (1024*1024)) + ' MB';
+                    if (treesEl) treesEl.textContent = (engine.stats && engine.stats.trees) || stats.instances || 0;
+                    if (animalsEl) animalsEl.textContent = (engine.stats && engine.stats.animals) || 0;
+                    if (ramEl) {
+                        const mb = (performance.memory && performance.memory.usedJSHeapSize)
+                            ? (performance.memory.usedJSHeapSize / 1048576).toFixed(0)
+                            : (stats.vram || 0);
+                        ramEl.textContent = mb + ' MB';
                     }
-                    if (hud.quality) hud.quality.textContent = (state.qualityLevel || 'ultra').toUpperCase();
-
-                    const optimizer = engine.getModule && engine.getModule('optimizerAI');
-                    if (optimizer && optimizer.getStatus && hud.confidence) {
-                        const conf = Math.round((optimizer.getStatus().confidence || 0.9) * 100);
-                        hud.confidence.textContent = conf + '%';
-                        if (hud.aiConf) hud.aiConf.textContent = conf + '%';
-                        if (hud.aiProgress) hud.aiProgress.style.width = conf + '%';
+                    if (qualityEl) qualityEl.textContent = (engine.quality || (r && r.quality) || 'HIGH').toUpperCase();
+                    if (confEl) {
+                        const opt = engine.getModule && engine.getModule('optimizerAI');
+                        const conf = opt && opt.getStatus ? (opt.getStatus().confidence * 100) : 90;
+                        confEl.textContent = Math.round(conf) + '%';
                     }
-                    const metaAI = engine.getModule && engine.getModule('metaAI');
-                    if (metaAI && metaAI.getStatus && hud.aiMeta) {
-                        hud.aiMeta.textContent = Math.round((metaAI.getStatus().confidence || 0.88) * 100) + '%';
+                    if (timeEl && r && typeof r.getTimeOfDay === 'function') {
+                        const t = r.getTimeOfDay();
+                        const h = Math.floor(t * 24);
+                        const m = Math.floor((t * 24 - h) * 60);
+                        timeEl.textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
                     }
+                    if (tempEl) tempEl.textContent = '-8°C';
 
-                    const renderer = engine.getModule && engine.getModule('renderer');
-                    if (renderer && renderer.dayNight && hud.timeDisplay) {
-                        const time = renderer.dayNight.time || 0.2;
-                        const hours = Math.floor(time * 24);
-                        const mins = Math.floor((time * 24 - hours) * 60);
-                        hud.timeDisplay.textContent = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
-
-                        const sunHeight = Math.sin(time * Math.PI * 2);
-                        if (sunHeight < -0.25) {
-                            if (hud.timeIcon) hud.timeIcon.textContent = '🌙';
-                            if (hud.timeLabel) hud.timeLabel.textContent = 'Noche Alpina';
-                        } else if (sunHeight < 0.35 && sunHeight >= 0) {
-                            if (hud.timeIcon) hud.timeIcon.textContent = '🌅';
-                            if (hud.timeLabel) hud.timeLabel.textContent = 'Golden Hour';
-                        } else if (sunHeight < 0 && sunHeight > -0.25) {
-                            if (hud.timeIcon) hud.timeIcon.textContent = '🌇';
-                            if (hud.timeLabel) hud.timeLabel.textContent = 'Blue Hour';
-                        } else {
-                            if (hud.timeIcon) hud.timeIcon.textContent = '☀️';
-                            if (hud.timeLabel) hud.timeLabel.textContent = 'Día Alpino';
-                        }
-
-                        // Temperatura alpina
-                        if (hud.temperature) {
-                            const temp = -12 + sunHeight * 14;
-                            hud.temperature.textContent = Math.round(temp) + '°C';
-                        }
+                    // Status bar
+                    const statusBar = document.querySelector('.ai-status-text') || document.getElementById('ai-status');
+                    if (statusBar) {
+                        statusBar.textContent = `TRINITY AI ACTIVA · running · frame ${engine.frameCount || 0}`;
                     }
+                } catch (_) {}
+            }, 500);
 
-                    if (hud.weatherLabel) hud.weatherLabel.textContent = '❄️ Nieve Ligera';
-                    if (hud.seasonLabel) hud.seasonLabel.textContent = '❄️ Invierno Eterno';
-                    if (hud.aiDetail) hud.aiDetail.textContent = '· ' + (state.status || 'running') + ' · frame ' + (state.frameCount || 0);
-                } catch (e) {}
-            }, 280);
-
-            // Botones calidad
-            const qualityButtons = { 'btn-low':'low', 'btn-medium':'medium', 'btn-high':'high', 'btn-ultra':'ultra', 'btn-quantum':'quantum' };
+            // Botones de calidad
+            const qualityButtons = {
+                'btn-low': 'low', 'btn-med': 'medium', 'btn-high': 'high',
+                'btn-ultra': 'ultra', 'btn-quantum': 'quantum', 'btn-dual': 'ultra'
+            };
             function setActive(id) {
-                ['btn-dual', ...Object.keys(qualityButtons)].forEach(b => {
-                    const el = document.getElementById(b);
-                    if (el) el.classList.toggle('active', b === id);
+                Object.keys(qualityButtons).forEach(bid => {
+                    const b = document.getElementById(bid);
+                    if (b) b.classList.toggle('active', bid === id);
                 });
             }
-            const dualBtn = document.getElementById('btn-dual');
-            if (dualBtn) dualBtn.onclick = () => {
-                engine.manualQuality = false;
-                engine.setQuality && engine.setQuality('ultra');
-                setActive('btn-dual');
-                showNotification('🧠 Trinity AI activada', 'success');
-            };
             Object.keys(qualityButtons).forEach(btnId => {
                 const btn = document.getElementById(btnId);
                 if (!btn) return;
                 btn.onclick = () => {
                     engine.manualQuality = true;
-                    engine.setQuality && engine.setQuality(qualityButtons[btnId]);
+                    if (engine.setQuality) engine.setQuality(qualityButtons[btnId]);
+                    else if (engine.getModule) {
+                        const r = engine.getModule('renderer');
+                        if (r && r.setQuality) r.setQuality(qualityButtons[btnId]);
+                    }
                     setActive(btnId);
                     showNotification(`⚡ Calidad: ${qualityButtons[btnId].toUpperCase()}`, 'info');
                 };
@@ -1102,14 +565,16 @@
             // Spawn fauna
             document.getElementById('btn-spawn')?.addEventListener('click', () => {
                 const factory = engine.getModule && engine.getModule('entityFactory');
-                const ecs = engine.getModule && engine.getModule('ecs');
-                if (!factory || !ecs) { showNotification('EntityFactory no disponible', 'error'); return; }
+                if (!factory || !factory.createAnimal) {
+                    showNotification('EntityFactory no disponible', 'error');
+                    return;
+                }
                 let created = 0;
                 for (let i = 0; i < 12; i++) {
                     const a = Math.random() * Math.PI * 2;
                     const d = 20 + Math.random() * 70;
-                    const id = factory.createAnimal(Math.cos(a)*d, 0.6, Math.sin(a)*d, Math.random() < 0.2);
-                    if (id !== -1) created++;
+                    const id = factory.createAnimal(Math.cos(a) * d, 0.6, Math.sin(a) * d, Math.random() < 0.2);
+                    if (id !== -1 && id != null) created++;
                 }
                 showNotification(`🦌 ${created} animales alpinos`, 'success');
             });
@@ -1126,11 +591,11 @@
                 });
             }
 
-            // Presets de hora
+            // Presets
             document.getElementById('btn-golden')?.addEventListener('click', () => {
                 const r = engine.getModule && engine.getModule('renderer');
                 if (r) {
-                    r.setTimeOfDay(0.18);
+                    if (r.setTimeOfDay) r.setTimeOfDay(0.18);
                     if (r.sunLight) r.sunLight.color.setHex(0xffcc88);
                     if (r.bloomPass) r.bloomPass.strength = 0.9;
                     showNotification('🌅 Golden Hour activado', 'info');
@@ -1139,7 +604,7 @@
             document.getElementById('btn-blue')?.addEventListener('click', () => {
                 const r = engine.getModule && engine.getModule('renderer');
                 if (r) {
-                    r.setTimeOfDay(0.72);
+                    if (r.setTimeOfDay) r.setTimeOfDay(0.72);
                     if (r.sunLight) r.sunLight.color.setHex(0xaaccff);
                     if (r.bloomPass) r.bloomPass.strength = 0.55;
                     showNotification('🌌 Blue Hour activado', 'info');
@@ -1149,29 +614,27 @@
             // Clima
             let weatherIdx = 0;
             const weathers = ['snow', 'clear', 'cloudy', 'stormy'];
-            const weatherLabels = { snow:'❄️ Nieve', clear:'☀️ Claro', cloudy:'⛅ Nublado', stormy:'⛈️ Tormenta' };
+            const weatherLabels = { snow: '❄️ Nieve', clear: '☀️ Claro', cloudy: '⛅ Nublado', stormy: '⛈️ Tormenta' };
             document.getElementById('btn-weather')?.addEventListener('click', () => {
                 weatherIdx = (weatherIdx + 1) % weathers.length;
                 const w = weathers[weatherIdx];
                 const fx = engine.getModule && engine.getModule('weatherFX');
                 if (fx && fx.setWeather) fx.setWeather(w);
-                document.getElementById('btn-weather').textContent = weatherLabels[w];
+                const btn = document.getElementById('btn-weather');
+                if (btn) btn.textContent = weatherLabels[w];
                 showNotification(`🌤️ ${weatherLabels[w]}`, 'info');
             });
 
             // Reset
             document.getElementById('btn-reset')?.addEventListener('click', () => {
                 engine.manualQuality = false;
-                engine.setQuality && engine.setQuality('ultra');
-                setActive('btn-dual');
+                if (engine.setQuality) engine.setQuality('high');
+                setActive('btn-high');
                 if (engine.reset) engine.reset();
-                setTimeout(() => {
-                    if (window.AlpineWorldBuilder) window.AlpineWorldBuilder.build(engine);
-                }, 600);
                 showNotification('🔄 Mundo reiniciado', 'warning');
             });
 
-            console.log('✅ UI conectada — Alpes Eternos listos');
+            console.log('✅ UI conectada');
         }
 
         function showNotification(message, type = 'info') {
@@ -1184,6 +647,44 @@
             setTimeout(() => { if (notif.parentNode) notif.parentNode.removeChild(notif); }, 3800);
         }
         window.showNotification = showNotification;
+
+        // ---- Arranque con polling de módulos ----
+        let started = false;
+        const maxWait = 12000;
+        const t0 = Date.now();
+
+        function tryStart() {
+            if (started) return;
+            const loaded = countLoaded();
+            const progress = Math.min(90, (loaded / moduleNames.length) * 90);
+            updateLoader(progress,
+                loaded < moduleNames.length ? '📦 Cargando módulos del motor...' : '⚡ Módulos listos',
+                `${loaded}/${moduleNames.length} módulos`,
+                loaded < 10 ? '⏳ Cargando...' : '✅ Casi listo'
+            );
+
+            // Arrancar cuando tenemos los críticos o timeout
+            const critical = typeof THREE !== 'undefined' && typeof MaxRenderer !== 'undefined' && typeof PriomEngine !== 'undefined' && typeof SoaManager !== 'undefined';
+            if (critical && (loaded >= moduleNames.length * 0.7 || Date.now() - t0 > 4000)) {
+                started = true;
+                startEngine();
+                return;
+            }
+            if (Date.now() - t0 > maxWait) {
+                started = true;
+                console.warn('⏰ Timeout de carga — arrancando con lo disponible');
+                startEngine();
+                return;
+            }
+            requestAnimationFrame(tryStart);
+        }
+
+        // Esperar a que el DOM y los scripts terminen
+        if (document.readyState === 'complete') {
+            setTimeout(tryStart, 100);
+        } else {
+            window.addEventListener('load', () => setTimeout(tryStart, 100));
+        }
     })();
     </script>
 </body>
