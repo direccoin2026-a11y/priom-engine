@@ -1018,18 +1018,11 @@
                     
                     // ===== GOD RAYS =====
                     try {
-                        if (window.GodRays && typeof window.GodRays.create === 'function') {
+                        if (window.GodRays) {
                             this.godRaysPass = window.GodRays.create();
-                            // CRÍTICO: nunca añadir null/undefined al composer
-                            // (causa TypeError: Cannot read properties of null (reading 'setSize'))
-                            if (this.godRaysPass) {
-                                this.composer.addPass(this.godRaysPass);
-                            }
+                            this.composer.addPass(this.godRaysPass);
                         }
-                    } catch (e) {
-                        console.warn('⚠️ GodRays no disponible:', e.message || e);
-                        this.godRaysPass = null;
-                    }
+                    } catch (e) { /* silencioso */ }
                     
                     // ===== CINEMATIC =====
                     const cinematicShader = {
@@ -1223,20 +1216,16 @@
                 
                 // ===== 8. RENDERIZAR (siempre dibujar escena aunque no haya entidades) =====
                 if (this.bloomAvailable && this.composer && cfg.bloomEnabled) {
-                    try {
-                        if (this.bloomPass) {
-                            this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
-                        }
-                        if (this.cinematicPass && this.cinematicPass.uniforms && this.cinematicPass.uniforms.uTime) {
-                            this.cinematicPass.uniforms.uTime.value = Date.now() * 0.001;
-                        }
-                        if (this.godRaysPass && window.GodRays && this.dayNight && this.dayNight.sunPosition) {
-                            try { window.GodRays.update(this.godRaysPass, this.dayNight.sunPosition, this.camera); } catch (_) {}
-                        }
-                        this.composer.render();
-                    } catch (compErr) {
-                        if (this.renderer) this.renderer.render(this.scene, this.camera);
+                    if (this.bloomPass) {
+                        this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
                     }
+                    if (this.cinematicPass && this.cinematicPass.uniforms) {
+                        this.cinematicPass.uniforms.uTime.value = Date.now() * 0.001;
+                    }
+                    if (this.godRaysPass && window.GodRays && this.dayNight.sunPosition) {
+                        try { window.GodRays.update(this.godRaysPass, this.dayNight.sunPosition, this.camera); } catch (_) {}
+                    }
+                    this.composer.render();
                 } else if (this.renderer) {
                     this.renderer.render(this.scene, this.camera);
                 }
@@ -1411,17 +1400,17 @@
                 
                 const billboardMat = this.materialCache.get('tree_lod3');
                 if (billboardMat && billboardMat.uniforms) {
-                    if (billboardMat.uniforms.fogColor) billboardMat.uniforms.fogColor.value.copy(fogColor);
-                    if (billboardMat.uniforms.fogNear) billboardMat.uniforms.fogNear.value = this.scene.fog.near || 50;
-                    if (billboardMat.uniforms.fogFar) billboardMat.uniforms.fogFar.value = this.scene.fog.far || 400;
+                    billboardMat.uniforms.fogColor.value.copy(fogColor);
+                    billboardMat.uniforms.fogNear.value = this.scene.fog.near || 50;
+                    billboardMat.uniforms.fogFar.value = this.scene.fog.far || 400;
                 }
             }
             
             if (this.skybox) {
                 const skyMat = this.skybox.material;
-                if (skyMat && skyMat.uniforms) {
-                    if (skyMat.uniforms.uSunPosition) skyMat.uniforms.uSunPosition.value.copy(this.dayNight.sunPosition);
-                    if (skyMat.uniforms.uTime) skyMat.uniforms.uTime.value = this.dayNight.time;
+                if (skyMat.uniforms) {
+                    skyMat.uniforms.uSunPosition.value.copy(this.dayNight.sunPosition);
+                    skyMat.uniforms.uTime.value = this.dayNight.time;
                 }
             }
             
@@ -1730,27 +1719,20 @@
         }
         
         _applyRenderScale() {
-            try {
-                const w = this._lastW || window.innerWidth;
-                const h = this._lastH || window.innerHeight;
-                const scale = this.renderScale || 1.0;
-                
-                if (this.renderer) {
-                    this.renderer.setSize(w * scale, h * scale, false);
-                }
-                
-                if (this.composer) {
-                    this.composer.setSize(w * scale, h * scale);
-                }
-                if (this.bloomPass && this.bloomPass.resolution) {
-                    this.bloomPass.resolution.set(w * scale, h * scale);
-                }
-                // Solo llamar si existe el método y hay un pass válido
-                if (window.PostProcessing && typeof window.PostProcessing.resizeFXAA === 'function' && this.fxaaPass) {
-                    window.PostProcessing.resizeFXAA(this.fxaaPass, this.renderer);
-                }
-            } catch (e) {
-                console.warn('⚠️ _applyRenderScale:', e.message || e);
+            const w = this._lastW || window.innerWidth;
+            const h = this._lastH || window.innerHeight;
+            const scale = this.renderScale || 1.0;
+            
+            this.renderer.setSize(w * scale, h * scale, false);
+            
+            if (this.composer) {
+                this.composer.setSize(w * scale, h * scale);
+            }
+            if (this.bloomPass && this.bloomPass.resolution) {
+                this.bloomPass.resolution.set(w * scale, h * scale);
+            }
+            if (window.PostProcessing) {
+                window.PostProcessing.resizeFXAA(this.fxaaPass, this.renderer);
             }
         }
         
@@ -1814,7 +1796,6 @@
         //  🎯 CALIDAD
         //  ============================================================
         setQuality(level) {
-            try {
             this.quality = level;
             const qualityMap = {
                 'low': { pixelRatio: 0.5, shadow: false, shadowSize: 512, lod: 60, water: false, particles: false, ssao: false, godrays: false, sky: false, mist: false },
@@ -1826,16 +1807,9 @@
             
             const q = qualityMap[level] || qualityMap.ultra;
             
-            if (this.renderer) {
-                this.renderer.setPixelRatio(Math.min(q.pixelRatio, 2));
-                this.renderer.shadowMap.enabled = q.shadow;
-            }
-            // Proteger setPixelRatio del composer (puede fallar si hay passes null)
-            try {
-                if (this.composer) this.composer.setPixelRatio(Math.min(q.pixelRatio, 2));
-            } catch (ce) {
-                console.warn('⚠️ composer.setPixelRatio:', ce.message || ce);
-            }
+            this.renderer.setPixelRatio(Math.min(q.pixelRatio, 2));
+            if (this.composer) this.composer.setPixelRatio(Math.min(q.pixelRatio, 2));
+            this.renderer.shadowMap.enabled = q.shadow;
             this.lodDistance = q.lod;
             
             if (this.sunLight && this.sunLight.shadow.mapSize.width !== q.shadowSize) {
@@ -1880,9 +1854,6 @@
             if (this.dofPass) this.dofPass.enabled = (level === 'ultra' || level === 'quantum');
             
             console.log(`🎯 Calidad: ${level}`);
-            } catch (e) {
-                console.warn('⚠️ setQuality falló:', e.message || e);
-            }
         }
         
         setLODDistance(dist) {
