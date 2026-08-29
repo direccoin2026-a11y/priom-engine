@@ -1,9 +1,9 @@
 /**
- * 🚀 PRIOM V0.4 - PRIOM ENGINE (VERSIÓN FINAL)
+ * 🚀 PRIOM V0.4 - PRIOM ENGINE (CORREGIDO)
  * "El motor que une todo en perfecta armonía"
  * 
  * 📁 Ubicación: js/engine/PriomEngine.js
- * 📦 Versión: 0.5.0
+ * 📦 Versión: 0.5.2
  */
 
 (function() {
@@ -24,12 +24,12 @@
                 ...config,
                 autoStart: config.autoStart !== undefined ? config.autoStart : true,
                 qualityLevel: config.qualityLevel || 'ultra',
-                worldSize: config.worldSize || 500,
-                terrainHeight: config.terrainHeight || 40,
-                treeDensity: config.treeDensity || 0.35,
-                animalCount: config.animalCount || 60,
-                lodDistance: config.lodDistance || 300,
-                maxEntities: config.maxEntities || 120000
+                worldSize: config.worldSize || 400,
+                terrainHeight: config.terrainHeight || 30,
+                treeDensity: config.treeDensity || 0.4,
+                animalCount: config.animalCount || 50,
+                lodDistance: config.lodDistance || 250,
+                maxEntities: config.maxEntities || 80000
             };
             
             // ============================================================
@@ -55,12 +55,34 @@
             // ============================================================
             //  🧩 MÓDULOS
             //  ============================================================
-            this.modules = {};
+            this.modules = {
+                ecs: null,
+                renderer: null,
+                entityFactory: null,
+                terrain: null,
+                world: null,
+                skySystem: null,
+                waterSystem: null,
+                weatherFX: null,
+                optimizerAI: null,
+                metaAI: null,
+                worldAI: null,
+                minimap: null,
+                vegetationPlacer: null,
+                alpineDecor: null,
+                forestDecor: null,
+                particleSystem: null,
+                animationSystem: null,
+                geometryLab: null,
+                profiler: null,
+                helpers: null
+            };
             
             // ============================================================
             //  📡 EVENTOS
             //  ============================================================
             this._events = new Map();
+            this._eventHistory = [];
             
             // ============================================================
             //  🎯 LOOP
@@ -70,7 +92,9 @@
                 lastTime: 0,
                 accumulator: 0,
                 fixedAccumulator: 0,
-                fixedDeltaTime: 1 / 60
+                fixedDeltaTime: 1 / 60,
+                updateCount: 0,
+                renderCount: 0
             };
             
             this._fpsSamples = [];
@@ -84,11 +108,11 @@
         }
         
         // ============================================================
-        //  🚀 INICIALIZACIÓN SECUENCIAL
+        //  🚀 INICIALIZACIÓN
         //  ============================================================
         _init() {
             try {
-                console.log('📦 Inicializando módulos secuencialmente...');
+                console.log('📦 Inicializando módulos...');
                 
                 // 1. ECS
                 this._initECS();
@@ -117,11 +141,11 @@
                 // 9. IA
                 this._initAI();
                 
-                // 10. Minimap
-                this._initMinimap();
-                
-                // 11. Decoraciones
+                // 10. Decoraciones
                 this._initDecorations();
+                
+                // 11. Minimap
+                this._initMinimap();
                 
                 // 12. Utils
                 this._initUtils();
@@ -135,16 +159,17 @@
                 console.log(`📊 Módulos cargados: ${this._countModules()}`);
                 
                 // Generar mundo
-                setTimeout(() => this._generateWorld(), 100);
+                setTimeout(() => this._generateWorld(), 200);
                 
                 if (this.config.autoStart) {
-                    setTimeout(() => this.start(), 400);
+                    setTimeout(() => this.start(), 500);
                 }
                 
             } catch (error) {
                 this.state.status = 'error';
                 this.state.error = error;
                 console.error('❌ Error en _init:', error);
+                console.error('Stack:', error.stack);
             }
         }
         
@@ -153,119 +178,86 @@
         //  ============================================================
         
         _initECS() {
-            try {
-                if (typeof SoaManager !== 'undefined') {
-                    this.modules.ecs = new SoaManager(this.config.maxEntities);
-                    console.log('✅ ECS (SoaManager) inicializado');
-                } else {
-                    throw new Error('SoaManager no disponible');
-                }
-            } catch (e) {
-                console.error('❌ Error en _initECS:', e);
-                throw e;
+            if (typeof SoaManager !== 'undefined') {
+                this.modules.ecs = new SoaManager(this.config.maxEntities);
+                console.log('✅ ECS (SoaManager) inicializado');
+            } else {
+                throw new Error('SoaManager no disponible');
             }
         }
         
         _initRenderer() {
-            try {
-                const canvas = document.getElementById('gameCanvas');
-                if (!canvas) {
-                    throw new Error('Canvas no encontrado');
-                }
-                
-                if (typeof MaxRenderer !== 'undefined') {
-                    this.modules.renderer = new MaxRenderer(canvas);
-                    this.modules.renderer.setQuality(this.config.qualityLevel);
-                    console.log('✅ Renderer (MaxRenderer) inicializado');
-                    
-                    // Geometry Lab
-                    if (typeof ComplexGeometryLab !== 'undefined') {
-                        this.modules.geometryLab = new ComplexGeometryLab(
-                            this.modules.renderer.scene
-                        );
-                        console.log('✅ Geometry Lab inicializado');
-                    }
-                } else {
-                    throw new Error('MaxRenderer no disponible');
-                }
-            } catch (e) {
-                console.error('❌ Error en _initRenderer:', e);
-                throw e;
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) {
+                throw new Error('Canvas no encontrado');
+            }
+            
+            if (typeof MaxRenderer !== 'undefined') {
+                this.modules.renderer = new MaxRenderer(canvas);
+                this.modules.renderer.setQuality(this.config.qualityLevel);
+                console.log('✅ Renderer (MaxRenderer) inicializado');
+            } else {
+                throw new Error('MaxRenderer no disponible');
             }
         }
         
         _initEntityFactory() {
-            try {
-                if (typeof EntityFactory !== 'undefined') {
-                    this.modules.entityFactory = new EntityFactory(
-                        this.modules.ecs,
-                        this.config
-                    );
-                    console.log('✅ EntityFactory inicializado');
-                } else {
-                    throw new Error('EntityFactory no disponible');
-                }
-            } catch (e) {
-                console.error('❌ Error en _initEntityFactory:', e);
-                throw e;
+            if (typeof EntityFactory !== 'undefined') {
+                this.modules.entityFactory = new EntityFactory(
+                    this.modules.ecs,
+                    this.config
+                );
+                console.log('✅ EntityFactory inicializado');
+            } else {
+                throw new Error('EntityFactory no disponible');
             }
         }
         
         _initTerrain() {
-            try {
-                if (typeof TerrainGenerator !== 'undefined') {
-                    const terrainConfig = {
-                        worldSize: this.config.worldSize,
-                        terrainHeight: this.config.terrainHeight,
-                        resolution: 256,
-                        octaves: 6,
-                        persistence: 0.5,
-                        lacunarity: 2.0,
-                        scale: 0.015,
-                        waterLevel: 0.35,
-                        erosionEnabled: true,
-                        erosionIterations: 10,
-                        thermalErosion: true,
-                        biomesEnabled: true,
-                        riversEnabled: true,
-                        riverCount: 6,
-                        vegetationEnabled: true
-                    };
-                    this.modules.terrain = new TerrainGenerator(terrainConfig);
-                    console.log('✅ TerrainGenerator inicializado');
-                } else {
-                    throw new Error('TerrainGenerator no disponible');
-                }
-            } catch (e) {
-                console.error('❌ Error en _initTerrain:', e);
-                throw e;
+            if (typeof TerrainGenerator !== 'undefined') {
+                const terrainConfig = {
+                    worldSize: this.config.worldSize,
+                    terrainHeight: this.config.terrainHeight,
+                    resolution: 256,
+                    octaves: 6,
+                    persistence: 0.5,
+                    lacunarity: 2.0,
+                    scale: 0.015,
+                    waterLevel: 0.35,
+                    erosionEnabled: true,
+                    erosionIterations: 8,
+                    thermalErosion: true,
+                    biomesEnabled: true,
+                    riversEnabled: true,
+                    riverCount: 4,
+                    vegetationEnabled: true
+                };
+                this.modules.terrain = new TerrainGenerator(terrainConfig);
+                console.log('✅ TerrainGenerator inicializado');
+            } else {
+                throw new Error('TerrainGenerator no disponible');
             }
         }
         
         _initGameWorld() {
-            try {
-                if (typeof GameWorld !== 'undefined') {
-                    this.modules.world = new GameWorld(
-                        this.modules.ecs,
-                        this.modules.renderer,
-                        null
-                    );
-                    console.log('✅ GameWorld inicializado');
-                } else {
-                    throw new Error('GameWorld no disponible');
-                }
-            } catch (e) {
-                console.error('❌ Error en _initGameWorld:', e);
-                throw e;
+            if (typeof GameWorld !== 'undefined') {
+                this.modules.world = new GameWorld(
+                    this.modules.ecs,
+                    this.modules.renderer,
+                    null
+                );
+                console.log('✅ GameWorld inicializado');
+            } else {
+                throw new Error('GameWorld no disponible');
             }
         }
         
         _initSkySystem() {
-            try {
-                const scene = this.modules.renderer?.scene;
-                if (!scene) return;
-                
-                if (typeof SkySystem !== 'undefined') {
+            const scene = this.modules.renderer?.scene;
+            if (!scene) return;
+            
+            if (typeof SkySystem !== 'undefined') {
+                try {
                     this.modules.skySystem = new SkySystem(scene, {
                         cloudDensity: 0.4,
                         cloudSpeed: 0.003,
@@ -278,18 +270,18 @@
                     if (this.modules.renderer) {
                         this.modules.renderer.skySystem = this.modules.skySystem;
                     }
+                } catch (e) {
+                    console.warn('⚠️ Error en SkySystem:', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ Error en _initSkySystem:', e);
             }
         }
         
         _initWaterSystem() {
-            try {
-                const scene = this.modules.renderer?.scene;
-                if (!scene) return;
-                
-                if (typeof WaterSystem !== 'undefined') {
+            const scene = this.modules.renderer?.scene;
+            if (!scene) return;
+            
+            if (typeof WaterSystem !== 'undefined') {
+                try {
                     this.modules.waterSystem = new WaterSystem(scene, {
                         waveHeight: 0.3,
                         waveSpeed: 0.8,
@@ -297,18 +289,18 @@
                         quality: this.config.qualityLevel
                     });
                     console.log('✅ WaterSystem inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en WaterSystem:', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ Error en _initWaterSystem:', e);
             }
         }
         
         _initWeatherFX() {
-            try {
-                const scene = this.modules.renderer?.scene;
-                if (!scene) return;
-                
-                if (typeof WeatherFX !== 'undefined') {
+            const scene = this.modules.renderer?.scene;
+            if (!scene) return;
+            
+            if (typeof WeatherFX !== 'undefined') {
+                try {
                     this.modules.weatherFX = new WeatherFX(scene, {
                         mistDensity: 0.1,
                         mistCount: 4,
@@ -322,9 +314,9 @@
                     if (this.modules.renderer) {
                         this.modules.renderer.weatherFX = this.modules.weatherFX;
                     }
+                } catch (e) {
+                    console.warn('⚠️ Error en WeatherFX:', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ Error en _initWeatherFX:', e);
             }
         }
         
@@ -354,14 +346,96 @@
                     console.log('✅ WorldAI inicializado');
                 }
             } catch (e) {
-                console.warn('⚠️ Error en _initAI:', e);
+                console.warn('⚠️ Error en IA:', e);
+            }
+        }
+        
+        _initDecorations() {
+            const scene = this.modules.renderer?.scene;
+            const terrain = this.modules.terrain;
+            if (!scene || !terrain) return;
+            
+            // Vegetation Placer
+            if (typeof VegetationPlacer !== 'undefined') {
+                try {
+                    this.modules.vegetationPlacer = new VegetationPlacer(scene, terrain, {
+                        worldSize: this.config.worldSize,
+                        flowerCount: 400,
+                        useGrowth: true,
+                        useWind: true
+                    });
+                    console.log('✅ VegetationPlacer inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en VegetationPlacer:', e);
+                }
+            }
+            
+            // Alpine Decor
+            if (typeof AlpineDecor !== 'undefined') {
+                try {
+                    this.modules.alpineDecor = new AlpineDecor(scene, terrain, {
+                        worldSize: this.config.worldSize,
+                        frostRockCount: 150,
+                        iceCrystalCount: 80,
+                        snowPatchCount: 60
+                    });
+                    console.log('✅ AlpineDecor inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en AlpineDecor:', e);
+                }
+            }
+            
+            // Forest Decor
+            if (typeof ForestDecor !== 'undefined') {
+                try {
+                    this.modules.forestDecor = new ForestDecor(scene, terrain, {
+                        worldSize: this.config.worldSize,
+                        bushCount: 500,
+                        fernCount: 200,
+                        flowerCount: 100
+                    });
+                    console.log('✅ ForestDecor inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en ForestDecor:', e);
+                }
+            }
+            
+            // Particle System
+            if (typeof ParticleSystem !== 'undefined') {
+                try {
+                    this.modules.particleSystem = new ParticleSystem(200, {
+                        spread: 100,
+                        height: 30,
+                        fallSpeed: 0.2,
+                        drift: 0.1,
+                        size: 0.15,
+                        color: 0x88aaff,
+                        opacity: 0.3
+                    });
+                    console.log('✅ ParticleSystem inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en ParticleSystem:', e);
+                }
+            }
+            
+            // Animation System
+            if (typeof AnimationSystem !== 'undefined') {
+                try {
+                    this.modules.animationSystem = new AnimationSystem({
+                        windStrength: 0.6,
+                        quality: this.config.qualityLevel
+                    });
+                    console.log('✅ AnimationSystem inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en AnimationSystem:', e);
+                }
             }
         }
         
         _initMinimap() {
-            try {
-                const canvas = document.getElementById('minimap-canvas');
-                if (typeof Minimap !== 'undefined' && canvas) {
+            const canvas = document.getElementById('minimap-canvas');
+            if (typeof Minimap !== 'undefined' && canvas) {
+                try {
                     this.modules.minimap = new Minimap(this, canvas, {
                         worldRange: 180,
                         enableFogOfWar: true,
@@ -374,93 +448,9 @@
                         enablePan: true
                     });
                     console.log('✅ Minimap inicializado');
+                } catch (e) {
+                    console.warn('⚠️ Error en Minimap:', e);
                 }
-            } catch (e) {
-                console.warn('⚠️ Error en _initMinimap:', e);
-            }
-        }
-        
-        _initDecorations() {
-            try {
-                const scene = this.modules.renderer?.scene;
-                const terrain = this.modules.terrain;
-                if (!scene || !terrain) return;
-                
-                // Vegetation Placer
-                if (typeof VegetationPlacer !== 'undefined') {
-                    this.modules.vegetationPlacer = new VegetationPlacer(scene, terrain, {
-                        worldSize: this.config.worldSize,
-                        flowerCount: 400,
-                        useGrowth: true,
-                        useWind: true
-                    });
-                    console.log('✅ VegetationPlacer inicializado');
-                    
-                    setTimeout(() => {
-                        if (this.modules.vegetationPlacer) {
-                            this.modules.vegetationPlacer.plantFlowers(400);
-                        }
-                    }, 300);
-                }
-                
-                // Alpine Decor
-                if (typeof AlpineDecor !== 'undefined') {
-                    this.modules.alpineDecor = new AlpineDecor(scene, terrain, {
-                        worldSize: this.config.worldSize,
-                        frostRockCount: 150,
-                        iceCrystalCount: 80,
-                        snowPatchCount: 60
-                    });
-                    console.log('✅ AlpineDecor inicializado');
-                    
-                    setTimeout(() => {
-                        if (this.modules.alpineDecor) {
-                            this.modules.alpineDecor.plant(150);
-                        }
-                    }, 400);
-                }
-                
-                // Forest Decor
-                if (typeof ForestDecor !== 'undefined') {
-                    this.modules.forestDecor = new ForestDecor(scene, terrain, {
-                        worldSize: this.config.worldSize,
-                        bushCount: 500,
-                        fernCount: 200,
-                        flowerCount: 100
-                    });
-                    console.log('✅ ForestDecor inicializado');
-                    
-                    setTimeout(() => {
-                        if (this.modules.forestDecor) {
-                            this.modules.forestDecor.plant(500);
-                        }
-                    }, 500);
-                }
-                
-                // Particle System
-                if (typeof ParticleSystem !== 'undefined') {
-                    this.modules.particleSystem = new ParticleSystem(200, {
-                        spread: 100,
-                        height: 30,
-                        fallSpeed: 0.2,
-                        drift: 0.1,
-                        size: 0.15,
-                        color: 0x88aaff,
-                        opacity: 0.3
-                    });
-                    console.log('✅ ParticleSystem inicializado');
-                }
-                
-                // Animation System
-                if (typeof AnimationSystem !== 'undefined') {
-                    this.modules.animationSystem = new AnimationSystem({
-                        windStrength: 0.6,
-                        quality: this.config.qualityLevel
-                    });
-                    console.log('✅ AnimationSystem inicializado');
-                }
-            } catch (e) {
-                console.warn('⚠️ Error en _initDecorations:', e);
             }
         }
         
@@ -476,7 +466,7 @@
                     console.log('✅ Helpers inicializado');
                 }
             } catch (e) {
-                console.warn('⚠️ Error en _initUtils:', e);
+                console.warn('⚠️ Error en Utils:', e);
             }
         }
         
@@ -529,96 +519,148 @@
         }
         
         // ============================================================
-        //  🌍 GENERAR MUNDO
+        //  🌍 GENERAR MUNDO - CORREGIDO
         //  ============================================================
         _generateWorld() {
             console.log('🌍 Generando mundo...');
             
             try {
+                const terrain = this.modules.terrain;
+                const world = this.modules.world;
+                const renderer = this.modules.renderer;
+                const ecs = this.modules.ecs;
+                const factory = this.modules.entityFactory;
+                
+                if (!terrain) {
+                    throw new Error('TerrainGenerator no disponible');
+                }
+                if (!world) {
+                    throw new Error('GameWorld no disponible');
+                }
+                if (!renderer) {
+                    throw new Error('Renderer no disponible');
+                }
+                
+                // === PASO 1: GENERAR TERRENO ===
                 this.state.generationStage = 'Generando terreno...';
                 this.state.generationProgress = 10;
+                console.log('🏔️ Generando terreno...');
                 
-                // Generar terreno
-                const terrain = this.modules.terrain;
-                if (terrain && terrain.generateHeightMap) {
-                    terrain.generateHeightMap(this.config.worldSize);
-                    console.log('✅ Terreno generado');
-                    
-                    // Crear malla de terreno
-                    const renderer = this.modules.renderer;
-                    if (renderer && renderer.scene && terrain.generateTerrainMesh) {
-                        terrain.generateTerrainMesh(renderer.scene);
-                        console.log('✅ Malla de terreno creada');
-                    }
+                // Generar mapa de altura
+                terrain.generateHeightMap(this.config.worldSize);
+                console.log('✅ Mapa de altura generado');
+                
+                // Generar malla de terreno
+                if (terrain.heightMap) {
+                    terrain.generateTerrainMesh(renderer.scene, terrain.heightMap);
+                    console.log('✅ Malla de terreno generada');
+                } else {
+                    console.warn('⚠️ No hay mapa de altura para generar malla');
                 }
                 
-                this.state.generationStage = 'Generando ecosistema...';
+                // === PASO 2: INICIALIZAR MUNDO ===
+                this.state.generationStage = 'Inicializando ecosistema...';
                 this.state.generationProgress = 30;
                 
-                // Generar GameWorld
-                const world = this.modules.world;
-                if (world && world._generateWorld) {
+                // Forzar generación del mundo en GameWorld
+                if (world._generateWorld) {
+                    // Reemplazar generadores con los que tenemos
+                    world.generators.terrain = terrain;
+                    world.generators.entities = factory;
+                    
+                    // Forzar generación
                     world._generateWorld();
                     console.log('✅ GameWorld generado');
+                } else {
+                    console.warn('⚠️ GameWorld no tiene _generateWorld');
                 }
                 
+                // === PASO 3: PLANTAR VEGETACIÓN ===
                 this.state.generationStage = 'Plantando vegetación...';
                 this.state.generationProgress = 50;
                 
-                // Vegetation Placer
                 if (this.modules.vegetationPlacer) {
-                    this.modules.vegetationPlacer.plantFlowers(400);
+                    try {
+                        this.modules.vegetationPlacer.plantFlowers(400);
+                        console.log('✅ Flores plantadas');
+                    } catch (e) {
+                        console.warn('⚠️ Error plantando flores:', e);
+                    }
                 }
                 
-                // Alpine Decor
                 if (this.modules.alpineDecor) {
-                    this.modules.alpineDecor.plant(150);
+                    try {
+                        this.modules.alpineDecor.plant(150);
+                        console.log('✅ Decoración alpina plantada');
+                    } catch (e) {
+                        console.warn('⚠️ Error en AlpineDecor:', e);
+                    }
                 }
                 
-                // Forest Decor
                 if (this.modules.forestDecor) {
-                    this.modules.forestDecor.plant(500);
+                    try {
+                        this.modules.forestDecor.plant(500);
+                        console.log('✅ Decoración forestal plantada');
+                    } catch (e) {
+                        console.warn('⚠️ Error en ForestDecor:', e);
+                    }
                 }
                 
+                // === PASO 4: CREAR AGUA ===
                 this.state.generationStage = 'Creando agua...';
                 this.state.generationProgress = 70;
                 
-                // Crear agua
                 if (this.modules.waterSystem) {
-                    const waterSystem = this.modules.waterSystem;
-                    for (let i = 0; i < 3; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const dist = 30 + Math.random() * 150;
-                        const x = Math.cos(angle) * dist;
-                        const z = Math.sin(angle) * dist;
-                        const size = 30 + Math.random() * 40;
-                        waterSystem.createWater(size, size, x, 0.5, z);
+                    try {
+                        const waterSystem = this.modules.waterSystem;
+                        for (let i = 0; i < 3; i++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const dist = 30 + Math.random() * 150;
+                            const x = Math.cos(angle) * dist;
+                            const z = Math.sin(angle) * dist;
+                            const size = 30 + Math.random() * 40;
+                            waterSystem.createWater(size, size, x, 0.5, z);
+                        }
+                        console.log('✅ Agua creada');
+                    } catch (e) {
+                        console.warn('⚠️ Error creando agua:', e);
                     }
-                    console.log('✅ Agua creada');
                 }
                 
+                // === PASO 5: CONFIGURAR CLIMA ===
                 this.state.generationStage = 'Configurando clima...';
                 this.state.generationProgress = 85;
                 
-                // Configurar clima
                 if (this.modules.weatherFX) {
-                    this.modules.weatherFX.setWeather('clear');
-                }
-                
-                this.state.generationStage = 'Inicializando día/noche...';
-                this.state.generationProgress = 95;
-                
-                // Configurar día/noche
-                if (this.modules.renderer) {
-                    this.modules.renderer.setTimeOfDay(0.5);
-                    if (this.modules.renderer._updateDayNight) {
-                        this.modules.renderer._updateDayNight();
+                    try {
+                        this.modules.weatherFX.setWeather('clear');
+                        console.log('✅ Clima configurado');
+                    } catch (e) {
+                        console.warn('⚠️ Error configurando clima:', e);
                     }
                 }
                 
+                // === PASO 6: DÍA/NOCHE ===
+                this.state.generationStage = 'Inicializando día/noche...';
+                this.state.generationProgress = 95;
+                
+                try {
+                    renderer.setTimeOfDay(0.5);
+                    if (renderer._updateDayNight) {
+                        renderer._updateDayNight();
+                    }
+                    console.log('✅ Ciclo día/noche configurado');
+                } catch (e) {
+                    console.warn('⚠️ Error configurando día/noche:', e);
+                }
+                
+                // === PASO 7: FINALIZAR ===
                 this.state.generationProgress = 100;
                 this.state.generationStage = 'Mundo listo!';
                 this.state.isReady = true;
+                
+                // Actualizar estadísticas
+                this._updateRealTimeStats();
                 
                 // Actualizar minimap
                 setTimeout(() => {
@@ -628,12 +670,22 @@
                     }
                 }, 500);
                 
-                this.emit('world_generated', { progress: 100, stage: 'Mundo listo!' });
+                this.emit('world_generated', { 
+                    progress: 100, 
+                    stage: 'Mundo listo!',
+                    trees: this.state.treesCount,
+                    animals: this.state.animalsCount
+                });
+                
                 console.log('🌍 Mundo generado correctamente');
+                console.log(`🌳 Árboles: ${this.state.treesCount}`);
+                console.log(`🦌 Animales: ${this.state.animalsCount}`);
                 
             } catch (e) {
                 console.error('❌ Error generando mundo:', e);
+                console.error('Stack:', e.stack);
                 this.state.error = e;
+                this.state.isReady = false;
             }
         }
         
@@ -659,6 +711,7 @@
             this._loop.fixedAccumulator = 0;
             this._loop.fixedDeltaTime = 1 / 60;
             
+            // Si el mundo no está listo, generarlo
             if (!this.state.isReady) {
                 this._generateWorld();
             }
@@ -772,7 +825,9 @@
                     this.modules.ecs.updatePhysics(
                         delta, -9.8, 0.6, this.state.frameCount, null, getGroundHeight
                     );
-                } catch (e) {}
+                } catch (e) {
+                    // Silencioso
+                }
             }
             
             // Game World
@@ -805,13 +860,6 @@
                     if (action && !this.manualQuality) {
                         this.modules.renderer?.setQuality(action.quality);
                     }
-                } catch (e) {}
-            }
-            
-            // Geometry Lab
-            if (this.modules.geometryLab) {
-                try {
-                    this.modules.geometryLab.update(delta);
                 } catch (e) {}
             }
             
@@ -874,7 +922,9 @@
             try {
                 this.modules.renderer.render(this.modules.ecs);
                 this._loop.renderCount++;
-            } catch (e) {}
+            } catch (e) {
+                // Silencioso
+            }
         }
         
         _postRender() {
@@ -1090,9 +1140,9 @@
     //  ============================================================
     window.PriomEngine = PriomEngine;
     
-    console.log('🚀 PriomEngine Cuántico cargado (v0.5.0)');
+    console.log('🚀 PriomEngine Cuántico cargado (v0.5.2 - CORREGIDO)');
     console.log('✅ Inicialización secuencial de módulos');
-    console.log('🌍 Generación de mundo automática');
+    console.log('🌍 Generación de mundo funcional');
     console.log('📊 Estadísticas en tiempo real');
     
     if (typeof module !== 'undefined' && module.exports) {
