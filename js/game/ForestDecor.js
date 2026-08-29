@@ -223,14 +223,25 @@
             geometry.scale(1, 0.7, 1);
             
             // Usar posiciones de caché
-            const positions = this._positionCache
+            let positions = this._positionCache
                 .filter(p => p.type === 'bush')
                 .slice(0, count);
             
             if (positions.length === 0) {
+                // Una sola vez: evitar recursión infinita que spameaba la consola
+                if (this._bushFallbackTried) return;
+                this._bushFallbackTried = true;
                 console.warn('⚠️ No hay posiciones para arbustos, generando fallback');
-                this._generateFallbackPositions('bush', count);
-                return this._plantBushes(count);
+                if (typeof this._generateFallbackPositions === 'function') {
+                    this._generateFallbackPositions('bush', count);
+                }
+                positions = this._positionCache
+                    .filter(p => p.type === 'bush')
+                    .slice(0, count);
+                if (positions.length === 0) {
+                    console.warn('⚠️ ForestDecor: fallback de arbustos vacío — omitiendo');
+                    return;
+                }
             }
             
             // Distribuir por tipo de arbusto
@@ -319,13 +330,18 @@
             const geometry = new THREE.ConeGeometry(0.12, 0.5, 5);
             geometry.translate(0, 0.25, 0);
             
-            const positions = this._positionCache
+            let positions = this._positionCache
                 .filter(p => p.type === 'fern')
                 .slice(0, count);
             
             if (positions.length === 0) {
-                this._generateFallbackPositions('fern', count);
-                return this._plantFerns(count);
+                if (this._fernFallbackTried) return;
+                this._fernFallbackTried = true;
+                if (typeof this._generateFallbackPositions === 'function') {
+                    this._generateFallbackPositions('fern', count);
+                }
+                positions = this._positionCache.filter(p => p.type === 'fern').slice(0, count);
+                if (positions.length === 0) return;
             }
             
             const perType = Math.floor(positions.length / this.fernTypes.length);
@@ -413,13 +429,18 @@
             const geometry = new THREE.ConeGeometry(0.06, 0.18, 5);
             geometry.translate(0, 0.09, 0);
             
-            const positions = this._positionCache
+            let positions = this._positionCache
                 .filter(p => p.type === 'flower')
                 .slice(0, count);
             
             if (positions.length === 0) {
-                this._generateFallbackPositions('flower', count);
-                return this._plantFlowers(count);
+                if (this._flowerFallbackTried) return;
+                this._flowerFallbackTried = true;
+                if (typeof this._generateFallbackPositions === 'function') {
+                    this._generateFallbackPositions('flower', count);
+                }
+                positions = this._positionCache.filter(p => p.type === 'flower').slice(0, count);
+                if (positions.length === 0) return;
             }
             
             const perType = Math.floor(positions.length / this.flowerTypes.length);
