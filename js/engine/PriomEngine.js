@@ -19,8 +19,9 @@
             // ============================================================
             //  📊 CONFIGURACIÓN
             //  ============================================================
+            const globalConfig = (typeof CONFIG !== 'undefined' && CONFIG) ? CONFIG : {};
             this.config = {
-                ...CONFIG,
+                ...globalConfig,
                 ...config,
                 autoStart: config.autoStart !== undefined ? config.autoStart : true,
                 qualityLevel: config.qualityLevel || 'ultra',
