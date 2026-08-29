@@ -257,6 +257,7 @@
         <button id="btn-spawn">➕ Fauna</button>
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">❄️ Clima</button>
+        <button id="btn-debug-fx">🐛 Sin FX</button>
         <button id="btn-golden">🌅 Golden</button>
         <button id="btn-blue">🌌 Blue Hour</button>
         <div class="time-slider-container">
@@ -1196,6 +1197,20 @@
                 if (fx && fx.setWeather) fx.setWeather(w);
                 document.getElementById('btn-weather').textContent = weatherLabels[w];
                 showNotification(`🌤️ ${weatherLabels[w]}`, 'info');
+            });
+
+            // Debug: desactivar/activar todo el post-procesado (bloom/SSAO/godrays/etc)
+            // Úsalo si la pantalla se ve negra: si al pulsarlo aparece la escena,
+            // el problema está en el composer de post-procesado; si sigue negra,
+            // el problema está en cámara/iluminación/geometría.
+            document.getElementById('btn-debug-fx')?.addEventListener('click', () => {
+                const r = engine.getModule && engine.getModule('renderer');
+                if (!r) return;
+                r.bloomAvailable = !r.bloomAvailable;
+                const btn = document.getElementById('btn-debug-fx');
+                if (btn) btn.classList.toggle('active', !r.bloomAvailable);
+                showNotification(r.bloomAvailable ? '✨ Post-procesado ON' : '🐛 Post-procesado OFF (render directo)', 'info');
+                console.log('Post-procesado:', r.bloomAvailable ? 'ON' : 'OFF (render directo, sin composer)');
             });
 
             // Reset
