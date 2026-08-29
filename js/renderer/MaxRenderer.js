@@ -207,15 +207,18 @@
                 this.camera.position.set(80, 50, 80);
                 this.camera.lookAt(0, 0, 0);
                 
-                // ===== CONFIGURAR RECURSOS =====
-                this._setupLighting();
-                this._setupGeometries();
-                this._setupMaterials();
-                this._setupSkybox();
-                this._setupGrassField();
-                this._setupAmbientDust();
-                this._setupWeather();
-                this._setupPostProcessing();
+                // ===== CONFIGURAR RECURSOS (protegidos para no tumbar el renderer) =====
+                const safeSetup = (name, fn) => {
+                    try { fn(); } catch (e) { console.warn(`⚠️ ${name} falló:`, e.message || e); }
+                };
+                safeSetup('Lighting', () => this._setupLighting());
+                safeSetup('Geometries', () => this._setupGeometries());
+                safeSetup('Materials', () => this._setupMaterials());
+                safeSetup('Skybox', () => this._setupSkybox());
+                safeSetup('GrassField', () => this._setupGrassField());
+                safeSetup('AmbientDust', () => this._setupAmbientDust());
+                safeSetup('Weather', () => this._setupWeather());
+                safeSetup('PostProcessing', () => this._setupPostProcessing());
                 
                 // ===== MÓDULOS ADITIVOS =====
                 this._initAdditiveModules();
@@ -223,12 +226,17 @@
                 // ===== EVENTOS =====
                 window.addEventListener('resize', () => this._onResize());
                 
+                // Asegurar fondo aunque falle algo
+                if (!this.scene.background) {
+                    this.scene.background = new THREE.Color(0x0a0a1f);
+                }
+                
                 console.log('✅ Renderizador inicializado correctamente');
                 
             } catch (e) {
                 console.error('❌ Error inicializando renderizador:', e);
                 console.error('Stack:', e.stack);
-                throw e;
+                // No re-lanzar: permitir que el motor continúe con lo que se pudo crear
             }
         }
         
@@ -869,32 +877,39 @@
             const dummy = new THREE.Object3D();
             
             for (const tone of tones) {
-                const mat = new THREE.MeshStandardMaterial({
-                    color: tone,
-                    roughness: 0.9,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                
-                const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
-                mesh.castShadow = false;
-                mesh.receiveShadow = false;
-                
-                for (let i = 0; i < tone.count; i++) {
-                    const x = (Math.random() - 0.5) * 150;
-                    const z = (Math.random() - 0.5) * 150;
-                    dummy.position.set(x, 0.35, z);
-                    dummy.rotation.y = Math.random() * Math.PI;
-                    const scale = 0.55 + Math.random() * 0.9;
-                    dummy.scale.set(scale, scale * (0.7 + Math.random() * 0.6), scale);
-                    dummy.updateMatrix();
-                    mesh.setMatrixAt(i, dummy.matrix);
+                try {
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: tone.color,  // FIX CRÍTICO: era "tone" (objeto) → debe ser tone.color (número hex)
+                        roughness: 0.9,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.85
+                    });
+                    
+                    const mesh = new THREE.InstancedMesh(bladeGeo, mat, tone.count);
+                    mesh.castShadow = false;
+                    mesh.receiveShadow = false;
+                    mesh.frustumCulled = false;
+                    
+                    for (let i = 0; i < tone.count; i++) {
+                        const x = (Math.random() - 0.5) * 150;
+                        const z = (Math.random() - 0.5) * 150;
+                        dummy.position.set(x, 0.35, z);
+                        dummy.rotation.y = Math.random() * Math.PI;
+                        const scale = 0.55 + Math.random() * 0.9;
+                        dummy.scale.set(scale, scale * (0.7 + Math.random() * 0.6), scale);
+                        dummy.updateMatrix();
+                        mesh.setMatrixAt(i, dummy.matrix);
+                    }
+                    mesh.instanceMatrix.needsUpdate = true;
+                    
+                    this.scene.add(mesh);
+                    this.grassMeshes.push(mesh);
+                } catch (e) {
+                    console.warn('⚠️ Error creando capa de pasto:', e);
                 }
-                
-                this.scene.add(mesh);
-                this.grassMeshes.push(mesh);
             }
+            console.log(`🌾 Campo de pasto creado: ${this.grassMeshes.length} capas`);
         }
         
         // ============================================================
@@ -1143,71 +1158,94 @@
         render(soa, cameraPos = null, metaOptimizations = null) {
             const _renderStart = performance.now();
             
-            // ===== 1. ACTUALIZAR CÁMARA =====
-            this._updateCamera(cameraPos);
+            // Guard global CONFIG (puede no existir si el motor arrancó mal)
+            const cfg = (typeof CONFIG !== 'undefined' && CONFIG) ? CONFIG : {
+                waterEnabled: true, particlesEnabled: true, bloomEnabled: true
+            };
             
-            // ===== 2. APLICAR OPTIMIZACIONES META =====
-            if (metaOptimizations) {
-                this._applyMetaOptimizations(metaOptimizations);
-            }
-            
-            // ===== 3. ACTUALIZAR ILUMINACIÓN =====
-            this._updateDayNight();
-            
-            // ===== 4. OBTENER ENTIDADES VISIBLES =====
-            const camPos = this.camera.position;
-            const frustum = this._getFrustum();
-            const visible = soa.queryVisible(frustum, camPos.x, camPos.z, this.lodDistance * 3);
-            
-            // ===== 5. SEPARAR POR TIPO =====
-            const waterIds = [];
-            const particleIds = [];
-            const normalIds = [];
-            
-            for (const id of visible.visibleIds) {
-                if (soa.isWater[id]) waterIds.push(id);
-                else if (soa.isParticle[id]) particleIds.push(id);
-                else normalIds.push(id);
-            }
-            
-            // ===== 6. RENDERIZAR AGUA =====
-            if (CONFIG.waterEnabled && waterIds.length > 0) {
-                this._renderWater(waterIds, soa);
-            }
-            
-            // ===== 7. RENDERIZAR PARTÍCULAS =====
-            if (CONFIG.particlesEnabled && particleIds.length > 0) {
-                const maxParticles = Math.floor(particleIds.length * (this.particleDensity || 1.0));
-                const renderParticles = particleIds.slice(0, maxParticles);
-                this._renderParticles(renderParticles, soa);
-            }
-            
-            // ===== 8. RENDERIZAR ENTIDADES NORMALES =====
-            this._renderEntities(normalIds, soa, camPos);
-            
-            // ===== 9. RENDERIZAR =====
-            if (this.bloomAvailable && this.composer && CONFIG.bloomEnabled) {
-                if (this.bloomPass) {
-                    this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
+            try {
+                // ===== 1. ACTUALIZAR CÁMARA =====
+                this._updateCamera(cameraPos);
+                
+                // ===== 2. APLICAR OPTIMIZACIONES META =====
+                if (metaOptimizations) {
+                    this._applyMetaOptimizations(metaOptimizations);
                 }
-                if (this.cinematicPass) {
-                    this.cinematicPass.uniforms.uTime.value = Date.now() * 0.001;
+                
+                // ===== 3. ACTUALIZAR ILUMINACIÓN =====
+                this._updateDayNight();
+                
+                // ===== 4. OBTENER ENTIDADES VISIBLES (protegido) =====
+                const camPos = this.camera.position;
+                let normalIds = [];
+                let waterIds = [];
+                let particleIds = [];
+                
+                if (soa && typeof soa.queryVisible === 'function') {
+                    try {
+                        const frustum = this._getFrustum();
+                        const visible = soa.queryVisible(frustum, camPos.x, camPos.z, this.lodDistance * 3);
+                        const ids = (visible && visible.visibleIds) ? visible.visibleIds : [];
+                        
+                        for (const id of ids) {
+                            if (soa.isWater && soa.isWater[id]) waterIds.push(id);
+                            else if (soa.isParticle && soa.isParticle[id]) particleIds.push(id);
+                            else normalIds.push(id);
+                        }
+                    } catch (e) {
+                        // Si queryVisible falla, seguimos renderizando cielo/luces
+                    }
                 }
-                if (this.godRaysPass && window.GodRays && this.dayNight.sunPosition) {
-                    window.GodRays.update(this.godRaysPass, this.dayNight.sunPosition, this.camera);
+                
+                // ===== 5. RENDERIZAR AGUA =====
+                if (cfg.waterEnabled && waterIds.length > 0) {
+                    this._renderWater(waterIds, soa);
                 }
-                this.composer.render();
-            } else {
-                this.renderer.render(this.scene, this.camera);
+                
+                // ===== 6. RENDERIZAR PARTÍCULAS =====
+                if (cfg.particlesEnabled && particleIds.length > 0) {
+                    const maxParticles = Math.floor(particleIds.length * (this.particleDensity || 1.0));
+                    const renderParticles = particleIds.slice(0, maxParticles);
+                    this._renderParticles(renderParticles, soa);
+                }
+                
+                // ===== 7. RENDERIZAR ENTIDADES NORMALES =====
+                if (normalIds.length > 0) {
+                    this._renderEntities(normalIds, soa, camPos);
+                }
+                
+                // ===== 8. RENDERIZAR (siempre dibujar escena aunque no haya entidades) =====
+                if (this.bloomAvailable && this.composer && cfg.bloomEnabled) {
+                    if (this.bloomPass) {
+                        this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
+                    }
+                    if (this.cinematicPass && this.cinematicPass.uniforms) {
+                        this.cinematicPass.uniforms.uTime.value = Date.now() * 0.001;
+                    }
+                    if (this.godRaysPass && window.GodRays && this.dayNight.sunPosition) {
+                        try { window.GodRays.update(this.godRaysPass, this.dayNight.sunPosition, this.camera); } catch (_) {}
+                    }
+                    this.composer.render();
+                } else if (this.renderer) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            } catch (e) {
+                // Último recurso: render directo para no dejar pantalla negra
+                try {
+                    if (this.renderer && this.scene && this.camera) {
+                        this.renderer.render(this.scene, this.camera);
+                    }
+                } catch (_) {}
+                console.warn('⚠️ Error en render frame (recuperado):', e.message || e);
             }
             
-            // ===== 10. ACTUALIZAR ESTADÍSTICAS =====
+            // ===== 9. ACTUALIZAR ESTADÍSTICAS =====
             this._memCheckCounter = (this._memCheckCounter || 0) + 1;
             if (this._memCheckCounter % 120 === 0) {
                 this.vramUsage = this._estimateMemoryUsage();
             }
             
-            // ===== 11. DRS =====
+            // ===== 10. DRS =====
             if (this.drsController) {
                 this.drsController.addSample(performance.now() - _renderStart);
                 this._drsCheckCounter = (this._drsCheckCounter || 0) + 1;
@@ -1709,7 +1747,7 @@
                 particles: this.particleCount,
                 sceneObjects: this.scene.children.length,
                 meshes: this.instanceMeshes.size,
-                bloomEnabled: this.bloomAvailable && CONFIG.bloomEnabled,
+                bloomEnabled: this.bloomAvailable && (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.bloomEnabled),
                 shadowQuality: this.shadowQuality,
                 ssaoEnabled: this.ssaoEnabled
             };
@@ -1790,14 +1828,17 @@
                 this._lastQualityLevel = level;
             }
             
-            CONFIG.waterEnabled = q.water;
-            CONFIG.particlesEnabled = q.particles;
+            // Guard: CONFIG puede no existir todavía
+            if (typeof CONFIG !== 'undefined' && CONFIG) {
+                CONFIG.waterEnabled = q.water;
+                CONFIG.particlesEnabled = q.particles;
+                CONFIG.bloomEnabled = q.sky;
+            }
             
             if (this.ssaoPass) this.ssaoPass.enabled = q.ssao;
             if (this.godRaysPass) this.godRaysPass.enabled = q.godrays;
             
             if (this.bloomPass) this.bloomPass.enabled = q.sky;
-            CONFIG.bloomEnabled = q.sky;
             
             if (this.grassMeshes) {
                 for (const m of this.grassMeshes) m.visible = q.particles;
