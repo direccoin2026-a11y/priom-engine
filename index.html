@@ -258,6 +258,7 @@
         <button id="btn-reset">🔄 Reset</button>
         <button id="btn-weather">❄️ Clima</button>
         <button id="btn-debug-fx">🐛 Sin FX</button>
+        <button id="btn-diag">🔍 Diagnóstico</button>
         <button id="btn-golden">🌅 Golden</button>
         <button id="btn-blue">🌌 Blue Hour</button>
         <div class="time-slider-container">
@@ -269,6 +270,15 @@
     <div id="notifications"></div>
     <canvas id="minimap-canvas" width="130" height="130"></canvas>
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Aviso de pérdida de contexto WebGL (oculto salvo que ocurra) -->
+    <div id="context-lost-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#7a1020; color:#fff; padding:14px 16px; font:600 14px system-ui, sans-serif; text-align:center; box-shadow:0 2px 12px rgba(0,0,0,.5);">
+        💀 La GPU perdió el contexto WebGL (sobrecarga de memoria/shaders). Intentando recuperar automáticamente…
+    </div>
+
+    <!-- Panel de diagnóstico en pantalla (sin necesitar consola de desarrollador) -->
+    <div id="diag-panel" style="display:none; position:fixed; top:60px; left:12px; right:12px; z-index:9998; background:rgba(5,5,16,.95); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:14px; font:12px/1.5 ui-monospace, monospace; color:#c9d6ff; max-height:70vh; overflow:auto; white-space:pre-wrap;"></div>
+
 
     <!-- ============================================================
          THREE.JS + POSTPROCESSING (CDN)
@@ -634,7 +644,10 @@
                 }
 
                 // --- 6. Calidad y bloom ---
-                try { renderer.setQuality('ultra'); } catch(e) {}
+                // No forzar 'ultra' aquí: respetar la calidad ya elegida según
+                // el dispositivo (ver startEngine). Forzar ultra en cualquier
+                // móvil es lo que satura la GPU y provoca pérdida de contexto
+                // WebGL (pantalla negra sin errores de JS).
                 if (renderer.bloomPass) {
                     renderer.bloomPass.strength = 0.85;
                     renderer.bloomPass.radius = 0.6;
@@ -934,9 +947,19 @@
         function startEngine() {
             updateLoader(95, '🚀 Iniciando motor cuántico...', 'Creando PriomEngine', '⚡ Motor');
 
+            // Calidad inicial adaptada al dispositivo: forzar ULTRA en cualquier
+            // móvil satura VRAM/shaders y el navegador mata el contexto WebGL
+            // (pantalla negra sin ningún error de JS). Detectamos el hardware y
+            // arrancamos conservador; el usuario puede subir a Ultra/Quantum
+            // manualmente si su dispositivo lo aguanta.
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 900;
+            const lowMem = (navigator.deviceMemory && navigator.deviceMemory <= 4);
+            const initialQuality = isMobile ? (lowMem ? 'low' : 'medium') : 'high';
+            console.log(`📱 Dispositivo detectado: ${isMobile ? 'móvil' : 'escritorio'} | RAM aprox: ${navigator.deviceMemory || '?'}GB | Calidad inicial: ${initialQuality}`);
+
             try {
                 const engine = new PriomEngine({
-                    qualityLevel: 'ultra',
+                    qualityLevel: initialQuality,
                     autoStart: true,
                     enableThreading: false,
                     enablePredictiveAI: true,
@@ -1238,6 +1261,88 @@
             setTimeout(() => { if (notif.parentNode) notif.parentNode.removeChild(notif); }, 3800);
         }
         window.showNotification = showNotification;
+
+        // ===== Captura global de errores (para diagnóstico visible) =====
+        window.__priomErrors = [];
+        window.addEventListener('error', (e) => {
+            window.__priomErrors.push(`[JS ERROR] ${e.message} @ ${e.filename}:${e.lineno}`);
+            if (window.__priomErrors.length > 30) window.__priomErrors.shift();
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+            window.__priomErrors.push(`[PROMISE REJECTED] ${e.reason}`);
+            if (window.__priomErrors.length > 30) window.__priomErrors.shift();
+        });
+
+        // ===== Aviso de pérdida de contexto WebGL =====
+        window.__priomOnContextLost = () => {
+            const b = document.getElementById('context-lost-banner');
+            if (b) b.style.display = 'block';
+        };
+        window.__priomOnContextRestored = () => {
+            const b = document.getElementById('context-lost-banner');
+            if (b) b.style.display = 'none';
+            showNotification('♻️ Contexto WebGL restaurado', 'success');
+        };
+
+        // ===== Panel de diagnóstico en pantalla =====
+        document.getElementById('btn-diag')?.addEventListener('click', () => {
+            const panel = document.getElementById('diag-panel');
+            if (!panel) return;
+            if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+
+            const lines = [];
+            const eng = window.engine;
+            const r = eng && eng.getModule ? eng.getModule('renderer') : null;
+            const canvas = document.getElementById('gameCanvas');
+            let gl = null;
+            try { gl = canvas.getContext('webgl2') || canvas.getContext('webgl'); } catch (e) {}
+
+            lines.push('=== DIAGNÓSTICO PRIOM ===');
+            lines.push('User-Agent: ' + navigator.userAgent);
+            lines.push('devicePixelRatio: ' + window.devicePixelRatio);
+            lines.push('deviceMemory: ' + (navigator.deviceMemory || 'desconocido') + ' GB');
+            lines.push('Canvas CSS size: ' + canvas.clientWidth + 'x' + canvas.clientHeight);
+            lines.push('Canvas buffer size: ' + canvas.width + 'x' + canvas.height);
+            lines.push('');
+            lines.push('--- Motor ---');
+            lines.push('engine existe: ' + !!eng);
+            lines.push('engine.state: ' + JSON.stringify(eng ? eng.state : null));
+            lines.push('renderer module existe: ' + !!r);
+            if (r) {
+                lines.push('contextLost (flag interno): ' + !!r.contextLost);
+                lines.push('quality: ' + r.quality);
+                lines.push('bloomAvailable: ' + r.bloomAvailable);
+                lines.push('scene.children.length: ' + (r.scene ? r.scene.children.length : 'N/A'));
+                lines.push('camera.position: ' + (r.camera ? JSON.stringify(r.camera.position) : 'N/A'));
+                lines.push('cameraTarget: ' + JSON.stringify(r.cameraTarget));
+                lines.push('drawCalls: ' + r.drawCalls);
+            }
+            lines.push('');
+            lines.push('--- WebGL crudo ---');
+            if (gl) {
+                lines.push('gl.isContextLost(): ' + gl.isContextLost());
+                lines.push('gl.getError(): ' + gl.getError());
+                const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                if (dbg) {
+                    lines.push('GPU: ' + gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL));
+                    lines.push('Vendor: ' + gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL));
+                }
+                lines.push('MAX_TEXTURE_SIZE: ' + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+            } else {
+                lines.push('No se pudo obtener contexto WebGL crudo (o ya está perdido/en uso por three.js)');
+            }
+            lines.push('');
+            lines.push('👉 Copia/haz captura de este panel y compártelo para diagnóstico.');
+            if (window.__priomErrors && window.__priomErrors.length) {
+                lines.push('');
+                lines.push('--- Errores capturados ---');
+                lines.push(...window.__priomErrors);
+            }
+
+            panel.textContent = lines.join('\n');
+            panel.style.display = 'block';
+        });
+
     })();
     </script>
 </body>
