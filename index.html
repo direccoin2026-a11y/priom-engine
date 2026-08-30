@@ -1315,7 +1315,11 @@
                 lines.push('scene.children.length: ' + (r.scene ? r.scene.children.length : 'N/A'));
                 lines.push('camera.position: ' + (r.camera ? JSON.stringify(r.camera.position) : 'N/A'));
                 lines.push('cameraTarget: ' + JSON.stringify(r.cameraTarget));
-                lines.push('drawCalls: ' + r.drawCalls);
+                lines.push('drawCalls (grupos ECS, no total real): ' + r.drawCalls);
+                try {
+                    const rt = r.renderer ? r.renderer.getRenderTarget() : null;
+                    lines.push('render target activo: ' + (rt ? ('⚠️ OFFSCREEN (' + (rt.width||'?') + 'x' + (rt.height||'?') + ') <- ESTO ES EL BUG SI ES DISTINTO DE null') : 'null (pantalla, correcto)'));
+                } catch (e) { lines.push('render target activo: error al leer (' + e.message + ')'); }
             }
             lines.push('');
             lines.push('--- WebGL crudo ---');
