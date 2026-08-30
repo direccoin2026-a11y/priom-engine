@@ -271,7 +271,7 @@
             
             try {
                 if (window.WaterSystem) {
-                    this.waterSystemFX = new WaterSystem(this.scene);
+                    this.waterSystemFX = new WaterSystem(this.scene, { renderer: this.renderer });
                 }
             } catch (e) { /* silencioso */ }
             
@@ -1271,6 +1271,12 @@
                 }
                 
                 // ===== 8. RENDERIZAR (siempre dibujar escena aunque no haya entidades) =====
+                // BLINDAJE DEFINITIVO: si cualquier render offscreen (reflejos de
+                // agua, cubemaps, post-procesado) dejó el render target "atascado"
+                // en una textura invisible, esto lo devuelve SIEMPRE a la pantalla
+                // antes del frame visible. Sin esto, un solo fallo silencioso en
+                // cualquier render-a-textura deja el canvas negro para siempre.
+                this.renderer.setRenderTarget(null);
                 if (this.bloomAvailable && this.composer && cfg.bloomEnabled) {
                     if (this.bloomPass) {
                         this.bloomPass.strength = Math.max(0, this.bloomIntensity) * 0.6;
@@ -1658,12 +1664,32 @@
                     if (this.envCubeCamera && (this.quality === 'high' || this.quality === 'ultra' || this.quality === 'quantum')) {
                         this._envFrameCounter = (this._envFrameCounter || 0) + 1;
                         if (this._envFrameCounter % 240 === 0) {
-                            this.waterMesh.visible = false;
-                            this.envCubeCamera.position.set(this.camera.position.x, 8, this.camera.position.z);
-                            this.envCubeCamera.update(this.renderer, this.scene);
-                            this.waterMesh.visible = true;
-                            mat.uniforms.uEnvMap.value = this.envCubeCamera.renderTarget.texture;
-                            mat.uniforms.uHasEnvMap.value = 1;
+                            // CRÍTICO: CubeCamera.update() renderiza 6 caras a una
+                            // textura offscreen y, si CUALQUIERA de esas 6 pasadas
+                            // lanza una excepción, three.js nunca llega a restaurar
+                            // el render target original — el renderer se queda
+                            // "pintando" para siempre sobre esa textura invisible
+                            // en vez de sobre el canvas visible. Resultado: pantalla
+                            // negra permanente sin ningún error visible, aunque el
+                            // resto del motor (FPS, HUD) siga funcionando con
+                            // normalidad. Por eso esto va en try/finally con
+                            // restauración explícita del render target a null.
+                            const _prevTarget = this.renderer.getRenderTarget();
+                            try {
+                                this.waterMesh.visible = false;
+                                this.envCubeCamera.position.set(this.camera.position.x, 8, this.camera.position.z);
+                                this.envCubeCamera.update(this.renderer, this.scene);
+                                mat.uniforms.uEnvMap.value = this.envCubeCamera.renderTarget.texture;
+                                mat.uniforms.uHasEnvMap.value = 1;
+                            } catch (envErr) {
+                                console.warn('⚠️ Fallo actualizando reflejo de agua (recuperado, sin afectar el render principal):', envErr.message || envErr);
+                            } finally {
+                                this.waterMesh.visible = true;
+                                // Restauración explícita: pase lo que pase arriba,
+                                // el canvas visible SIEMPRE vuelve a ser el destino
+                                // del render.
+                                this.renderer.setRenderTarget(_prevTarget || null);
+                            }
                         }
                     }
                 }
