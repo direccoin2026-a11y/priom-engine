@@ -877,6 +877,68 @@
             } catch (e) {
                 // Silencioso
             }
+
+            // ===== LUNA (disco con cráteres + halo suave) =====
+            // Antes se usaba el propio disco solar atenuado como aproximación
+            // de luna de noche; con el ciclo día/noche ya corregido en fase,
+            // vale la pena tener una luna real, posicionada en el lado
+            // opuesto al sol, con su propio halo frío.
+            try {
+                const moonCanvas = document.createElement('canvas');
+                moonCanvas.width = 256;
+                moonCanvas.height = 256;
+                const mctx = moonCanvas.getContext('2d');
+                const moonGrad = mctx.createRadialGradient(100, 100, 10, 128, 128, 128);
+                moonGrad.addColorStop(0, '#f5f3ee');
+                moonGrad.addColorStop(0.7, '#d8d6ce');
+                moonGrad.addColorStop(1, '#b8b6ae');
+                mctx.fillStyle = moonGrad;
+                mctx.beginPath();
+                mctx.arc(128, 128, 126, 0, Math.PI * 2);
+                mctx.fill();
+                // cráteres procedurales
+                mctx.globalAlpha = 0.35;
+                const craterSeed = [[80,70,18],[160,90,12],[110,150,22],[180,170,10],[70,180,14],[140,60,8]];
+                for (const [cx, cy, cr] of craterSeed) {
+                    const cg = mctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+                    cg.addColorStop(0, 'rgba(140,138,130,0.6)');
+                    cg.addColorStop(1, 'rgba(140,138,130,0)');
+                    mctx.fillStyle = cg;
+                    mctx.beginPath();
+                    mctx.arc(cx, cy, cr, 0, Math.PI * 2);
+                    mctx.fill();
+                }
+                mctx.globalAlpha = 1;
+
+                const moonTexture = new THREE.CanvasTexture(moonCanvas);
+                const moonMat = new THREE.MeshBasicMaterial({
+                    map: moonTexture, fog: false, toneMapped: false
+                });
+                const moonGeo = new THREE.SphereGeometry(4.2, 24, 24);
+                this.moonMesh = new THREE.Mesh(moonGeo, moonMat);
+                this.scene.add(this.moonMesh);
+
+                const moonCoronaCanvas = document.createElement('canvas');
+                moonCoronaCanvas.width = 128;
+                moonCoronaCanvas.height = 128;
+                const mcctx = moonCoronaCanvas.getContext('2d');
+                const mGrad = mcctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                mGrad.addColorStop(0, 'rgba(220,228,255,0.55)');
+                mGrad.addColorStop(0.4, 'rgba(190,205,240,0.22)');
+                mGrad.addColorStop(1, 'rgba(180,200,240,0)');
+                mcctx.fillStyle = mGrad;
+                mcctx.fillRect(0, 0, 128, 128);
+                const moonCoronaTex = new THREE.CanvasTexture(moonCoronaCanvas);
+                const moonCoronaMat = new THREE.SpriteMaterial({
+                    map: moonCoronaTex, transparent: true, depthWrite: false,
+                    blending: THREE.AdditiveBlending, fog: false
+                });
+                this.moonCorona = new THREE.Sprite(moonCoronaMat);
+                this.moonCorona.scale.set(26, 26, 1);
+                this.scene.add(this.moonCorona);
+            } catch (e) {
+                // Silencioso
+            }
         }
         
         // ============================================================
@@ -1427,9 +1489,15 @@
             this.dayNight.time = (this.dayNight.time + 0.001 * this.dayNight.speed) % 1;
             
             const angle = this.dayNight.time * Math.PI * 2;
-            const sunX = Math.cos(angle) * 300;
-            const sunY = Math.sin(angle) * 200 + 50;
-            const sunZ = Math.sin(angle * 0.7) * 200;
+            // CORRECCIÓN DE FASE: con "angle" crudo, el sol quedaba más alto a
+            // las 6:00 y más bajo a las 18:00 — desfasado 6h respecto al reloj
+            // mostrado en el HUD (time*24 = hora). Con este desfase de -π/2,
+            // el mediodía (t=0.5) es el punto más alto real y la medianoche
+            // (t=0) el más bajo, como corresponde.
+            const sunAngle = angle - Math.PI / 2;
+            const sunX = Math.cos(sunAngle) * 300;
+            const sunY = Math.sin(sunAngle) * 200 + 50;
+            const sunZ = Math.sin(sunAngle * 0.7) * 200;
             
             this.sunLight.position.set(sunX, sunY, sunZ);
             this.dayNight.sunPosition.set(sunX, sunY, sunZ);
@@ -1442,7 +1510,7 @@
                 }
             }
             
-            const intensity = Math.max(0.1, Math.sin(angle) * 0.8 + 0.6);
+            const intensity = Math.max(0.1, Math.sin(sunAngle) * 0.8 + 0.6);
             this.sunLight.intensity = intensity * 1.8;
             
             const bgColor = new THREE.Color().setHSL(
@@ -1478,11 +1546,33 @@
             
             if (this.sunMesh) {
                 this.sunMesh.position.set(sunX, sunY, sunZ).multiplyScalar(1.4);
-                this.sunMesh.material.opacity = Math.max(0.15, intensity);
+                // Con luna dedicada ya no hace falta mantener el sol visible
+                // de noche como aproximación — se apaga del todo bajo el horizonte.
+                this.sunMesh.material.opacity = Math.max(0, Math.min(1, intensity * 1.3));
             }
             if (this.sunCorona) {
                 this.sunCorona.position.copy(this.sunMesh.position);
-                this.sunCorona.material.opacity = Math.max(0.2, intensity);
+                this.sunCorona.material.opacity = Math.max(0, Math.min(1, intensity * 1.3));
+            }
+            if (this.moonMesh || this.moonCorona) {
+                // La luna vive en el lado opuesto del cielo respecto al sol,
+                // y solo se ve claramente cuando el sol está bajo/por debajo
+                // del horizonte (noche o crepúsculo). Se usa sin(sunAngle) sin
+                // recortar (a diferencia de "intensity") para distinguir bien
+                // entre atardecer y noche cerrada.
+                const moonX = -sunX, moonY = -sunY + 100, moonZ = -sunZ;
+                const sunRaw = Math.sin(sunAngle);
+                const nightAmount = Math.min(1, Math.max(0, (0.05 - sunRaw) / 0.55));
+                if (this.moonMesh) {
+                    this.moonMesh.position.set(moonX, moonY, moonZ).multiplyScalar(1.35);
+                    this.moonMesh.visible = nightAmount > 0.02;
+                    this.moonMesh.lookAt(this.camera.position);
+                }
+                if (this.moonCorona) {
+                    this.moonCorona.position.copy(this.moonMesh ? this.moonMesh.position : new THREE.Vector3(moonX, moonY, moonZ));
+                    this.moonCorona.material.opacity = 0.5 * nightAmount;
+                    this.moonCorona.visible = nightAmount > 0.02;
+                }
             }
             
             this._updateAmbientDust(0.016, this.camera.position);
