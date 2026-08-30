@@ -33,6 +33,8 @@
      */
     class WaterSystem {
         constructor(scene, options = {}) {
+            this.scene = scene;
+            this.renderer = options.renderer || null;
             // ============================================================
             //  📦 CONFIGURACIÓN
             //  ============================================================
@@ -776,8 +778,14 @@
         //  🔄 ACTUALIZAR REFLEJOS
         //  ============================================================
         _updateReflections(cameraPos) {
-            if (!this.reflectionCamera || !this.reflectionTarget) return;
+            if (!this.reflectionCamera || !this.reflectionTarget || !this.renderer) return;
             
+            // Mismo blindaje que en MaxRenderer: si el render a la textura de
+            // reflejo falla a mitad de camino, el render target del renderer
+            // puede quedar apuntando a esa textura offscreen para siempre,
+            // dejando el canvas visible en negro permanentemente. Por eso se
+            // restaura explícitamente en el finally.
+            const _prevTarget = this.renderer.getRenderTarget();
             try {
                 // Posicionar cámara de reflexión
                 if (cameraPos) {
@@ -789,10 +797,12 @@
                 }
                 
                 // Renderizar cubemap
-                this.reflectionCamera.update(this.scene);
+                this.reflectionCamera.update(this.renderer, this.scene);
                 
             } catch (e) {
                 // Silencioso
+            } finally {
+                this.renderer.setRenderTarget(_prevTarget || null);
             }
         }
         
