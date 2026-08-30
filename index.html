@@ -603,7 +603,12 @@
 
                 // --- 1. Limpiar fondo y niebla para look alpino ---
                 scene.background = new THREE.Color(0x1a2040);
-                scene.fog = new THREE.FogExp2(0x1a2040, 0.0011);
+                // Más densidad de niebla que antes: apenas se notaba a 130+
+                // unidades de distancia (la cámara ahora está más lejos), y
+                // sin neblina atmosférica los picos lejanos se ven planos en
+                // vez de desvanecerse con profundidad — truco clásico de
+                // fotografía de montaña.
+                scene.fog = new THREE.FogExp2(0x1a2040, 0.0032);
 
                 // --- 2. Crear cadena de montañas (múltiples capas) ---
                 this._createMountainRange(scene, renderer);
@@ -616,15 +621,22 @@
                 }
 
                 // --- 4. Cámara y hora del día → Golden Hour / Blue Hour ---
+                // Encuadre más "toma de establecimiento": un poco más atrás y
+                // arriba para que se vea el valle con los árboles, no solo un
+                // muro de picos pegado a la cámara.
                 if (renderer.cameraTarget) {
-                    renderer.cameraTarget.set(0, 12, 0);
-                    renderer.cameraDistance = 95;
-                    renderer.cameraHeight = 28;
+                    renderer.cameraTarget.set(0, 12, -10);
+                    renderer.cameraDistance = 130;
+                    renderer.cameraHeight = 42;
                     renderer.cameraAngle = 0.85;
+                }
+                if (renderer.camera) {
+                    renderer.camera.fov = 50; // un poco más "teleobjetivo" = picos más imponentes
+                    renderer.camera.updateProjectionMatrix();
                 }
                 // Golden hour cálido (como la imagen derecha)
                 if (renderer.setTimeOfDay) {
-                    renderer.setTimeOfDay(0.18); // amanecer dorado
+                    renderer.setTimeOfDay(0.28); // ~06:43, sol bajo y cálido tras la corrección de fase
                 }
                 if (renderer.dayNight) {
                     renderer.dayNight.speed = 0.00008; // ciclo lento y cinematográfico
@@ -663,18 +675,22 @@
             },
 
             _createMountainRange(scene, renderer) {
-                // Materiales de nieve / roca
+                // Materiales de nieve / roca — más contraste y calidez que antes
+                // (antes rock y snow eran ambos fríos/grisáceos y la escena se
+                // veía plana; ahora la roca es más cálida/oscura para que la
+                // nieve resalte y la luz del sol pinte highlights cálidos).
                 const snowMat = new THREE.MeshStandardMaterial({
-                    color: 0xe8f0ff, roughness: 0.92, metalness: 0.05,
-                    flatShading: true, envMapIntensity: 0.4
+                    color: 0xf0f4ff, roughness: 0.75, metalness: 0.04,
+                    flatShading: true, envMapIntensity: 0.6
                 });
                 const rockMat = new THREE.MeshStandardMaterial({
-                    color: 0x4a4a55, roughness: 0.95, metalness: 0.08,
-                    flatShading: true
+                    color: 0x5c5248, roughness: 0.92, metalness: 0.06,
+                    flatShading: true, envMapIntensity: 0.15
                 });
-                const iceMat = new THREE.MeshStandardMaterial({
-                    color: 0xb8d4f0, roughness: 0.35, metalness: 0.25,
-                    flatShading: true, transparent: true, opacity: 0.92
+                const iceMat = new THREE.MeshPhysicalMaterial({
+                    color: 0xcfe4ff, roughness: 0.15, metalness: 0.1,
+                    flatShading: true, transparent: true, opacity: 0.92,
+                    clearcoat: 0.6, clearcoatRoughness: 0.3, envMapIntensity: 0.8
                 });
 
                 const peaks = [
@@ -804,7 +820,10 @@
                     if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
                     const id = factory.createTree(x, 0.8, z);
                     if (id >= 0) {
-                        const s = 0.9 + Math.random() * 1.4;
+                        // Escala algo mayor: la cámara ahora está más lejos
+                        // (encuadre más cinematográfico) y los árboles pequeños
+                        // se perdían de vista.
+                        const s = 1.3 + Math.random() * 1.9;
                         ecs.scaleX[id] = s; ecs.scaleY[id] = s * (1.1 + Math.random() * 0.4); ecs.scaleZ[id] = s;
                         trees++;
                     }
@@ -1108,7 +1127,7 @@
                         const mins = Math.floor((time * 24 - hours) * 60);
                         hud.timeDisplay.textContent = `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
 
-                        const sunHeight = Math.sin(time * Math.PI * 2);
+                        const sunHeight = Math.sin(time * Math.PI * 2 - Math.PI / 2);
                         if (sunHeight < -0.25) {
                             if (hud.timeIcon) hud.timeIcon.textContent = '🌙';
                             if (hud.timeLabel) hud.timeLabel.textContent = 'Noche Alpina';
@@ -1189,11 +1208,13 @@
                 });
             }
 
-            // Presets de hora
+            // Presets de hora (tiempos recalculados tras corregir el desfase
+            // de fase del ciclo día/noche: antes el "mediodía" real caía a
+            // las 6:00 y la "medianoche" a las 18:00)
             document.getElementById('btn-golden')?.addEventListener('click', () => {
                 const r = engine.getModule && engine.getModule('renderer');
                 if (r) {
-                    r.setTimeOfDay(0.18);
+                    r.setTimeOfDay(0.726); // ~17:25, sol bajo y cálido antes de ponerse
                     if (r.sunLight) r.sunLight.color.setHex(0xffcc88);
                     if (r.bloomPass) r.bloomPass.strength = 0.9;
                     showNotification('🌅 Golden Hour activado', 'info');
@@ -1202,7 +1223,7 @@
             document.getElementById('btn-blue')?.addEventListener('click', () => {
                 const r = engine.getModule && engine.getModule('renderer');
                 if (r) {
-                    r.setTimeOfDay(0.72);
+                    r.setTimeOfDay(0.774); // ~18:35, justo tras la puesta de sol
                     if (r.sunLight) r.sunLight.color.setHex(0xaaccff);
                     if (r.bloomPass) r.bloomPass.strength = 0.55;
                     showNotification('🌌 Blue Hour activado', 'info');
